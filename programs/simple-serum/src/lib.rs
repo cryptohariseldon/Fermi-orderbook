@@ -34,6 +34,13 @@ pub mod simple_serum {
         Ok(())
     }
 
+    //Add: 
+    // Create PDA / Use existing PDA
+    // Approve tokens to PDA
+    //Remove:
+    // Transfer tokens
+    // vault logic
+
     pub fn new_order(
         ctx: Context<NewOrder>,
         side: Side,
