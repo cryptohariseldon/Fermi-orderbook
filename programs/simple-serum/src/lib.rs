@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 use enumflags2::{bitflags, BitFlags};
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
 
 #[program]
 pub mod simple_serum {
