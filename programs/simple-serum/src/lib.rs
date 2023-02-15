@@ -874,8 +874,8 @@ impl<'a> OrderBook<'a> {
                 ),
                 Side::Ask => {
                     //enable error to check failure due to locked quantity
-                    require!(native_pc_qty_locked.is_some(), ErrorCode::InvalidLocked);
-                    native_pc_qty_locked.ok_or(()).unwrap_err();
+                    //require!(native_pc_qty_locked.is_some(), ErrorCode::InvalidLocked);
+                    //native_pc_qty_locked.ok_or(()).unwrap_err();
                     self.new_ask(
                         NewAskParams {
                             max_qty: max_coin_qty,
@@ -956,6 +956,7 @@ impl<'a> OrderBook<'a> {
         let mut coin_qty_remaining = max_coin_qty;
         let mut pc_qty_remaining = max_pc_qty;
 
+        // begin matching order
         let crossed;
         let done = loop {
             let best_offer = match self.find_bbo_mut(Side::Ask) {
@@ -970,6 +971,8 @@ impl<'a> OrderBook<'a> {
             crossed = limit_price
                 .map(|limit_price| limit_price >= trade_price)
                 .unwrap_or(true);
+            // testing
+
             if !crossed || post_only {
                 break true;
             }
@@ -1002,6 +1005,7 @@ impl<'a> OrderBook<'a> {
             coin_qty_remaining -= trade_qty;
             pc_qty_remaining -= trade_qty * trade_price;
 
+            //if order is filled, delete (ask) order.
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
                 event_q
@@ -1036,8 +1040,8 @@ impl<'a> OrderBook<'a> {
             let coin_lots_received = max_coin_qty - coin_qty_remaining;
             let native_pc_paid = native_accum_fill_price;
 
-            to_release.credit_coin(coin_lots_received);
-            to_release.debit_native_pc(native_pc_paid);
+            //to_release.credit_coin(coin_lots_received);
+            //to_release.debit_native_pc(native_pc_paid);
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
@@ -1166,6 +1170,7 @@ impl<'a> OrderBook<'a> {
         let pc_lot_size = self.market.pc_lot_size;
         let coin_lot_size = self.market.coin_lot_size;
 
+        //begin matching
         let crossed;
         let done = loop {
             let best_bid = match self.find_bbo_mut(Side::Bid) {
