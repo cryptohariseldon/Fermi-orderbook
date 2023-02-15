@@ -247,7 +247,7 @@ describe('simple-serum', () => {
   });
 
   describe('#new_order', async () => {
-    it('should new order successfully', async () => {
+    it('New order - buy @ 99 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -286,6 +286,8 @@ describe('simple-serum', () => {
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
       }
+    }),
+      it('New order - ask @ 100 successful', async () => {
 
       {
         await program.methods
@@ -325,7 +327,8 @@ describe('simple-serum', () => {
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
       }
-
+}),
+      it('New order - buy @ 101 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -363,7 +366,7 @@ describe('simple-serum', () => {
         console.log(asks);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
-      }
+      };
     });
   });
 });
