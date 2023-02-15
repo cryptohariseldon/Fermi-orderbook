@@ -82,8 +82,10 @@ pub mod simple_serum {
                 let lock_qty_native = max_native_pc_qty;
                 native_pc_qty_locked = Some(lock_qty_native);
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
-                deposit_amount = lock_qty_native - free_qty_to_lock;
+                let total_deposit_amount = lock_qty_native - free_qty_to_lock;
+                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_vault = pc_vault;
+                //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_pc(free_qty_to_lock);
                 open_orders.credit_locked_pc(deposit_amount);
@@ -98,7 +100,8 @@ pub mod simple_serum {
                     .checked_mul(market.coin_lot_size)
                     .ok_or(error!(ErrorCode::InsufficientFunds))?;
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
-                deposit_amount = lock_qty_native - free_qty_to_lock;
+                let total_deposit_amount = lock_qty_native - free_qty_to_lock;
+                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_vault = coin_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_coin(free_qty_to_lock);
@@ -177,6 +180,7 @@ pub mod simple_serum {
                 authority: authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?
@@ -869,7 +873,8 @@ impl<'a> OrderBook<'a> {
                     proceeds,
                 ),
                 Side::Ask => {
-                    // require!(native_pc_qty_locked.is_some(), ErrorCode::Error);
+                    //enable error to check failure due to locked quantity
+                    require!(native_pc_qty_locked.is_some(), ErrorCode::InvalidLocked);
                     native_pc_qty_locked.ok_or(()).unwrap_err();
                     self.new_ask(
                         NewAskParams {
@@ -1693,6 +1698,9 @@ pub enum ErrorCode {
 
     #[msg("Invalid price")]
     InvalidPrice,
+
+    #[msg("Insufficient native qty locked")]
+    InvalidLocked,
 
     #[msg("Error")]
     Error,
