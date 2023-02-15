@@ -2,16 +2,29 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/simple_serum';
+import idl from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/idl/simple_serum.json";
+import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
+
+
+const getDevPgmId = () => {
+    // get the program ID from the solblog-keyfile.json
+    let pgmKeypair = anchor.web3.Keypair.fromSecretKey(
+        new Uint8Array(solblog_keypair)
+    )
+    return new anchor.web3.PublicKey(pgmKeypair.publicKey) // Address of the deployed program
+}
 
 const createMint = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.Keypair,
   decimal: number,
 ) => {
+  //const programId = getDevPgmId();
   const tx = new anchor.web3.Transaction();
   tx.add(
     anchor.web3.SystemProgram.createAccount({
       programId: spl.TOKEN_PROGRAM_ID,
+      //programId: programId,
       fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: mint.publicKey,
       space: spl.MintLayout.span,
@@ -73,9 +86,10 @@ describe('simple-serum', () => {
 
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
-
-  const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>;
-
+  const programId = getDevPgmId();
+  //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>;
+  // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+  const program = new anchor.Program(idl, programId, provider)
   const coinMint = anchor.web3.Keypair.generate();
   const pcMint = anchor.web3.Keypair.generate();
 
@@ -104,17 +118,19 @@ describe('simple-serum', () => {
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
 
+  console.log('basics done')
+
   before(async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         authority.publicKey,
-        10 * anchor.web3.LAMPORTS_PER_SOL,
+        2 * anchor.web3.LAMPORTS_PER_SOL,
       ),
     );
 
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
-
+    //program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
     [marketPda, marketPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from('market', 'utf-8'),
