@@ -5,7 +5,7 @@ import { SimpleSerum } from '../target/types/simple_serum';
 import idl from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/idl/simple_serum.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
 
-
+//make sure this is executed with solblock keypair path (Fermi)
 const getDevPgmId = () => {
     // get the program ID from the solblog-keyfile.json
     let pgmKeypair = anchor.web3.Keypair.fromSecretKey(
@@ -14,12 +14,12 @@ const getDevPgmId = () => {
     return new anchor.web3.PublicKey(pgmKeypair.publicKey) // Address of the deployed program
 }
 
-const createMint = async (
+const createMint = async ( 
   provider: anchor.AnchorProvider,
   mint: anchor.web3.Keypair,
   decimal: number,
 ) => {
-  //const programId = getDevPgmId();
+  //const programId = getDevPgmId(); 
   const tx = new anchor.web3.Transaction();
   tx.add(
     anchor.web3.SystemProgram.createAccount({
@@ -80,7 +80,7 @@ const mintTo = async (
   );
   await provider.sendAndConfirm(tx, []);
 };
-
+//execute this on website opening (Fermi)
 describe('simple-serum', () => {
   const provider = anchor.AnchorProvider.env();
 
@@ -88,9 +88,10 @@ describe('simple-serum', () => {
   anchor.setProvider(provider);
   const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>;
-  // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+  
+  let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   const program = new anchor.Program(idl, programId, provider)
-  const coinMint = anchor.web3.Keypair.generate();
+  const coinMint = anchor.web3.Keypair.generate(); 
   const pcMint = anchor.web3.Keypair.generate();
 
   let coinVault: anchor.web3.PublicKey;
@@ -113,6 +114,7 @@ describe('simple-serum', () => {
   let openOrdersPda: anchor.web3.PublicKey;
   let openOrdersPdaBump: number;
 
+  //skip ((Fermi))
   const authority = anchor.web3.Keypair.generate();
 
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
@@ -130,7 +132,8 @@ describe('simple-serum', () => {
 
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
-    //program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+    //execute from here on webpage openings (Fermi)
+    program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
     [marketPda, marketPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from('market', 'utf-8'),
@@ -227,7 +230,7 @@ describe('simple-serum', () => {
       BigInt('1000000000'),
     );
   });
-
+//to be executed only once (Fermi)
   describe('#initialize_market', async () => {
     it('should initialize market successfully', async () => {
       await program.methods
@@ -247,6 +250,7 @@ describe('simple-serum', () => {
         .signers([authority])
         .rpc();
 
+        //do this everytime (Fermi)
       const market = await program.account.market.fetch(marketPda);
       assert(market.coinVault.equals(coinVault));
       assert(market.pcVault.equals(pcVault));
@@ -261,7 +265,7 @@ describe('simple-serum', () => {
       assert(market.authority.equals(authority.publicKey));
     });
   });
-
+//steps to execute when there is new bid order (Fermi)
   describe('#new_order', async () => {
     it('New order - buy @ 99 successful', async () => {
       {
@@ -302,7 +306,7 @@ describe('simple-serum', () => {
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
       }
-    }),
+    }), //steps to execute when placing new ask order (Fermi)
       it('New order - ask @ 100 successful', async () => {
 
       {
