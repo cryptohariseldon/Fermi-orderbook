@@ -177,10 +177,11 @@ pub mod simple_serum {
         }
 
         if deposit_amount > 0 {
+
             let transfer_ix = Approve {
-                to: deposit_vault.to_account_info(),
+                to: payer.to_account_info(),
                 delegate: deposit_vault.to_account_info(),
-                authority: payer.to_account_info(), // authority.to_account_info(),
+                authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
             //let marginal_deposit = cpi_ctx * 2 / 100
@@ -188,7 +189,7 @@ pub mod simple_serum {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
 
-        msg!("approval done");
+        //msg!("approval done");
         //continue with transfer for internal accounting: modify later
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
@@ -864,6 +865,7 @@ impl<'a> OrderBook<'a> {
             OrderType::ImmediateOrCancel => (false, false),
             OrderType::PostOnly => (true, true),
         };
+        //check Order impls for sourcing payer acc.
         let limit_price = Order::price_from_order_id(order_id);
         let mut limit = 10;
         loop {
@@ -874,7 +876,9 @@ impl<'a> OrderBook<'a> {
             }
 
             let remaining_order = match side {
-                Side::Bid => self.new_bid(
+                Side::Bid => {
+                //let deposit_vault = pc_vault;
+                self.new_bid(
                     NewBidParams {
                         max_coin_qty,
                         native_pc_qty_locked: native_pc_qty_locked.unwrap(),
@@ -887,11 +891,12 @@ impl<'a> OrderBook<'a> {
                     },
                     event_q,
                     proceeds,
-                ),
+                )},
                 Side::Ask => {
                     //enable error to check failure due to locked quantity
                     //require!(native_pc_qty_locked.is_some(), ErrorCode::InvalidLocked);
                     //native_pc_qty_locked.ok_or(()).unwrap_err();
+                    // let deposit_vault = coin_vault;
                     self.new_ask(
                         NewAskParams {
                             max_qty: max_coin_qty,
@@ -918,10 +923,15 @@ impl<'a> OrderBook<'a> {
                 }
                 None => return Ok(None),
                 /*{
+                // info we have: owner , order_id, type (BID/ASK),
+                // info we need: payer, deposit_vault, token_program, deposit_amount
+                // see how 2 are found in inital funct. (L186)
+                // get order amounts from order id (possibly Order::price_from_order_id(order_id))
+                // revise authority: authority.to_account_info(),  ^^^^^^^^^^^^^^^ method cannot be called on `for<'r, 's> fn(&'r anchor_lang::prelude::AccountInfo<'s>) -> std::result::Result<anchor_lang::prelude::Pubkey, anchor_lang::error::Error> {authority}` due to unsatisfied trait bounds
                 //transfer tokens a second time
                 //if max_coin_qty > 0  {
                     let transfer_ix = Transfer {
-                        from: payer.to_account_info(),
+                        from: owner.to_account_info(),
                         to: deposit_vault.to_account_info(),
                         authority: authority.to_account_info(),
                     };
