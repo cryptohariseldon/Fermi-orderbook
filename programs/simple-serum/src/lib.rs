@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount, Transfer},
+    token::{Mint, Token, TokenAccount, Transfer, Approve},
 };
+use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 
 declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
@@ -83,7 +84,8 @@ pub mod simple_serum {
                 native_pc_qty_locked = Some(lock_qty_native);
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
-                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = pc_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
@@ -101,7 +103,8 @@ pub mod simple_serum {
                     .ok_or(error!(ErrorCode::InsufficientFunds))?;
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
-                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = coin_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_coin(free_qty_to_lock);
@@ -174,6 +177,19 @@ pub mod simple_serum {
         }
 
         if deposit_amount > 0 {
+            let transfer_ix = Approve {
+                to: deposit_vault.to_account_info(),
+                delegate: deposit_vault.to_account_info(),
+                authority: payer.to_account_info(), // authority.to_account_info(),
+            };
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })?;
+
+        msg!("approval done");
+        //continue with transfer for internal accounting: modify later
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
                 to: deposit_vault.to_account_info(),
@@ -901,6 +917,20 @@ impl<'a> OrderBook<'a> {
                     native_pc_qty_locked = remaining_order.native_pc_qty_remaining;
                 }
                 None => return Ok(None),
+                /*{
+                //transfer tokens a second time
+                //if max_coin_qty > 0  {
+                    let transfer_ix = Transfer {
+                        from: payer.to_account_info(),
+                        to: deposit_vault.to_account_info(),
+                        authority: authority.to_account_info(),
+                    };
+                    let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                    //let marginal_deposit = cpi_ctx * 2 / 100
+                    anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                        _ => error!(ErrorCode::TransferFailed),
+                    })?
+                }*/
             };
         }
     }
@@ -1040,8 +1070,8 @@ impl<'a> OrderBook<'a> {
             let coin_lots_received = max_coin_qty - coin_qty_remaining;
             let native_pc_paid = native_accum_fill_price;
 
-            //to_release.credit_coin(coin_lots_received);
-            //to_release.debit_native_pc(native_pc_paid);
+            to_release.credit_coin(coin_lots_received);
+            to_release.debit_native_pc(native_pc_paid);
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
