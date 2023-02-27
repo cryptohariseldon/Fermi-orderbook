@@ -86,10 +86,10 @@ describe('simple-serum', () => {
 
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
-  const programId = getDevPgmId();
-  const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy 
-  // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  // const program = new anchor.Program(idl, programId, provider) //for existing prog
+  //const programId = getDevPgmId();
+  //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
+  let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+  const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
   const pcMint = anchor.web3.Keypair.generate();
 

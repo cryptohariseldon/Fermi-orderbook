@@ -175,7 +175,8 @@ pub mod simple_serum {
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
-
+        let withdraw_amount_pc = proceeds.native_pc_credit;
+        let withdraw_amount_coin = proceeds.coin_credit;
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -202,6 +203,22 @@ pub mod simple_serum {
                 _ => error!(ErrorCode::TransferFailed),
             })?
         }
+         if withdraw_amount_pc > 0 {
+             let transfer_ix = Transfer {
+                 from: deposit_vault.to_account_info(),
+                 to: payer.to_account_info(),
+                 authority: authority.to_account_info(),
+             };
+             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+             msg!("transfered pc!");
+             //let marginal_deposit = cpi_ctx * 2 / 100
+             anchor_spl::token::transfer(cpi_ctx, withdraw_amount_pc).map_err(|err| match err {
+                 _ => error!(ErrorCode::TransferFailed),
+             })?
+
+         }
+
+
 
         Ok(())
     }
