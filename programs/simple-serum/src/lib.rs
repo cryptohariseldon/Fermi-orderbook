@@ -191,6 +191,7 @@ pub mod simple_serum {
             })?;
 
         //msg!("approval done");
+        msg!("withdraw-amount {}", withdraw_amount_coin);
         //continue with transfer for internal accounting: modify later
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
@@ -203,16 +204,17 @@ pub mod simple_serum {
                 _ => error!(ErrorCode::TransferFailed),
             })?
         }
-         if withdraw_amount_pc > 0 {
+
+         if withdraw_amount_coin > 0 {
              let transfer_ix = Transfer {
-                 from: deposit_vault.to_account_info(),
-                 to: payer.to_account_info(),
+                 from: payer.to_account_info(),
+                 to: deposit_vault.to_account_info(),
                  authority: authority.to_account_info(),
              };
              let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
              msg!("transfered pc!");
              //let marginal_deposit = cpi_ctx * 2 / 100
-             anchor_spl::token::transfer(cpi_ctx, withdraw_amount_pc).map_err(|err| match err {
+             anchor_spl::token::transfer(cpi_ctx, withdraw_amount_coin).map_err(|err| match err {
                  _ => error!(ErrorCode::TransferFailed),
              })?
 
