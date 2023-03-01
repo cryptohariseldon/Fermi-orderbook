@@ -130,7 +130,7 @@ pub mod simple_serum {
             max_coin_qty,
             native_pc_qty_locked,
         };
-        let jit_data: Vec<crate::RequestView> = vec![];
+        let jitdata: Vec<JitStruct> = vec![];
         let mut proceeds = RequestProceeds {
             coin_unlocked: 0,
             native_pc_unlocked: 0,
@@ -138,7 +138,7 @@ pub mod simple_serum {
             native_pc_credit: 0,
             coin_debit: 0,
             native_pc_debit: 0,
-            jit_data: jit_data,
+            jit_data: None,
         };
         let mut order_book = OrderBook { bids, asks, market };
 
@@ -161,7 +161,6 @@ pub mod simple_serum {
                 native_pc_debit,
                 jit_data,
             } = proceeds;
-
             let native_coin_unlocked = coin_unlocked.checked_mul(coin_lot_size).unwrap();
             let native_coin_credit = coin_credit.checked_mul(coin_lot_size).unwrap();
             let native_coin_debit = coin_debit.checked_mul(coin_lot_size).unwrap();
@@ -185,8 +184,21 @@ pub mod simple_serum {
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
+
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
+        let other_trades = proceeds.jit_data;
+        // let mut counterparty_info = proceeds.jit_data.copy();
+/*
+        match proceeds.jit_data {
+            None => {},
+            Some(data) => {
+        let cpt_amt = data[1].native_qty_received;
+    }}*/
+
+        msg!("withdraw-amount {}", Some(other_trades[1]));
+
+
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -201,7 +213,8 @@ pub mod simple_serum {
             })?;
 
         //msg!("approval done");
-        msg!("withdraw-amount {}", matched_amount_coin);
+
+
         //continue with transfer for internal accounting: modify later
         /*
             let transfer_ix = Transfer {
@@ -328,7 +341,11 @@ pub enum RequestView {
         expected_owner_slot: u8,
         expected_owner: Pubkey,
     },
-    JitStruct {
+
+}
+
+#[derive(Copy, Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct JitStruct {
         side: Side,
         maker: bool,
         native_qty_paid: u64,
@@ -337,8 +354,6 @@ pub enum RequestView {
         owner: Pubkey,
         owner_slot: u8,
     }
-}
-
 // #[repr(packed)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct RequestQueueHeader {
@@ -784,7 +799,7 @@ pub struct RequestProceeds {
 
     pub coin_debit: u64,
     pub native_pc_debit: u64,
-    pub jit_data: Vec<crate::RequestView>,
+    pub jit_data: Option<Vec<JitStruct>>,
 }
 
 macro_rules! impl_incr_method {
@@ -882,10 +897,12 @@ impl<'a> OrderBook<'a> {
                 )?;
                 None
             }
+            /*
             RequestView::JitStruct { .. } => {
                 msg!("jit it!");
                 None
             }
+            */
         })
     }
 }
@@ -1060,7 +1077,7 @@ impl<'a> OrderBook<'a> {
         //experimental, needs usize ->
         // let jit_data: Vec<crate::RequestView> = Vec::new();
         //general vec ->
-        let mut jit_data: Vec<crate::RequestView> = vec![];
+        let mut jit_data: Vec<JitStruct> = vec![];
         // begin matching order
         let crossed;
         let done = loop {
@@ -1107,7 +1124,7 @@ impl<'a> OrderBook<'a> {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
             */
-            let jit_struct = RequestView::JitStruct {
+            let jit_struct = JitStruct {
                 side: Side::Ask,
                 maker: true,
                 native_qty_paid: trade_qty * coin_lot_size,
@@ -1174,7 +1191,7 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
-            to_release.jit_data = jit_data;
+            to_release.jit_data = Some(jit_data);
 
 
             if native_accum_fill_price > 0 {
