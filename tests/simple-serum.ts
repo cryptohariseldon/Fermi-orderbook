@@ -14,12 +14,12 @@ const getDevPgmId = () => {
     return new anchor.web3.PublicKey(pgmKeypair.publicKey) // Address of the deployed program
 }
 
-const createMint = async ( 
+const createMint = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.Keypair,
   decimal: number,
 ) => {
-  //const programId = getDevPgmId(); 
+  //const programId = getDevPgmId();
   const tx = new anchor.web3.Transaction();
   tx.add(
     anchor.web3.SystemProgram.createAccount({
@@ -134,7 +134,7 @@ describe('simple-serum', () => {
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
     //execute from here on webpage openings (Fermi)
-    program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+    //program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
     [marketPda, marketPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from('market', 'utf-8'),

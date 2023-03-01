@@ -130,6 +130,7 @@ pub mod simple_serum {
             max_coin_qty,
             native_pc_qty_locked,
         };
+        let jit_data: Vec<crate::RequestView> = vec![];
         let mut proceeds = RequestProceeds {
             coin_unlocked: 0,
             native_pc_unlocked: 0,
@@ -137,12 +138,14 @@ pub mod simple_serum {
             native_pc_credit: 0,
             coin_debit: 0,
             native_pc_debit: 0,
+            jit_data: jit_data,
         };
         let mut order_book = OrderBook { bids, asks, market };
 
         // matching occurs at this stage
         order_book.process_request(&request, event_q, &mut proceeds)?;
         //msg!(event_q[1].side);
+        //let jit_data = vec![];
 
         {
             let coin_lot_size = market.coin_lot_size;
@@ -156,6 +159,7 @@ pub mod simple_serum {
 
                 coin_debit,
                 native_pc_debit,
+                jit_data,
             } = proceeds;
 
             let native_coin_unlocked = coin_unlocked.checked_mul(coin_lot_size).unwrap();
@@ -780,6 +784,7 @@ pub struct RequestProceeds {
 
     pub coin_debit: u64,
     pub native_pc_debit: u64,
+    pub jit_data: Vec<crate::RequestView>,
 }
 
 macro_rules! impl_incr_method {
@@ -1169,6 +1174,8 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
+            to_release.jit_data = jit_data;
+
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
@@ -1210,7 +1217,6 @@ impl<'a> OrderBook<'a> {
         let out = {
             let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
-
             to_release.unlock_native_pc(native_qty_unlocked);
 
             Event::new(EventView::Out {
