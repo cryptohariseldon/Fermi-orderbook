@@ -173,6 +173,9 @@ pub mod simple_serum {
             open_orders.credit_locked_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_unlocked);
+            let others = jit_data;
+            //msg!("data {}", others[1].native_qty_paid);
+
 
             open_orders.native_coin_total = open_orders
                 .native_coin_total
@@ -188,12 +191,14 @@ pub mod simple_serum {
 
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
-/*
-        let data = vec![]
-        for proceeds.jitdata.iter() {
-            dat
+        //let mut data = vec![];
+        // let others = jit_data[1];
+        /*
+        for p in proceeds.jit_data[1] {
+            let c = p.clone();
+            data.push(p);
         }
-        */
+
         proceeds.jit_data.into_iter().map(|data| JitStruct {
                     side,
                     maker,
@@ -202,7 +207,7 @@ pub mod simple_serum {
                     order_id,
                     owner,
                     owner_slot,
-                });
+                });*/
 
         // });
         // let mut counterparty_info = proceeds.jit_data.copy();
@@ -1211,7 +1216,7 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
-            to_release.jit_data = Some(jit_data);
+            to_release.jit_data = jit_data;
 
 
             if native_accum_fill_price > 0 {
