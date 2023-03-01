@@ -5,6 +5,7 @@ use anchor_spl::{
 };
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
+use resp;
 
 declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
 
@@ -138,7 +139,7 @@ pub mod simple_serum {
             native_pc_credit: 0,
             coin_debit: 0,
             native_pc_debit: 0,
-            jit_data: None,
+            jit_data: jitdata,
         };
         let mut order_book = OrderBook { bids, asks, market };
 
@@ -187,17 +188,36 @@ pub mod simple_serum {
 
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
-        let other_trades = proceeds.jit_data;
+/*
+        let data = vec![]
+        for proceeds.jitdata.iter() {
+            dat
+        }
+        */
+        proceeds.jit_data.into_iter().map(|data| JitStruct {
+                    side,
+                    maker,
+                    native_qty_paid,
+                    native_qty_received,
+                    order_id,
+                    owner,
+                    owner_slot,
+                });
+
+        // });
         // let mut counterparty_info = proceeds.jit_data.copy();
 /*
-        match proceeds.jit_data {
+        match other_trades {
             None => {},
             Some(data) => {
         let cpt_amt = data[1].native_qty_received;
+        msg!("withdraw-amount {}", cpt_amt);
+
     }}*/
-
-        msg!("withdraw-amount {}", Some(other_trades[1]));
-
+    //if let Some(other_trades) = other_trades.get("other_trades") {
+// use origi
+    //    msg!("withdraw-amount {}", other_trades[1]);
+//}
 
         if deposit_amount > 0 {
 
@@ -799,7 +819,7 @@ pub struct RequestProceeds {
 
     pub coin_debit: u64,
     pub native_pc_debit: u64,
-    pub jit_data: Option<Vec<JitStruct>>,
+    pub jit_data: Vec<JitStruct>,
 }
 
 macro_rules! impl_incr_method {

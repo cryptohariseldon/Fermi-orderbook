@@ -19,3 +19,4 @@ default = []
 anchor-lang = {version = "0.25.0", features = ["init-if-needed"]}
 anchor-spl = "0.25.0"
 enumflags2 = "0.7.5"
+resp = "1.0.3"
