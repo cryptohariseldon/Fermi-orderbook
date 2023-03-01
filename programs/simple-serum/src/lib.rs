@@ -77,6 +77,7 @@ pub mod simple_serum {
 
         let deposit_amount;
         let deposit_vault;
+        let counterparty_vault;
         let native_pc_qty_locked;
         match side {
             Side::Bid => {
@@ -87,6 +88,7 @@ pub mod simple_serum {
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = pc_vault;
+                counterparty_vault = coin_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_pc(free_qty_to_lock);
@@ -106,6 +108,7 @@ pub mod simple_serum {
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = coin_vault;
+                counterparty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_coin(free_qty_to_lock);
                 open_orders.credit_locked_coin(deposit_amount);
@@ -136,6 +139,8 @@ pub mod simple_serum {
             native_pc_debit: 0,
         };
         let mut order_book = OrderBook { bids, asks, market };
+
+        // matching occurs at this stage
         order_book.process_request(&request, event_q, &mut proceeds)?;
 
         {
@@ -175,8 +180,8 @@ pub mod simple_serum {
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
-        let withdraw_amount_pc = proceeds.native_pc_credit;
-        let withdraw_amount_coin = proceeds.coin_credit;
+        let matched_amount_pc = proceeds.native_pc_credit;
+        let matched_amount_coin = proceeds.coin_credit;
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -191,8 +196,9 @@ pub mod simple_serum {
             })?;
 
         //msg!("approval done");
-        msg!("withdraw-amount {}", withdraw_amount_coin);
+        msg!("withdraw-amount {}", matched_amount_coin);
         //continue with transfer for internal accounting: modify later
+        /*
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
                 to: deposit_vault.to_account_info(),
@@ -202,21 +208,37 @@ pub mod simple_serum {
             //let marginal_deposit = cpi_ctx * 2 / 100
             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
-            })?
+            })? */
         }
 
-         if withdraw_amount_coin > 0 {
+         if matched_amount_coin > 0 {
+             // transfer from depositor
              let transfer_ix = Transfer {
                  from: payer.to_account_info(),
                  to: deposit_vault.to_account_info(),
                  authority: authority.to_account_info(),
              };
              let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+             //let marginal_deposit = cpi_ctx * 2 / 100
+             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                 _ => error!(ErrorCode::TransferFailed),
+             })?;
+
+
+
+             // transfer from counterpart(ies)
+             /*
+             let transfer_ix = Transfer {
+                 from: payer.to_account_info(),
+                 to: counterparty_vault.to_account_info(),
+                 authority: authority.to_account_info(),
+             };
+             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
              msg!("transfered pc!");
              //let marginal_deposit = cpi_ctx * 2 / 100
-             anchor_spl::token::transfer(cpi_ctx, withdraw_amount_coin).map_err(|err| match err {
+             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
                  _ => error!(ErrorCode::TransferFailed),
-             })?
+             })? */
 
          }
 
