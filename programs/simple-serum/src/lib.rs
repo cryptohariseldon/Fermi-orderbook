@@ -142,6 +142,7 @@ pub mod simple_serum {
 
         // matching occurs at this stage
         order_book.process_request(&request, event_q, &mut proceeds)?;
+        //msg!(event_q[1].side);
 
         {
             let coin_lot_size = market.coin_lot_size;
@@ -323,6 +324,15 @@ pub enum RequestView {
         expected_owner_slot: u8,
         expected_owner: Pubkey,
     },
+    JitStruct {
+        side: Side,
+        maker: bool,
+        native_qty_paid: u64,
+        native_qty_received: u64,
+        order_id: u128,
+        owner: Pubkey,
+        owner_slot: u8,
+    }
 }
 
 // #[repr(packed)]
@@ -867,6 +877,10 @@ impl<'a> OrderBook<'a> {
                 )?;
                 None
             }
+            RequestView::JitStruct { .. } => {
+                msg!("jit it!");
+                None
+            }
         })
     }
 }
@@ -1037,7 +1051,11 @@ impl<'a> OrderBook<'a> {
 
         let mut coin_qty_remaining = max_coin_qty;
         let mut pc_qty_remaining = max_pc_qty;
-
+        //let mut jit_data = vec![];
+        //experimental, needs usize ->
+        // let jit_data: Vec<crate::RequestView> = Vec::new();
+        //general vec ->
+        let mut jit_data: Vec<crate::RequestView> = vec![];
         // begin matching order
         let crossed;
         let done = loop {
@@ -1070,6 +1088,7 @@ impl<'a> OrderBook<'a> {
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
             //transfer tokens from counterparty to vault upon matching
+            /*
             let counterparty = best_offer.owner;
             txn_ix = Transfer {
                 from: counterparty.to_account_info(),
@@ -1082,6 +1101,17 @@ impl<'a> OrderBook<'a> {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
+            */
+            let jit_struct = RequestView::JitStruct {
+                side: Side::Ask,
+                maker: true,
+                native_qty_paid: trade_qty * coin_lot_size,
+                native_qty_received: native_maker_pc_qty,
+                order_id: best_offer.order_id,
+                owner: best_offer.owner,
+                owner_slot: best_offer.owner_slot,
+            };
+            jit_data.push(jit_struct);
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
