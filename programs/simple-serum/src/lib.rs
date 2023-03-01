@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount, Transfer},
+    token::{Mint, Token, TokenAccount, Transfer, Approve},
 };
+use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 
 declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
@@ -76,6 +77,7 @@ pub mod simple_serum {
 
         let deposit_amount;
         let deposit_vault;
+        let counterparty_vault;
         let native_pc_qty_locked;
         match side {
             Side::Bid => {
@@ -83,8 +85,10 @@ pub mod simple_serum {
                 native_pc_qty_locked = Some(lock_qty_native);
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
-                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = pc_vault;
+                counterparty_vault = coin_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_pc(free_qty_to_lock);
@@ -101,8 +105,10 @@ pub mod simple_serum {
                     .ok_or(error!(ErrorCode::InsufficientFunds))?;
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
-                deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = coin_vault;
+                counterparty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 open_orders.lock_free_coin(free_qty_to_lock);
                 open_orders.credit_locked_coin(deposit_amount);
@@ -133,7 +139,10 @@ pub mod simple_serum {
             native_pc_debit: 0,
         };
         let mut order_book = OrderBook { bids, asks, market };
+
+        // matching occurs at this stage
         order_book.process_request(&request, event_q, &mut proceeds)?;
+        //msg!(event_q[1].side);
 
         {
             let coin_lot_size = market.coin_lot_size;
@@ -172,8 +181,25 @@ pub mod simple_serum {
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
-
+        let matched_amount_pc = proceeds.native_pc_credit;
+        let matched_amount_coin = proceeds.coin_credit;
         if deposit_amount > 0 {
+
+            let transfer_ix = Approve {
+                to: payer.to_account_info(),
+                delegate: deposit_vault.to_account_info(),
+                authority: authority.to_account_info(), // authority.to_account_info(),
+            };
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })?;
+
+        //msg!("approval done");
+        msg!("withdraw-amount {}", matched_amount_coin);
+        //continue with transfer for internal accounting: modify later
+        /*
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
                 to: deposit_vault.to_account_info(),
@@ -183,8 +209,41 @@ pub mod simple_serum {
             //let marginal_deposit = cpi_ctx * 2 / 100
             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
-            })?
+            })? */
         }
+
+         if matched_amount_coin > 0 {
+             // transfer from depositor
+             let transfer_ix = Transfer {
+                 from: payer.to_account_info(),
+                 to: deposit_vault.to_account_info(),
+                 authority: authority.to_account_info(),
+             };
+             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+             //let marginal_deposit = cpi_ctx * 2 / 100
+             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                 _ => error!(ErrorCode::TransferFailed),
+             })?;
+
+
+
+             // transfer from counterpart(ies)
+             /*
+             let transfer_ix = Transfer {
+                 from: payer.to_account_info(),
+                 to: counterparty_vault.to_account_info(),
+                 authority: authority.to_account_info(),
+             };
+             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+             msg!("transfered pc!");
+             //let marginal_deposit = cpi_ctx * 2 / 100
+             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                 _ => error!(ErrorCode::TransferFailed),
+             })? */
+
+         }
+
+
 
         Ok(())
     }
@@ -265,6 +324,15 @@ pub enum RequestView {
         expected_owner_slot: u8,
         expected_owner: Pubkey,
     },
+    JitStruct {
+        side: Side,
+        maker: bool,
+        native_qty_paid: u64,
+        native_qty_received: u64,
+        order_id: u128,
+        owner: Pubkey,
+        owner_slot: u8,
+    }
 }
 
 // #[repr(packed)]
@@ -616,6 +684,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
     }
 }
 
+// User owner value to track counterparty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
     order_id: u128,
@@ -808,6 +877,10 @@ impl<'a> OrderBook<'a> {
                 )?;
                 None
             }
+            RequestView::JitStruct { .. } => {
+                msg!("jit it!");
+                None
+            }
         })
     }
 }
@@ -848,6 +921,7 @@ impl<'a> OrderBook<'a> {
             OrderType::ImmediateOrCancel => (false, false),
             OrderType::PostOnly => (true, true),
         };
+        //check Order impls for sourcing payer acc.
         let limit_price = Order::price_from_order_id(order_id);
         let mut limit = 10;
         loop {
@@ -858,7 +932,9 @@ impl<'a> OrderBook<'a> {
             }
 
             let remaining_order = match side {
-                Side::Bid => self.new_bid(
+                Side::Bid => {
+                //let deposit_vault = pc_vault;
+                self.new_bid(
                     NewBidParams {
                         max_coin_qty,
                         native_pc_qty_locked: native_pc_qty_locked.unwrap(),
@@ -871,11 +947,12 @@ impl<'a> OrderBook<'a> {
                     },
                     event_q,
                     proceeds,
-                ),
+                )},
                 Side::Ask => {
                     //enable error to check failure due to locked quantity
                     //require!(native_pc_qty_locked.is_some(), ErrorCode::InvalidLocked);
                     //native_pc_qty_locked.ok_or(()).unwrap_err();
+                    // let deposit_vault = coin_vault;
                     self.new_ask(
                         NewAskParams {
                             max_qty: max_coin_qty,
@@ -901,6 +978,25 @@ impl<'a> OrderBook<'a> {
                     native_pc_qty_locked = remaining_order.native_pc_qty_remaining;
                 }
                 None => return Ok(None),
+                /*{
+                // info we have: owner , order_id, type (BID/ASK),
+                // info we need: payer, deposit_vault, token_program, deposit_amount
+                // see how 2 are found in inital funct. (L186)
+                // get order amounts from order id (possibly Order::price_from_order_id(order_id))
+                // revise authority: authority.to_account_info(),  ^^^^^^^^^^^^^^^ method cannot be called on `for<'r, 's> fn(&'r anchor_lang::prelude::AccountInfo<'s>) -> std::result::Result<anchor_lang::prelude::Pubkey, anchor_lang::error::Error> {authority}` due to unsatisfied trait bounds
+                //transfer tokens a second time
+                //if max_coin_qty > 0  {
+                    let transfer_ix = Transfer {
+                        from: owner.to_account_info(),
+                        to: deposit_vault.to_account_info(),
+                        authority: authority.to_account_info(),
+                    };
+                    let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                    //let marginal_deposit = cpi_ctx * 2 / 100
+                    anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                        _ => error!(ErrorCode::TransferFailed),
+                    })?
+                }*/
             };
         }
     }
@@ -955,7 +1051,11 @@ impl<'a> OrderBook<'a> {
 
         let mut coin_qty_remaining = max_coin_qty;
         let mut pc_qty_remaining = max_pc_qty;
-
+        //let mut jit_data = vec![];
+        //experimental, needs usize ->
+        // let jit_data: Vec<crate::RequestView> = Vec::new();
+        //general vec ->
+        let mut jit_data: Vec<crate::RequestView> = vec![];
         // begin matching order
         let crossed;
         let done = loop {
@@ -987,6 +1087,31 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
+            //transfer tokens from counterparty to vault upon matching
+            /*
+            let counterparty = best_offer.owner;
+            txn_ix = Transfer {
+                from: counterparty.to_account_info(),
+                to: coin_vault.to_account_info(), // as counterparty is Asker => supplies coins
+                authority:
+            }
+            let token_program = coin_mint;
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })?;
+            */
+            let jit_struct = RequestView::JitStruct {
+                side: Side::Ask,
+                maker: true,
+                native_qty_paid: trade_qty * coin_lot_size,
+                native_qty_received: native_maker_pc_qty,
+                order_id: best_offer.order_id,
+                owner: best_offer.owner,
+                owner_slot: best_offer.owner_slot,
+            };
+            jit_data.push(jit_struct);
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1008,6 +1133,7 @@ impl<'a> OrderBook<'a> {
             //if order is filled, delete (ask) order.
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
+
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1027,6 +1153,7 @@ impl<'a> OrderBook<'a> {
 
         msg!("[OrderBook.new_bid] crossed: {}", crossed);
         msg!("[OrderBook.new_bid] done: {}", done);
+        msg!("[OrderBook.new_bid] countrerparty: {}", done);
         msg!("[OrderBook.new_bid] coin_qty_remaining: {}", coin_qty_remaining);
         msg!("[OrderBook.new_bid] pc_qty_remaining: {}", pc_qty_remaining);
 
@@ -1040,8 +1167,8 @@ impl<'a> OrderBook<'a> {
             let coin_lots_received = max_coin_qty - coin_qty_remaining;
             let native_pc_paid = native_accum_fill_price;
 
-            //to_release.credit_coin(coin_lots_received);
-            //to_release.debit_native_pc(native_pc_paid);
+            to_release.credit_coin(coin_lots_received);
+            to_release.debit_native_pc(native_pc_paid);
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {

@@ -9,7 +9,8 @@ simple_serum = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver"
 url = "https://api.apr.dev"
 
 [provider]
-cluster ="devnet"
+#cluster ="devnet"
+cluster="localnet"
 wallet = "/Users/dm/.config/solana/id.json"
 
 [scripts]

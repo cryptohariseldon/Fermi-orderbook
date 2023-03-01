@@ -528,6 +528,41 @@ export type SimpleSerum = {
                 "type": "publicKey"
               }
             ]
+          },
+          {
+            "name": "JitStruct",
+            "fields": [
+              {
+                "name": "side",
+                "type": {
+                  "defined": "Side"
+                }
+              },
+              {
+                "name": "maker",
+                "type": "bool"
+              },
+              {
+                "name": "native_qty_paid",
+                "type": "u64"
+              },
+              {
+                "name": "native_qty_received",
+                "type": "u64"
+              },
+              {
+                "name": "order_id",
+                "type": "u128"
+              },
+              {
+                "name": "owner",
+                "type": "publicKey"
+              },
+              {
+                "name": "owner_slot",
+                "type": "u8"
+              }
+            ]
           }
         ]
       }
@@ -1249,6 +1284,41 @@ export const IDL: SimpleSerum = {
               {
                 "name": "expected_owner",
                 "type": "publicKey"
+              }
+            ]
+          },
+          {
+            "name": "JitStruct",
+            "fields": [
+              {
+                "name": "side",
+                "type": {
+                  "defined": "Side"
+                }
+              },
+              {
+                "name": "maker",
+                "type": "bool"
+              },
+              {
+                "name": "native_qty_paid",
+                "type": "u64"
+              },
+              {
+                "name": "native_qty_received",
+                "type": "u64"
+              },
+              {
+                "name": "order_id",
+                "type": "u128"
+              },
+              {
+                "name": "owner",
+                "type": "publicKey"
+              },
+              {
+                "name": "owner_slot",
+                "type": "u8"
               }
             ]
           }
