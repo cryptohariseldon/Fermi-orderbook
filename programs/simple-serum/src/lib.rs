@@ -674,6 +674,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
     }
 }
 
+// User owner value to track counterparty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
     order_id: u128,
@@ -1068,6 +1069,19 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
+            //transfer tokens from counterparty to vault upon matching
+            let counterparty = best_offer.owner;
+            txn_ix = Transfer {
+                from: counterparty.to_account_info(),
+                to: coin_vault.to_account_info(), // as counterparty is Asker => supplies coins
+                authority:
+            }
+            let token_program = coin_mint;
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })?;
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1089,6 +1103,7 @@ impl<'a> OrderBook<'a> {
             //if order is filled, delete (ask) order.
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
+
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1108,6 +1123,7 @@ impl<'a> OrderBook<'a> {
 
         msg!("[OrderBook.new_bid] crossed: {}", crossed);
         msg!("[OrderBook.new_bid] done: {}", done);
+        msg!("[OrderBook.new_bid] countrerparty: {}", done);
         msg!("[OrderBook.new_bid] coin_qty_remaining: {}", coin_qty_remaining);
         msg!("[OrderBook.new_bid] pc_qty_remaining: {}", pc_qty_remaining);
 
