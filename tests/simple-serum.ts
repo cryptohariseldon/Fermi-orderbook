@@ -285,6 +285,16 @@ describe('simple-serum', () => {
         program.programId,
       );
 
+      [openOrdersBobPda, openOrdersBobPdaBump] =
+        await anchor.web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from('open-orders', 'utf-8'),
+            marketPda.toBuffer(),
+            authority_bob.publicKey.toBuffer(),
+          ],
+          program.programId,
+        );
+
     coinVault = await spl.getAssociatedTokenAddress(
       coinMint.publicKey,
       marketPda,
@@ -500,7 +510,7 @@ describe('simple-serum', () => {
             { limit: {} },
           )
           .accounts({
-            openOrders: openOrdersPda,
+            openOrders: openOrdersBobPda,
             market: marketPda,
             coinVault,
             pcVault,
