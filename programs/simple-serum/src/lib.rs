@@ -3,6 +3,8 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount, Transfer, Approve},
 };
+//use solana_sdk::instruction::{AccountMeta, Instruction};
+
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
@@ -43,6 +45,12 @@ pub mod simple_serum {
     // Transfer tokens
     // vault logic
 
+
+
+    //pub fn crank()
+
+
+
     pub fn new_order(
         ctx: Context<NewOrder>,
         side: Side,
@@ -62,6 +70,9 @@ pub mod simple_serum {
         let event_q = &mut ctx.accounts.event_q;
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
+        let coin_mint = &ctx.accounts.coin_mint;
+        let pc_mint = &ctx.accounts.pc_mint;
+
 
         if !open_orders.is_initialized {
             open_orders.init(market.key(), authority.key())?;
@@ -75,6 +86,9 @@ pub mod simple_serum {
                 ErrorCode::WrongAuthority
             );
         }
+        // let nonce = market.vault_signer_nonce;
+        // let market_pubkey = market.pubkey();
+        //let  market_seeds:&[&[u8]] = gen_vault_signer_seeds([b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()]);
 
         let deposit_amount;
         let deposit_vault;
@@ -174,8 +188,38 @@ pub mod simple_serum {
             open_orders.unlock_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_unlocked);
             let others = jit_data;
-            //msg!("data {}", others[1].native_qty_paid);
+            // transfer from counterpart(ies)
+            /*
+            let transfer_ix = Transfer {
+                from: payer.to_account_info(),
+                to: counterparty_vault.to_account_info(),
+                authority: authority.to_account_info(),
+            };
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            msg!("transfered pc!");
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })? */
 
+            /*
+            for p in others {
+                let transfer_ix = Transfer {
+                    from: payer.to_account_info(),
+                    to: counterparty_vault.to_account_info(),
+                    authority: authority.to_account_info(),
+                };
+                let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                msg!("transfered pc match!");
+                //let marginal_deposit = cpi_ctx * 2 / 100
+                anchor_spl::token::transfer(cpi_ctx, p.native_qty_paid).map_err(|err| match err {
+                    _ => error!(ErrorCode::TransferFailed),
+                })?;
+
+            } */
+            //msg!( "data {}", others[1].native_qty_paid); df[]
+
+            //let market_seeds = &[&[&b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()], &[bump_seed]];
 
             open_orders.native_coin_total = open_orders
                 .native_coin_total
@@ -189,46 +233,16 @@ pub mod simple_serum {
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
 
+
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
-        //let mut data = vec![];
-        // let others = jit_data[1];
-        /*
-        for p in proceeds.jit_data[1] {
-            let c = p.clone();
-            data.push(p);
-        }
 
-        proceeds.jit_data.into_iter().map(|data| JitStruct {
-                    side,
-                    maker,
-                    native_qty_paid,
-                    native_qty_received,
-                    order_id,
-                    owner,
-                    owner_slot,
-                });*/
-
-        // });
-        // let mut counterparty_info = proceeds.jit_data.copy();
-/*
-        match other_trades {
-            None => {},
-            Some(data) => {
-        let cpt_amt = data[1].native_qty_received;
-        msg!("withdraw-amount {}", cpt_amt);
-
-    }}*/
-    //if let Some(other_trades) = other_trades.get("other_trades") {
-// use origi
-    //    msg!("withdraw-amount {}", other_trades[1]);
-//}
 
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: deposit_vault.to_account_info(),
+                delegate: authority.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -236,37 +250,62 @@ pub mod simple_serum {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
+        }
+        msg!("matched amount {}", matched_amount_coin);
+        if matched_amount_coin > 0 {
+                // transfer from depositor
+                let transfer_ix = Transfer {
+                    from: payer.to_account_info(),
+                    to: deposit_vault.to_account_info(),
+                    authority: authority.to_account_info(),
+                };
+                let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                //let marginal_deposit = cpi_ctx * 2 / 100
+                anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                    _ => error!(ErrorCode::TransferFailed),
+                })?;
+            }
+
+
+
+           Ok(())
+       }
+   }
 
         //msg!("approval done");
 
-
-        //continue with transfer for internal accounting: modify later
-        /*
-            let transfer_ix = Transfer {
-                from: payer.to_account_info(),
-                to: deposit_vault.to_account_info(),
-                authority: authority.to_account_info(),
-            };
-            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-            //let marginal_deposit = cpi_ctx * 2 / 100
-            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                _ => error!(ErrorCode::TransferFailed),
-            })? */
+/*
+        pub fn match_orders(
+            program_id: &Pubkey,
+            market: &Pubkey,
+            request_queue: &Pubkey,
+            bids: &Pubkey,
+            asks: &Pubkey,
+            event_queue: &Pubkey,
+            coin_fee_receivable_account: &Pubkey,
+            pc_fee_receivable_account: &Pubkey,
+            limit: u16,
+        ) -> Result<Instruction> {
+            let data = MarketInstruction::MatchOrders(limit).pack();
+            let accounts: Vec<AccountMeta> = vec![
+                AccountMeta::new(*market, false),
+                AccountMeta::new(*request_queue, false),
+                AccountMeta::new(*event_queue, false),
+                AccountMeta::new(*bids, false),
+                AccountMeta::new(*asks, false),
+                AccountMeta::new(*coin_fee_receivable_account, false),
+                AccountMeta::new(*pc_fee_receivable_account, false),
+            ];
+            Ok(Instruction {
+                program_id: *program_id,
+                data,
+                accounts,
+            })
         }
-
-         if matched_amount_coin > 0 {
-             // transfer from depositor
-             let transfer_ix = Transfer {
-                 from: payer.to_account_info(),
-                 to: deposit_vault.to_account_info(),
-                 authority: authority.to_account_info(),
-             };
-             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-             //let marginal_deposit = cpi_ctx * 2 / 100
-             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
-                 _ => error!(ErrorCode::TransferFailed),
-             })?;
-
+        */
+/*        pub fn gen_vault_signer_seeds<'a>(nonce: &'a u64, market: &'a Pubkey) -> [&'a [u8]; 2] {
+            [market.as_ref(), bytes_of(nonce)]
+        }*/
 
 
              // transfer from counterpart(ies)
@@ -283,13 +322,7 @@ pub mod simple_serum {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
 
-         }
 
-
-
-        Ok(())
-    }
-}
 
 #[account]
 #[derive(Default)]
