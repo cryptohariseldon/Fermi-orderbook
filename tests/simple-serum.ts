@@ -87,6 +87,7 @@ const mintTo = async (
 // setup wallet and associated token accounts for Bob wallet_account
 // Process setup and airdrops for Viv wallet
 
+// create
 const createMintBob = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.Keypair,
@@ -98,7 +99,7 @@ const createMintBob = async (
     anchor.web3.SystemProgram.createAccount({
       programId: spl.TOKEN_PROGRAM_ID,
       //programId: programId,
-      fromPubkey: provider.wallet.publicKey,
+      fromPubkey: authority_bob.PublicKey,
       newAccountPubkey: mint.publicKey,
       space: spl.MintLayout.span,
       lamports: await provider.connection.getMinimumBalanceForRentExemption(
@@ -114,7 +115,7 @@ const createMintBob = async (
       provider.wallet.publicKey,
     ),
   );
-  await provider.sendAndConfirm(tx2, [mint]);
+  await provider.sendAndConfirm(tx, [mint]);
 };
 
 console.log("create ATA");
@@ -138,11 +139,11 @@ const createAssociatedTokenAccountBob = async (
 
 console.log("Mint to ATA");
 
-
 const mintToBob = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.PublicKey,
   ta: anchor.web3.PublicKey,
+  auth: anchor.web3.PublicKey,
   amount: bigint,
 ) => {
   const tx = new anchor.web3.Transaction();
@@ -150,12 +151,12 @@ const mintToBob = async (
     spl.createMintToInstruction(
       mint,
       ta,
-      provider.wallet.publicKey,
+      auth,
       amount,
-      [],
+      [auth],
     ),
   );
-  await provider.sendAndConfirm(tx, []);
+  await provider.sendAndConfirm(tx, [auth]);
 };
 
 //execute this on website opening (Fermi)
@@ -206,6 +207,8 @@ describe('simple-serum', () => {
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
   let authorityBobPcTokenAccount: anchor.web3.Pubkey;
+  let authorityBobCoinTokenAccount: anchor.web3.Pubkey;
+
 
   console.log('basics done')
 
@@ -336,6 +339,12 @@ describe('simple-serum', () => {
       false,
     );
 
+    authorityBobCoinTokenAccount = await spl.getAssociatedTokenAddress(
+      coinMint.publicKey,
+      authority_bob.publicKey,
+      false,
+    );
+
     await createAssociatedTokenAccount(
       provider,
       coinMint.publicKey,
@@ -356,6 +365,13 @@ describe('simple-serum', () => {
       authority_bob.publicKey,
     );
 
+    await createAssociatedTokenAccount(
+      provider,
+      coinMint.publicKey,
+      authorityBobCoinTokenAccount,
+      authority_bob.publicKey,
+    );
+
 
     await mintTo(
       provider,
@@ -372,13 +388,18 @@ describe('simple-serum', () => {
       BigInt('1000000000'),
     );
 
+    console.log("minting PC tokens to Bob");
     // Mint pc tokens to bobs ATA
-    await mintTo(
+    /*
+    await mintToBob(
       provider,
       pcMint.publicKey,
       authorityBobPcTokenAccount,
+      authority_bob,
       BigInt('1000000000'),
-    );
+    );*/
+
+
   });
 //to be executed only once (Fermi)
   describe('#initialize_market', async () => {
@@ -406,6 +427,8 @@ describe('simple-serum', () => {
       assert(market.pcVault.equals(pcVault));
       assert(market.coinMint.equals(coinMint.publicKey));
       assert(market.pcMint.equals(pcMint.publicKey));
+
+      // remove equality to zero check
       assert(market.coinDepositsTotal.eq(new anchor.BN(0)));
       assert(market.pcDepositsTotal.eq(new anchor.BN(0)));
       assert(market.bids.equals(bidsPda));
@@ -501,41 +524,46 @@ describe('simple-serum', () => {
 }),
       it('New order - buy @ 101 successful', async () => {
       {
+        console.log(authorityBobPcTokenAccount.PublicKey);
+        const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        const lol = eventQ['buf'][1];
+        console.log("warp");
+        console.log(lol);
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(101),
+            new anchor.BN(10),
             new anchor.BN(1),
-            new anchor.BN(101).mul(new anchor.BN(1000000)),
+            new anchor.BN(10).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
-            openOrders: openOrdersBobPda,
+            openOrders: openOrdersPda,
             market: marketPda,
             coinVault,
             pcVault,
             coinMint: coinMint.publicKey,
             pcMint: pcMint.publicKey,
-            payer: authorityBobPcTokenAccount,
+            payer: authorityPcTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
-            authority: authority_bob.publicKey,
+            authority: authority.publicKey,
           })
-          .signers([authority_bob])
+          .signers([authority])
           .rpc();
 
         console.log('place limit order buy price: 101');
         const openOrders = await program.account.openOrders.fetch(
-          openOrdersBobPda,
+          openOrdersPda,
         );
         console.log(openOrders);
         const bids = await program.account.orders.fetch(bidsPda);
         console.log(bids);
         const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
-        const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        //const eventQ = await program.account.eventQueue.fetch(eventQPda);
         //console.log(eventQ);
 /*
         for (p in eventQ) {
