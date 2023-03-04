@@ -72,7 +72,8 @@ pub mod simple_serum {
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
         let pc_mint = &ctx.accounts.pc_mint;
-
+        //let counterparty = &ctx.accounts.counterparty;
+        let counterparty = payer;
 
         if !open_orders.is_initialized {
             open_orders.init(market.key(), authority.key())?;
@@ -189,32 +190,24 @@ pub mod simple_serum {
             open_orders.unlock_pc(native_pc_unlocked);
             let others = jit_data;
             // transfer from counterpart(ies)
-            /*
-            let transfer_ix = Transfer {
-                from: payer.to_account_info(),
-                to: counterparty_vault.to_account_info(),
-                authority: authority.to_account_info(),
-            };
-            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-            msg!("transfered pc!");
-            //let marginal_deposit = cpi_ctx * 2 / 100
-            anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
-                _ => error!(ErrorCode::TransferFailed),
-            })? */
+            if native_pc_debit > 1 {
 
-            /*
+
+        }
+/*
             for p in others {
+                msg!("native pc debt = {}", native_pc_debit);
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
-                    to: counterparty_vault.to_account_info(),
+                    to: deposit_vault.to_account_info(),
                     authority: authority.to_account_info(),
                 };
                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-                msg!("transfered pc match!");
                 //let marginal_deposit = cpi_ctx * 2 / 100
-                anchor_spl::token::transfer(cpi_ctx, p.native_qty_paid).map_err(|err| match err {
+                anchor_spl::token::transfer(cpi_ctx, native_pc_debit).map_err(|err| match err {
                     _ => error!(ErrorCode::TransferFailed),
                 })?;
+
 
             } */
             //msg!( "data {}", others[1].native_qty_paid); df[]
@@ -242,7 +235,7 @@ pub mod simple_serum {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: authority.to_account_info(),
+                delegate: pc_vault.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -257,7 +250,7 @@ pub mod simple_serum {
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
                     to: deposit_vault.to_account_info(),
-                    authority: authority.to_account_info(),
+                    authority: market.to_account_info(),
                 };
                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
                 //let marginal_deposit = cpi_ctx * 2 / 100
@@ -1058,7 +1051,7 @@ impl<'a> OrderBook<'a> {
                     native_pc_qty_locked = remaining_order.native_pc_qty_remaining;
                 }
                 None => return Ok(None),
-                /*{
+                //{
                 // info we have: owner , order_id, type (BID/ASK),
                 // info we need: payer, deposit_vault, token_program, deposit_amount
                 // see how 2 are found in inital funct. (L186)
@@ -1066,6 +1059,7 @@ impl<'a> OrderBook<'a> {
                 // revise authority: authority.to_account_info(),  ^^^^^^^^^^^^^^^ method cannot be called on `for<'r, 's> fn(&'r anchor_lang::prelude::AccountInfo<'s>) -> std::result::Result<anchor_lang::prelude::Pubkey, anchor_lang::error::Error> {authority}` due to unsatisfied trait bounds
                 //transfer tokens a second time
                 //if max_coin_qty > 0  {
+                /*
                     let transfer_ix = Transfer {
                         from: owner.to_account_info(),
                         to: deposit_vault.to_account_info(),
@@ -1075,8 +1069,8 @@ impl<'a> OrderBook<'a> {
                     //let marginal_deposit = cpi_ctx * 2 / 100
                     anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                         _ => error!(ErrorCode::TransferFailed),
-                    })?
-                }*/
+                    })?*/
+
             };
         }
     }
@@ -1855,6 +1849,7 @@ pub struct NewOrder<'info> {
     )]
     pub payer: Account<'info, TokenAccount>,
 
+
     #[account(mut)]
     pub bids: Box<Account<'info, Bids>>,
     #[account(mut)]
@@ -1867,6 +1862,9 @@ pub struct NewOrder<'info> {
 
     #[account(mut)]
     pub authority: Signer<'info>,
+    //CHECK : NOT unsafe.
+    //#[account(mut)]
+    //pub counterparty: Account<'info, TokenAccount>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,

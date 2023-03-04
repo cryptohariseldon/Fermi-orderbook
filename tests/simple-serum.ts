@@ -206,6 +206,7 @@ describe('simple-serum', () => {
 
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
+  let counterpartyPcTokenAccount: anchor.web3.PublicKey;
   let authorityBobPcTokenAccount: anchor.web3.Pubkey;
   let authorityBobCoinTokenAccount: anchor.web3.Pubkey;
 
@@ -473,8 +474,11 @@ describe('simple-serum', () => {
         );
         console.log(openOrders);
         const bids = await program.account.orders.fetch(bidsPda);
+        console.log("bids:")
         console.log(bids);
         const asks = await program.account.orders.fetch(asksPda);
+        console.log("asks:")
+
         console.log(asks);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
@@ -512,13 +516,20 @@ describe('simple-serum', () => {
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
+        function priceFromOrderId(orderId) {
+  return orderId >> 64;
+}
         console.log(openOrders);
         const bids = await program.account.orders.fetch(bidsPda);
-        console.log(bids);
-        const asks = await program.account.orders.fetch(asksPda);
+        console.log(bids['sorted'][0].orderId);
+        console.log(priceFromOrderId(BigInt(bids['sorted'][0].orderId)));
+                const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
+        console.log(asks['sorted'][0].orderId.toBigInt());
+        console.log(priceFromOrderId(asks['sorted'][0].orderId.toBigInt()));
+        //console.log(asks[0]);
         console.log("eventQ");
-        const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        const eventQ = await program.account.requestQueue.fetch(reqQPda);
         console.log(eventQ);
       }
 }),
@@ -526,15 +537,24 @@ describe('simple-serum', () => {
       {
         console.log(authorityBobPcTokenAccount.PublicKey);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        const lol = eventQ['buf'][1];
+
+        const lol = new anchor.web3.PublicKey(eventQ['buf'][0].owner);
         console.log("warp");
         console.log(lol);
+
+        counterpartyPcTokenAccount = await spl.getAssociatedTokenAddress(
+          pcMint.publicKey,
+          lol,
+          true,
+        );
+        console.log(counterpartyPcTokenAccount);
+
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(10),
+            new anchor.BN(101),
             new anchor.BN(1),
-            new anchor.BN(10).mul(new anchor.BN(1000000)),
+            new anchor.BN(101).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -550,6 +570,7 @@ describe('simple-serum', () => {
             reqQ: reqQPda,
             eventQ: eventQPda,
             authority: authority.publicKey,
+            token_program_coin: coinMint,
           })
           .signers([authority])
           .rpc();
@@ -561,10 +582,12 @@ describe('simple-serum', () => {
         console.log(openOrders);
         const bids = await program.account.orders.fetch(bidsPda);
         console.log(bids);
+        console.log(bids['sorted'][0].orderId);
+        console.log(priceFromOrderId(bids['sorted'][0].orderId));
         const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
-        //const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        //console.log(eventQ);
+        const eventQ2 = await program.account.eventQueue.fetch(eventQPda);
+        console.log(eventQ2);
 /*
         for (p in eventQ) {
           console.log(p);
