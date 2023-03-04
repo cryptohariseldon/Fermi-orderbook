@@ -202,8 +202,18 @@ pub mod simple_serum {
                 _ => error!(ErrorCode::TransferFailed),
             })? */
 
-            /*
+            msg!("going to loop!");
             for p in others {
+                msg!("heya {}", p.owner);
+                let mut owner_slot = p.owner_slot;
+                msg!("this is the way {}", owner_slot);
+                let mut owner_orders = open_orders.orders[usize::from(owner_slot - 1)];
+                let mut deposits = p.native_qty_paid;
+                //let mut owner_deposits = owner_order.deposits;
+                msg!("owner_deposits");
+                msg!("dep {}", deposits);
+}
+                /*
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
                     to: counterparty_vault.to_account_info(),
@@ -956,6 +966,8 @@ impl<'a> OrderBook<'a> {
                 None
             }
             /*
+
+
             RequestView::JitStruct { .. } => {
                 msg!("jit it!");
                 None
@@ -1131,11 +1143,11 @@ impl<'a> OrderBook<'a> {
 
         let mut coin_qty_remaining = max_coin_qty;
         let mut pc_qty_remaining = max_pc_qty;
-        //let mut jit_data = vec![];
+        let mut jit_data = vec![];
         //experimental, needs usize ->
         // let jit_data: Vec<crate::RequestView> = Vec::new();
         //general vec ->
-        let mut jit_data: Vec<JitStruct> = vec![];
+        // let mut jit_data: Vec<JitStruct> = vec![];
         // begin matching order
         let crossed;
         let done = loop {
@@ -1192,6 +1204,7 @@ impl<'a> OrderBook<'a> {
                 owner_slot: best_offer.owner_slot,
             };
             jit_data.push(jit_struct);
+            msg!("data pushed to jitstruct");
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1377,6 +1390,7 @@ impl<'a> OrderBook<'a> {
 
         let pc_lot_size = self.market.pc_lot_size;
         let coin_lot_size = self.market.coin_lot_size;
+        let mut jit_data = vec![];
 
         //begin matching
         let crossed;
@@ -1404,6 +1418,17 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
+            let jit_struct = JitStruct {
+                side: Side::Bid,
+                maker: true,
+                native_qty_paid: native_maker_pc_qty,
+                native_qty_received: trade_qty * coin_lot_size,
+                order_id: best_bid.order_id,
+                owner: best_bid.owner,
+                owner_slot: best_bid.owner_slot,
+            };
+            jit_data.push(jit_struct);
+            msg!("data pushed to jitstruct");
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Bid,
@@ -1449,6 +1474,7 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_native_pc(net_taker_pc_qty);
             to_release.debit_coin(coin_lots_traded);
+            to_release.jit_data = jit_data;
 
             if native_taker_pc_qty > 0 {
                 let taker_fill = Event::new(EventView::Fill {
