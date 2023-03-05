@@ -169,11 +169,18 @@ describe('simple-serum', () => {
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  const program = new anchor.Program(idl, programId, provider) //for existing prog
+  const program = new anchor.Program(idl, programId, provider); //for existing prog
+
   const coinMint = anchor.web3.Keypair.generate();
 
   const pcMint = anchor.web3.Keypair.generate();
-
+  /*const pcMint = new anchor.web3.PublicKey(
+  "9Fz25i53XBim9wKBW2gNzsuGqTm9DrtpPh7YrtoBFopR"
+);
+  const coinMint = new anchor.web3.PublicKey(
+  "FLXU7NceNSZ1UJX4Qyx9KCwzMyQUHJw6pFnTcuWoz9zw"
+  );
+*/
   let coinVault: anchor.web3.PublicKey;
   let pcVault: anchor.web3.PublicKey;
 
@@ -199,6 +206,7 @@ describe('simple-serum', () => {
   let openOrdersBobPdaBump: number;
 
   const authority = anchor.web3.Keypair.generate();
+
   const authority_bob = anchor.web3.Keypair.generate();
 
   console.log("alice {}", authority);
@@ -209,6 +217,7 @@ describe('simple-serum', () => {
   let counterpartyPcTokenAccount: anchor.web3.PublicKey;
   let authorityBobPcTokenAccount: anchor.web3.Pubkey;
   let authorityBobCoinTokenAccount: anchor.web3.Pubkey;
+
 
 
   console.log('basics done')
@@ -238,6 +247,7 @@ describe('simple-serum', () => {
 
 
   before(async () => {
+
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         authority.publicKey,
@@ -265,6 +275,9 @@ describe('simple-serum', () => {
       [Buffer.from('bids', 'utf-8'), marketPda.toBuffer()],
       program.programId,
     );
+    console.log("final");
+
+    console.log(bidsPda.PublicKey);
     [asksPda, asksPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from('asks', 'utf-8'), marketPda.toBuffer()],
       program.programId,
@@ -405,6 +418,13 @@ describe('simple-serum', () => {
 //to be executed only once (Fermi)
   describe('#initialize_market', async () => {
     it('should initialize market successfully', async () => {
+      //const bidsPda2 = new anchor.web3.PublicKey("t49Apab6yTXpsmy8V5vQyUL9EPzDwsPsbAjet8JQQCZ");
+      const bids2 = await program.account.orders.fetch('EcCQzXzp7tEteQsyM9HebrXdtrX7DRXqxBZCqVX2Qpdx');
+      console.log(bids2);
+      //const bids = await program.account.orders.fetch(bidsPda);
+      //console.log(bids);
+      //console.log(bidsPda2);
+      console.log("heya");
       await program.methods
         .initializeMarket(new anchor.BN('1000000000'), new anchor.BN('1000000'))
         .accounts({
@@ -526,7 +546,7 @@ describe('simple-serum', () => {
                 const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
         //console.log(asks['sorted'][0].orderId.toBigInt());
-        
+
         //console.log(asks[0]);
         console.log("eventQ");
         const eventQ = await program.account.requestQueue.fetch(reqQPda);
@@ -552,9 +572,9 @@ describe('simple-serum', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(101),
+            new anchor.BN(95),
             new anchor.BN(1),
-            new anchor.BN(101).mul(new anchor.BN(1000000)),
+            new anchor.BN(95).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -570,7 +590,7 @@ describe('simple-serum', () => {
             reqQ: reqQPda,
             eventQ: eventQPda,
             authority: authority.publicKey,
-            token_program_coin: coinMint,
+            //token_program_coin: coinMint,
           })
           .signers([authority])
           .rpc();
@@ -579,9 +599,11 @@ describe('simple-serum', () => {
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
-        console.log(openOrders);
+        console.log("yo");
+
         const bids = await program.account.orders.fetch(bidsPda);
         console.log(bids);
+        console.log(bidsPda.publicKey);
         //console.log(bids['sorted'][0].orderId);
         //console.log(priceFromOrderId(bids['sorted'][0].orderId));
         const asks = await program.account.orders.fetch(asksPda);

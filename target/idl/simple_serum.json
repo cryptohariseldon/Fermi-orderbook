@@ -1,6 +1,9 @@
 {
   "version": "0.1.0",
   "name": "simple_serum",
+  "metadata":{
+    "address":"HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver"
+  }
   "instructions": [
     {
       "name": "initializeMarket",
@@ -756,8 +759,5 @@
       "name": "Error",
       "msg": "Error"
     }
-  ],
-  "metadata": {
-    "address": "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver"
-  }
+  ]
 }

@@ -207,10 +207,11 @@ pub mod simple_serum {
                 msg!("heya {}", p.owner);
                 let mut owner_slot = p.owner_slot;
                 msg!("this is the way {}", owner_slot);
-                let mut owner_orders = open_orders.orders[usize::from(owner_slot - 1)];
+                let mut owner_order = open_orders.orders[usize::from(owner_slot - 1)];
+                //let qty = owner_order.qty;
                 let mut deposits = p.native_qty_paid;
                 //let mut owner_deposits = owner_order.deposits;
-                msg!("owner_deposits");
+                msg!("owner qty {}", owner_order);
                 msg!("dep {}", deposits);
 }
                 /*
