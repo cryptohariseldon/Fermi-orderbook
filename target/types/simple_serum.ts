@@ -78,6 +78,12 @@ export type SimpleSerum = {
       ],
       "args": [
         {
+          "name": "side",
+          "type": {
+            "defined": "Side"
+          }
+        },
+        {
           "name": "coinLotSize",
           "type": "u64"
         },
@@ -838,6 +844,12 @@ export const IDL: SimpleSerum = {
         }
       ],
       "args": [
+        {
+          "name": "side",
+          "type": {
+            "defined": "Side"
+          }
+        },
         {
           "name": "coinLotSize",
           "type": "u64"

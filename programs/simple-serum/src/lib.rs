@@ -17,6 +17,7 @@ pub mod simple_serum {
 
     pub fn initialize_market(
         ctx: Context<InitializeMarket>,
+        side: Side,
         coin_lot_size: u64,
         pc_lot_size: u64,
     ) -> Result<()> {
@@ -48,6 +49,81 @@ pub mod simple_serum {
 
 
     //pub fn crank()
+    /*
+    pub fn finalise_matches(
+        ctx: Context<NewMatch>,
+        event1_slot: u8,
+        event2_slot: u8,
+        orderId: u128,
+        authority_counterparty: Pubkey,
+    ) -> Result<()> {
+
+        let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+        let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+
+        let market =  &ctx.accounts.market;
+        let coin_vault = &ctx.accounts.coin_vault;
+        let pc_vault = &ctx.accounts.pc_vault;
+        // let payer = &ctx.accounts.payer;
+        let bids = &mut ctx.accounts.bids;
+        let asks = &mut ctx.accounts.asks;
+        let req_q = &mut ctx.accounts.req_q;
+        let event_q = &mut ctx.accounts.event_q;
+        let authority = &ctx.accounts.authority;
+        let token_program = &ctx.accounts.token_program;
+        let coin_mint = &ctx.accounts.coin_mint;
+        let pc_mint = &ctx.accounts.pc_mint;
+
+        // Verification steps
+        // consume eventQ, check event_slot for matching order_id
+
+        let event1: Event = event_q.buf[usize::from(event1_slot)];
+        let event2: Event = event_q.buf[usize::from(event2_slot)];
+
+        let events: Vec<Event> = vec![event1, event2];
+        // check if owner = authority or counterparty_authority
+        // check side of event
+        // Execute event fill
+        // assume party A
+        for parsed_event in events {
+
+                //EventView::Fill => {
+                //let mut side = parsedEventFlag::from_side(side);
+                //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
+                let mut sider = parsed_event.event_flags;
+                msg!("the side is {}", sider);
+                let side = Side::Bid;
+                require!(parsed_event.order_id == orderId, Error);
+                match side {
+                    Side::Bid => {
+                //if side=="Bid"{
+                    //qty to fill
+                    let mut qty_pc = parsed_event.native_qty_paid;
+                    //check openorders balance
+                    let mut available_funds = open_orders_auth.native_pc_free;
+                    //revert if Bidder JIT fails.
+                    require!(available_funds >= qty_pc, Error);
+                    open_orders_auth.native_pc_free -= qty_pc;
+
+                },
+                    Side::Ask => {
+                //if side=="Ask"{
+                    //qty to fill
+                    let mut qty_coin = parsed_event.native_qty_released;
+                    //check openorders balance
+                    let mut available_funds = open_orders_cpty.native_coin_free;
+                    //revert if asker JIT fails.
+                    require!(available_funds >= qty_coin, Error);
+                    open_orders_cpty.native_coin_free -= qty_coin;
+
+                }
+            }
+                    }
+
+
+
+    Ok(())
+} */
 
 
 
@@ -1840,6 +1916,72 @@ impl OpenOrders {
         Ok(slot as u8)
     }
 }
+
+/*
+#[derive(Accounts)]
+//#[instruction(side: Side)]
+
+pub struct NewMatch<'info>{
+    #[account(
+        seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
+        bump,
+    )]
+    pub open_orders_owner: Box<Account<'info, OpenOrders>>,
+
+    #[account(
+        seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
+        bump,
+    )]
+    pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
+
+    #[account(
+        seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+        bump,
+    )]
+    pub market: Box<Account<'info, Market>>,
+
+    #[account(
+        mut,
+        associated_token::mint = coin_mint,
+        associated_token::authority = market,
+    )]
+    pub coin_vault: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        associated_token::mint = pc_mint,
+        associated_token::authority = market,
+    )]
+    pub pc_vault: Account<'info, TokenAccount>,
+
+    pub coin_mint: Account<'info, Mint>,
+    pub pc_mint: Account<'info, Mint>,
+
+    #[account(mut)]
+    pub bids: Box<Account<'info, Bids>>,
+    #[account(mut)]
+    pub asks: Box<Account<'info, Asks>>,
+
+    #[account(mut)]
+    pub req_q: Box<Account<'info, RequestQueue>>,
+    #[account(mut)]
+    pub event_q: Box<Account<'info, EventQueue>>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    //#[account(mut)]
+    //pub authority_counterparty: Account<'info, AccountInfo>,
+
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
+    pub rent: Sysvar<'info, Rent>,
+
+
+
+}
+*/
 
 #[derive(Accounts)]
 #[instruction(side: Side)]
