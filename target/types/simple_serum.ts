@@ -78,18 +78,115 @@ export type SimpleSerum = {
       ],
       "args": [
         {
-          "name": "side",
-          "type": {
-            "defined": "Side"
-          }
-        },
-        {
           "name": "coinLotSize",
           "type": "u64"
         },
         {
           "name": "pcLotSize",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "finaliseMatches",
+      "accounts": [
+        {
+          "name": "openOrdersOwner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersCounterparty",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "coinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pcMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "event1Slot",
+          "type": "u8"
+        },
+        {
+          "name": "event2Slot",
+          "type": "u8"
+        },
+        {
+          "name": "orderId",
+          "type": "u128"
+        },
+        {
+          "name": "authorityCounterparty",
+          "type": "publicKey"
         }
       ]
     },
@@ -845,18 +942,115 @@ export const IDL: SimpleSerum = {
       ],
       "args": [
         {
-          "name": "side",
-          "type": {
-            "defined": "Side"
-          }
-        },
-        {
           "name": "coinLotSize",
           "type": "u64"
         },
         {
           "name": "pcLotSize",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "finaliseMatches",
+      "accounts": [
+        {
+          "name": "openOrdersOwner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersCounterparty",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "coinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pcMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "event1Slot",
+          "type": "u8"
+        },
+        {
+          "name": "event2Slot",
+          "type": "u8"
+        },
+        {
+          "name": "orderId",
+          "type": "u128"
+        },
+        {
+          "name": "authorityCounterparty",
+          "type": "publicKey"
         }
       ]
     },

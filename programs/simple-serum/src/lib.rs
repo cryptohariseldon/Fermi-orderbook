@@ -17,7 +17,6 @@ pub mod simple_serum {
 
     pub fn initialize_market(
         ctx: Context<InitializeMarket>,
-        side: Side,
         coin_lot_size: u64,
         pc_lot_size: u64,
     ) -> Result<()> {
@@ -49,7 +48,7 @@ pub mod simple_serum {
 
 
     //pub fn crank()
-    /*
+
     pub fn finalise_matches(
         ctx: Context<NewMatch>,
         event1_slot: u8,
@@ -91,9 +90,10 @@ pub mod simple_serum {
                 //let mut side = parsedEventFlag::from_side(side);
                 //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
                 let mut sider = parsed_event.event_flags;
-                msg!("the side is {}", sider);
+                //msg!("the side is {}", sider);
                 let side = Side::Bid;
-                require!(parsed_event.order_id == orderId, Error);
+                msg!("orderid is {}", parsed_event.order_id);
+                // require!(parsed_event.order_id == orderId, Error);
                 match side {
                     Side::Bid => {
                 //if side=="Bid"{
@@ -102,8 +102,11 @@ pub mod simple_serum {
                     //check openorders balance
                     let mut available_funds = open_orders_auth.native_pc_free;
                     //revert if Bidder JIT fails.
-                    require!(available_funds >= qty_pc, Error);
-                    open_orders_auth.native_pc_free -= qty_pc;
+                    msg!("the available funds is {}", available_funds);
+                    msg!("the required funds are {}", qty_pc);
+
+                    //require!(available_funds >= qty_pc, Error);
+                    //open_orders_auth.native_pc_free -= qty_pc;
 
                 },
                     Side::Ask => {
@@ -113,8 +116,10 @@ pub mod simple_serum {
                     //check openorders balance
                     let mut available_funds = open_orders_cpty.native_coin_free;
                     //revert if asker JIT fails.
+                    //msg!("the available funds is {}", available_funds);
+
                     require!(available_funds >= qty_coin, Error);
-                    open_orders_cpty.native_coin_free -= qty_coin;
+                    //open_orders_cpty.native_coin_free -= qty_coin;
 
                 }
             }
@@ -123,7 +128,7 @@ pub mod simple_serum {
 
 
     Ok(())
-} */
+}
 
 
 
@@ -1917,7 +1922,7 @@ impl OpenOrders {
     }
 }
 
-/*
+
 #[derive(Accounts)]
 //#[instruction(side: Side)]
 
@@ -1981,7 +1986,7 @@ pub struct NewMatch<'info>{
 
 
 }
-*/
+
 
 #[derive(Accounts)]
 #[instruction(side: Side)]

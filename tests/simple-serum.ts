@@ -230,11 +230,14 @@ describe('simple-serum', () => {
 
   describe('#initialize_market', async () => {
     it('should initialize market successfully', async () => {
-      const market = await program.account.market.fetch(marketPda);
+    //  const market = await program.account.market.fetch(marketPda);
+
       await program.methods
         .initializeMarket(new anchor.BN('1000000000'), new anchor.BN('1000000'))
         .accounts({
-          market: market,
+          market: marketPda,
+          coinVault,
+          pcVault,
           coinMint: coinMint.publicKey,
           pcMint: pcMint.publicKey,
           bids: bidsPda,
@@ -246,7 +249,7 @@ describe('simple-serum', () => {
         .signers([authority])
         .rpc();
 
-      //const market = await program.account.market.fetch(marketPda);
+      const market = await program.account.market.fetch(marketPda);
       assert(market.coinVault.equals(coinVault));
       assert(market.pcVault.equals(pcVault));
       assert(market.coinMint.equals(coinMint.publicKey));
@@ -380,8 +383,69 @@ describe('simple-serum', () => {
         const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        console.log(eventQ);
-      };
-    });
+}
+
+    }),
+    it('finalise order - buy @ 101 successful', async () => {
+    {
+      const eventsQ2 = await program.account.eventQueue.fetch(eventQPda);
+      //let i = -1;
+      console.log(eventsQ2['buf'][1]);
+      let order_id;
+      let event_slot;
+      console.log(authority);
+      for(let i=0; i<eventsQ2['buf'].length; i++){
+        //i+=1;
+        let event = eventsQ2['buf'][i];
+        console.log(event.flag);
+        if (event.flags=="0x1"){
+          const event_slot = i;
+          const order_id = event.order_id;
+        }
+      }
+      let base_order_id = 1844674407370955161599;
+      let base_event_slot = 1;
+      let base_event_slot2 = 2;
+
+      console.log(base_order_id);
+      console.log('test finalise match with event slot + order id');
+      await program.methods
+        .finaliseMatches(
+          base_event_slot,
+          base_event_slot,
+          new anchor.BN(0),
+          authority.PublicKey,
+        )
+        .accounts({
+          openOrdersOwner: openOrdersPda,
+          openOrdersCounterparty: openOrdersPda,
+          market: marketPda,
+          coinVault,
+          pcVault,
+          coinMint: coinMint.publicKey,
+          pcMint: pcMint.publicKey,
+          //payer: authorityPcTokenAccount,
+          bids: bidsPda,
+          asks: asksPda,
+          reqQ: reqQPda,
+          eventQ: eventQPda,
+          authority: authority.publicKey,
+        })
+        .signers([authority])
+        .rpc();
+
+      console.log('test finalise match with event slot + order id');
+      const openOrders = await program.account.openOrders.fetch(
+        openOrdersPda,
+      );
+      console.log(openOrders);
+      const bids = await program.account.orders.fetch(bidsPda);
+      console.log(bids);
+      const asks = await program.account.orders.fetch(asksPda);
+      console.log(asks);
+      const eventQ = await program.account.eventQueue.fetch(eventQPda);
+      console.log(eventQ);
+    };
+  });
   });
 });
