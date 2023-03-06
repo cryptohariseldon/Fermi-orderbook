@@ -403,7 +403,7 @@ describe('simple-serum', () => {
           const order_id = event.order_id;
         }
       }
-      let base_order_id = 1844674407370955161599;
+      let base_order_id = 1844674407370955161601;
       let base_event_slot = 1;
       let base_event_slot2 = 2;
 
@@ -412,7 +412,7 @@ describe('simple-serum', () => {
       await program.methods
         .finaliseMatches(
           base_event_slot,
-          base_event_slot,
+          base_event_slot2,
           new anchor.BN(0),
           authority.PublicKey,
         )

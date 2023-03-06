@@ -98,15 +98,28 @@ pub mod simple_serum {
                     Side::Bid => {
                 //if side=="Bid"{
                     //qty to fill
-                    let mut qty_pc = parsed_event.native_qty_paid;
+                    let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
                     //check openorders balance
-                    let mut available_funds = open_orders_auth.native_pc_free;
+                    let mut available_funds = open_orders_auth.native_pc_free * 10;
                     //revert if Bidder JIT fails.
                     msg!("the available funds is {}", available_funds);
                     msg!("the required funds are {}", qty_pc);
 
+                    let mut remaining_funds = available_funds - qty_pc;
+
                     //require!(available_funds >= qty_pc, Error);
-                    //open_orders_auth.native_pc_free -= qty_pc;
+                    if remaining_funds > 1 {
+                    // edit balances, assuming counterparty tx. goes through
+                    open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                    //10);
+                    open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                    //open_orders_auth.lock_free_pc(qty_pc);
+                    open_orders_auth.native_pc_free -= qty_pc;
+
+                    msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
+                    msg!("Newly locked PC for bidder {}", qty_pc);
+                }
+                    // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
 
                 },
                     Side::Ask => {
@@ -114,11 +127,28 @@ pub mod simple_serum {
                     //qty to fill
                     let mut qty_coin = parsed_event.native_qty_released;
                     //check openorders balance
-                    let mut available_funds = open_orders_cpty.native_coin_free;
+                    let mut available_funds = open_orders_cpty.native_coin_free * 10;
                     //revert if asker JIT fails.
                     //msg!("the available funds is {}", available_funds);
+                    //let mut remaining_funds = available_funds - qty_coin;
+                    let mut remaining_funds = available_funds - qty_coin;
+                    if remaining_funds > 1 {
+                    // edit balances, assuming counterparty tx. goes through
+                    open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
+                    //10);
+                    open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
+                    //open_orders_auth.lock_free_pc(qty_pc);
+                    open_orders_auth.native_coin_free -= qty_coin;
 
-                    require!(available_funds >= qty_coin, Error);
+                    msg!("Newly available PC for asker {}", parsed_event.native_qty_paid);
+                    msg!("Newly locked coins for asker {}", qty_coin);
+                }
+
+
+                    // require!(available_funds >= qty_coin, Error);
+                    // edit balances, assuming counterparty tx. goes through
+                    // open_orders_cpty.credit_unlocked_pc(parsed_event.native_qty_paid);
+                    // open_orders_cpty.lock_free_coin(qty_coin);
                     //open_orders_cpty.native_coin_free -= qty_coin;
 
                 }
@@ -171,6 +201,8 @@ pub mod simple_serum {
         // let market_pubkey = market.pubkey();
         //let  market_seeds:&[&[u8]] = gen_vault_signer_seeds([b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()]);
 
+
+        //MODIFIED : Do not lock collateral in openorders at this stage.
         let deposit_amount;
         let deposit_vault;
         let counterparty_vault;
@@ -187,8 +219,8 @@ pub mod simple_serum {
                 counterparty_vault = coin_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
-                open_orders.lock_free_pc(free_qty_to_lock);
-                open_orders.credit_locked_pc(deposit_amount);
+                //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
+                open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
                 market.pc_deposits_total = market
                     .pc_deposits_total
                     .checked_add(deposit_amount)
@@ -206,8 +238,8 @@ pub mod simple_serum {
                 deposit_vault = coin_vault;
                 counterparty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
-                open_orders.lock_free_coin(free_qty_to_lock);
-                open_orders.credit_locked_coin(deposit_amount);
+                //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
                 market.coin_deposits_total = market
                     .coin_deposits_total
                     .checked_add(deposit_amount)
@@ -261,6 +293,8 @@ pub mod simple_serum {
             let native_coin_credit = coin_credit.checked_mul(coin_lot_size).unwrap();
             let native_coin_debit = coin_debit.checked_mul(coin_lot_size).unwrap();
 
+            // do not do this right now, only after finaliseMatches
+            /*
             open_orders.credit_locked_coin(native_coin_credit);
             open_orders.unlock_coin(native_coin_credit);
             open_orders.unlock_coin(native_coin_unlocked);
@@ -268,6 +302,18 @@ pub mod simple_serum {
             open_orders.credit_locked_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_unlocked);
+*/
+
+            /*
+            open_orders.native_coin_total = open_orders
+                .native_coin_total
+                .checked_sub(native_coin_debit)
+                .unwrap();
+            open_orders.native_pc_total = open_orders
+                .native_pc_total
+                .checked_sub(native_pc_debit)
+                .unwrap(); */
+
             let others = jit_data;
             // transfer from counterpart(ies)
             /*
@@ -282,6 +328,7 @@ pub mod simple_serum {
             anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })? */
+
 
             msg!("going to loop!");
             for p in others {
@@ -313,14 +360,6 @@ pub mod simple_serum {
 
             //let market_seeds = &[&[&b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()], &[bump_seed]];
 
-            open_orders.native_coin_total = open_orders
-                .native_coin_total
-                .checked_sub(native_coin_debit)
-                .unwrap();
-            open_orders.native_pc_total = open_orders
-                .native_pc_total
-                .checked_sub(native_pc_debit)
-                .unwrap();
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
         }
@@ -1805,11 +1844,24 @@ impl OpenOrders {
         Ok(())
     }
 
+    fn credit_unlocked_coin(&mut self, native_coin_amount: u64) {
+        self.native_coin_total = self
+            .native_coin_total
+            .checked_add(native_coin_amount)
+            .unwrap();
+        self.native_coin_free = self.native_coin_free.checked_add(native_coin_amount).unwrap();
+    }
+
     fn credit_locked_coin(&mut self, native_coin_amount: u64) {
         self.native_coin_total = self
             .native_coin_total
             .checked_add(native_coin_amount)
             .unwrap();
+    }
+
+    fn credit_unlocked_pc(&mut self, native_pc_amount: u64) {
+        self.native_pc_total = self.native_pc_total.checked_add(native_pc_amount).unwrap();
+        self.native_pc_free = self.native_pc_free.checked_add(native_pc_amount).unwrap();
     }
 
     fn credit_locked_pc(&mut self, native_pc_amount: u64) {
