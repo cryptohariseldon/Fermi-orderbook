@@ -79,6 +79,10 @@ pub mod simple_serum {
         let event1: Event = event_q.buf[usize::from(event1_slot)];
         let event2: Event = event_q.buf[usize::from(event2_slot)];
 
+        // VERIFY : event slots correspond with passed Open_orders accounts.
+        require!(event1.owner == open_orders_auth.key(), Error);
+        require!(event2.owner == open_orders_cpty.key(), Error);
+
         let events: Vec<Event> = vec![event1, event2];
         // check if owner = authority or counterparty_authority
         // check side of event
