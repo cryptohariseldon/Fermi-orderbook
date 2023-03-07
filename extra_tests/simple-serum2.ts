@@ -161,7 +161,7 @@ const mintToBob = async (
 };
 
 //execute this on website opening (Fermi)
-describe('simple-serum', () => {
+describe(' fermi-dex', () => {
   const provider = anchor.AnchorProvider.env();
 
   // Configure the client to use the local cluster.

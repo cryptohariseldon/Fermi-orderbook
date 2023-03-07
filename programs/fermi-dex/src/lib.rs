@@ -10,7 +10,7 @@ use enumflags2::{bitflags, BitFlags};
 use resp;
 
 //declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
-declare_id!("AEVsGnS792FqggDf5jbC4e1HJbPVyXEs3MTowP591vdd");
+declare_id!("D184GxrZpBJZVEBYLJbyAAkV1poev6LVaxbitWgeKLiY");
 
 const MAX_EVENT_QUEUE_SIZE: u64 = 16;
 

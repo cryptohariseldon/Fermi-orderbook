@@ -3,6 +3,16 @@
 version = 3
 
 [[package]]
+name = " fermi-dex"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "enumflags2",
+ "resp",
+]
+
+[[package]]
 name = "ahash"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1161,16 +1171,6 @@ checksum = "0a31480366ec990f395a61b7c08122d99bd40544fdb5abcfc1b06bb29994312c"
 dependencies = [
  "digest 0.10.3",
  "keccak",
-]
-
-[[package]]
-name = "simple-serum"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "enumflags2",
- "resp",
 ]
 
 [[package]]
