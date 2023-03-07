@@ -383,6 +383,7 @@ describe('simple-serum', () => {
         const asks = await program.account.orders.fetch(asksPda);
         console.log(asks);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        console.log(eventQ);
 }
 
     }),
@@ -404,8 +405,8 @@ describe('simple-serum', () => {
         }
       }
       let base_order_id = 1844674407370955161601;
-      let base_event_slot = 0;
-      let base_event_slot2 = 1;
+      let base_event_slot = 1;
+      let base_event_slot2 = 2;
 
       console.log(base_order_id);
       console.log('test finalise match with event slot + order id');

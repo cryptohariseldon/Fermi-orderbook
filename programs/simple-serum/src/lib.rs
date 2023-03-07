@@ -88,8 +88,19 @@ pub mod simple_serum {
         // check side of event
         // Execute event fill
         // assume party A
+
+        // Allow only two events, with the same order-id.
+        let mut order_id_general: u128 = 0;
+        let mut first_event_done: bool = false;
         for parsed_event in events {
 
+                if !first_event_done {
+                    order_id_general = parsed_event.order_id;
+                    first_event_done = true;
+                }
+                else {
+                    require!(parsed_event.order_id == order_id_general, Error);
+                }
                 //EventView::Fill => {
                 //let mut side = parsedEventFlag::from_side(side);
                 //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
@@ -122,14 +133,27 @@ pub mod simple_serum {
 
                     msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
                     msg!("Newly locked PC for bidder {}", qty_pc);
-                }
+                    /*
+                    let maker_fill = Event::new(EventView::Finalise {
+                        side: Side::Ask,
+                        maker: true,
+                        native_qty_paid:  parsed_event.native_qty_released,
+                        native_qty_received: qty_pc,
+                        order_id: parsed_event.order_id,
+                        owner: parsed_event.owner,
+                        owner_slot: parsed_event.owner_slot,
+                    });
+                    event_q
+                        .push_back(maker_fill)
+                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                */}
                     // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
 
                 },
                     Side::Ask => {
                 //if side=="Ask"{
                     //qty to fill
-                    let mut qty_coin = parsed_event.native_qty_released;
+                    let mut qty_coin = parsed_event.native_qty_paid;
                     //check openorders balance
                     let mut available_funds = open_orders_cpty.native_coin_free * 10;
                     //revert if asker JIT fails.
@@ -144,7 +168,7 @@ pub mod simple_serum {
                     //open_orders_auth.lock_free_pc(qty_pc);
                     open_orders_auth.native_coin_free -= qty_coin;
 
-                    msg!("Newly available PC for asker {}", parsed_event.native_qty_paid);
+                    msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
                     msg!("Newly locked coins for asker {}", qty_coin);
                 }
 
@@ -592,6 +616,7 @@ enum EventFlag {
     Bid = 0x4,
     Maker = 0x8,
     ReleaseFunds = 0x10,
+    Finalise = 0x20,
 }
 
 impl EventFlag {
@@ -632,12 +657,21 @@ pub enum EventView {
         owner: Pubkey,
         owner_slot: u8,
     },
+    Finalise {
+        side: Side,
+        maker: bool,
+        native_qty_paid: u64,
+        native_qty_received: u64,
+        order_id: u128,
+        owner: Pubkey,
+        owner_slot: u8,
+    },
 }
 
 impl EventView {
     fn side(&self) -> Side {
         match self {
-            &EventView::Fill { side, .. } | &EventView::Out { side, .. } => side,
+            &EventView::Fill { side, .. } | &EventView::Out { side, .. } |  &EventView::Finalise { side, .. } => side,
         }
     }
 }
@@ -682,7 +716,7 @@ impl Event {
                     order_id,
                     owner,
                 }
-            }
+            },
 
             EventView::Out {
                 side,
@@ -705,9 +739,33 @@ impl Event {
                     order_id,
                     owner,
                 }
-            }
+
+            },
+
+            EventView::Finalise {
+                side,
+                maker,
+                native_qty_paid,
+                native_qty_received,
+                order_id,
+                owner,
+                owner_slot,
+            } => {
+                let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
+                if maker {
+                    flags |= EventFlag::Maker;
+                }
+                Event {
+                    event_flags: flags.bits(),
+                    owner_slot,
+                    native_qty_released: native_qty_received,
+                    native_qty_paid,
+                    order_id,
+                    owner,
+                }
         }
     }
+}
 
     // #[inline(always)]
     // pub fn as_view(&self) -> DexResult<EventView> {
@@ -1446,6 +1504,7 @@ impl<'a> OrderBook<'a> {
             .push_back(out)
             .map_err(|_| ErrorCode::QueueAlreadyFull)?;
 
+            //post order to OB
         if pc_qty_to_keep_locked > 0 {
             let insert_result = self.bids.insert(Order {
                 order_id,
