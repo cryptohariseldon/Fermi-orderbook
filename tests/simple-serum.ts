@@ -169,7 +169,8 @@ describe('simple-serum', () => {
 
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
-  let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+  //let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
+  let programId = "AEVsGnS792FqggDf5jbC4e1HJbPVyXEs3MTowP591vdd";
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   //const coinMint = anchor.web3.Keypair.generate();
   const coinMint = new anchor.web3.PublicKey("FLXU7NceNSZ1UJX4Qyx9KCwzMyQUHJw6pFnTcuWoz9zw");

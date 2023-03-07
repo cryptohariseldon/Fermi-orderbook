@@ -9,7 +9,10 @@ use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
 
-declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
+//declare_id!("HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver");
+declare_id!("AEVsGnS792FqggDf5jbC4e1HJbPVyXEs3MTowP591vdd");
+
+const MAX_EVENT_QUEUE_SIZE: u64 = 16;
 
 #[program]
 pub mod simple_serum {
@@ -1206,7 +1209,7 @@ impl<'a> OrderBook<'a> {
             if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
-            };
+            }
             event_q
                 .push_back(maker_fill)
                 .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
@@ -1221,7 +1224,7 @@ impl<'a> OrderBook<'a> {
                 if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                     // If it is full, remove the oldest event from the queue
                     let _ = event_q.pop_front();
-                };
+                }
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1261,7 +1264,7 @@ impl<'a> OrderBook<'a> {
             if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
-            };
+            }
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
@@ -1300,16 +1303,19 @@ impl<'a> OrderBook<'a> {
         msg!("[OrderBook.new_bid] coin_qty_to_post: {}", coin_qty_to_post);
         msg!("[OrderBook.new_bid] pc_qty_to_keep_locked: {}", pc_qty_to_keep_locked);
         // If it is full, remove the oldest event from the queue
+        //let _ = event_q.pop_front();
+    //CHECK
+
+    if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+        // If it is full, remove the oldest event from the queue
         let _ = event_q.pop_front();
     }
+    //CHECK
         let out = {
             let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
             to_release.unlock_native_pc(native_qty_unlocked);
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
-                // If it is full, remove the oldest event from the queue
-                let _ = event_q.pop_front();
-            };
+
             Event::new(EventView::Out {
                 side: Side::Bid,
                 release_funds: false,
@@ -1360,12 +1366,15 @@ impl<'a> OrderBook<'a> {
                         owner_slot,
                     })?;
                 }
-            }
+
         }
 
-        Ok(None)
+}
+return Ok(None)
     }
 }
+
+
 
 struct NewAskParams {
     max_qty: u64,
@@ -1428,7 +1437,7 @@ impl<'a> OrderBook<'a> {
             if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
-            };
+            }
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Bid,
                 maker: true,
@@ -1451,7 +1460,7 @@ impl<'a> OrderBook<'a> {
                 if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                     // If it is full, remove the oldest event from the queue
                     let _ = event_q.pop_front();
-                };
+                }
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Bid,
@@ -1480,7 +1489,7 @@ impl<'a> OrderBook<'a> {
             if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
-            };
+            }
             if native_taker_pc_qty > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Ask,
@@ -1521,7 +1530,7 @@ impl<'a> OrderBook<'a> {
                     if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                         // If it is full, remove the oldest event from the queue
                         let _ = event_q.pop_front();
-                    };
+                    }
                     let out = Event::new(EventView::Out {
                         side: Side::Ask,
                         release_funds: true,
@@ -1546,7 +1555,7 @@ impl<'a> OrderBook<'a> {
             if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
-            };
+            }
             to_release.unlock_coin(unfilled_qty);
             let out = Event::new(EventView::Out {
                 side: Side::Ask,
