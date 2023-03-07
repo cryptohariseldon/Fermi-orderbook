@@ -1,9 +1,9 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../target/types/simple_serum';
-import idl from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/idl/simple_serum.json";
-import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
+import { SimpleSerum } from '../target/types/fermi_dex';
+import idl from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/idl/fermi_dex.json";
+import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 
 
 const getDevPgmId = () => {
@@ -101,7 +101,7 @@ const mintToCustom = async (
   await provider.sendAndConfirm(tx, []);
 };
 
-describe(' fermi-dex', () => {
+describe('fermi-dex', () => {
   const provider = anchor.AnchorProvider.env();
 
   // Configure the client to use the local cluster.
@@ -109,7 +109,7 @@ describe(' fermi-dex', () => {
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  let programId = "D184GxrZpBJZVEBYLJbyAAkV1poev6LVaxbitWgeKLiY";
+  let programId = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT";
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
