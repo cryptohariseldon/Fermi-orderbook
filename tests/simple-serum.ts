@@ -2,8 +2,8 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/simple_serum';
-import idl from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/idl/simple_serum.json";
-import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
+import idl from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/idl/simple_serum.json";
+import solblog_keypair from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/deploy/simple_serum-keypair.json"
 import { decodeEventQueue, decodeRequestQueue } from './queue';
 
 //make sure this is executed with solblock keypair path (Fermi)
@@ -170,9 +170,10 @@ describe('simple-serum', () => {
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   const program = new anchor.Program(idl, programId, provider) //for existing prog
-  const coinMint = anchor.web3.Keypair.generate();
-
-  const pcMint = anchor.web3.Keypair.generate();
+  //const coinMint = anchor.web3.Keypair.generate();
+  const coinMint = new anchor.web3.PublicKey("FLXU7NceNSZ1UJX4Qyx9KCwzMyQUHJw6pFnTcuWoz9zw");
+  //const pcMint = anchor.web3.Keypair.generate();
+  const pcMint = new anchor.web3.PublicKey("9Fz25i53XBim9wKBW2gNzsuGqTm9DrtpPh7YrtoBFopR")
 
   let coinVault: anchor.web3.PublicKey;
   let pcVault: anchor.web3.PublicKey;
@@ -198,7 +199,9 @@ describe('simple-serum', () => {
   let openOrdersBobPda: anchor.web3.PublicKey;
   let openOrdersBobPdaBump: number;
 
-  const authority = anchor.web3.Keypair.generate();
+  //const authority = anchor.web3.Keypair.generate();
+  const authority = new anchor.web3.PublicKey("t49Apab6yTXpsmy8V5vQyUL9EPzDwsPsbAjet8JQQCZ")
+  const authority_custom = anchor.web3.Keypair.generate();
   const authority_bob = anchor.web3.Keypair.generate();
 
   console.log("alice {}", authority);
@@ -239,14 +242,14 @@ describe('simple-serum', () => {
   before(async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
-        authority.publicKey,
+        authority_custom.publicKey,
         2 * anchor.web3.LAMPORTS_PER_SOL,
       ),
     );
 
-
-    await createMint(provider, coinMint, 9);
-    await createMint(provider, pcMint, 6);
+ console.log(provider.publicKey);
+    //await createMint(provider, coinMint, 9);
+    //await createMint(provider, pcMint, 6);
     //await createMintBob(provider, pcMint, 6);
     console.log("created mint");
     //execute from here on webpage openings (Fermi)
@@ -254,8 +257,8 @@ describe('simple-serum', () => {
     [marketPda, marketPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [
         Buffer.from('market', 'utf-8'),
-        coinMint.publicKey.toBuffer(),
-        pcMint.publicKey.toBuffer(),
+        coinMint.toBuffer(),
+        pcMint.toBuffer(),
       ],
       program.programId,
     );
@@ -283,12 +286,12 @@ describe('simple-serum', () => {
         [
           Buffer.from('open-orders', 'utf-8'),
           marketPda.toBuffer(),
-          authority.publicKey.toBuffer(),
+          authority_custom.publicKey.toBuffer(),
         ],
         program.programId,
       );
 
-      [openOrdersBobPda, openOrdersBobPdaBump] =
+      /*[openOrdersBobPda, openOrdersBobPdaBump] =
         await anchor.web3.PublicKey.findProgramAddress(
           [
             Buffer.from('open-orders', 'utf-8'),
@@ -296,15 +299,15 @@ describe('simple-serum', () => {
             authority_bob.publicKey.toBuffer(),
           ],
           program.programId,
-        );
+        );*/
 
     coinVault = await spl.getAssociatedTokenAddress(
-      coinMint.publicKey,
+      coinMint,
       marketPda,
       true,
     );
     pcVault = await spl.getAssociatedTokenAddress(
-      pcMint.publicKey,
+      pcMint,
       marketPda,
       true,
     );
@@ -322,60 +325,65 @@ describe('simple-serum', () => {
     // );
 
     authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
-      coinMint.publicKey,
-      authority.publicKey,
+      coinMint,
+      authority_custom.publicKey,
       false,
     );
     authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
-      pcMint.publicKey,
-      authority.publicKey,
+      pcMint,
+      authority_custom.publicKey,
       false,
     );
     console.log("bob incoming");
 
-    authorityBobPcTokenAccount = await spl.getAssociatedTokenAddress(
-      pcMint.publicKey,
+   /* authorityBobPcTokenAccount = await spl.getAssociatedTokenAddress(
+      pcMint,
       authority_bob.publicKey,
       false,
     );
 
     authorityBobCoinTokenAccount = await spl.getAssociatedTokenAddress(
-      coinMint.publicKey,
+      coinMint,
       authority_bob.publicKey,
       false,
-    );
+    ); */
+
+    
 
     await createAssociatedTokenAccount(
       provider,
-      coinMint.publicKey,
+      coinMint,
       authorityCoinTokenAccount,
-      authority.publicKey,
+      authority_custom.publicKey,
     );
     await createAssociatedTokenAccount(
       provider,
-      pcMint.publicKey,
+      pcMint,
       authorityPcTokenAccount,
-      authority.publicKey,
+      authority_custom.publicKey,
     );
+    console.log("created ATA");
+    console.log(authorityCoinTokenAccount);
+    console.log(authorityPcTokenAccount);
     // create ATA for Bob
-    await createAssociatedTokenAccount(
+    /*await createAssociatedTokenAccount(
       provider,
-      pcMint.publicKey,
+      pcMint,
       authorityBobPcTokenAccount,
       authority_bob.publicKey,
     );
 
     await createAssociatedTokenAccount(
       provider,
-      coinMint.publicKey,
+      coinMint,
       authorityBobCoinTokenAccount,
       authority_bob.publicKey,
-    );
+    );*/
 
 
-    await mintTo(
+   /* await mintTo(
       provider,
-      coinMint.publicKey,
+      coinMint,
       authorityCoinTokenAccount,
       BigInt('10000000000'),
     );
@@ -383,10 +391,10 @@ describe('simple-serum', () => {
 
     await mintTo(
       provider,
-      pcMint.publicKey,
+      pcMint,
       authorityPcTokenAccount,
       BigInt('1000000000'),
-    );
+    );*/
 
     console.log("minting PC tokens to Bob");
     // Mint pc tokens to bobs ATA
@@ -402,7 +410,7 @@ describe('simple-serum', () => {
 
   });
 //to be executed only once (Fermi)
-  describe('#initialize_market', async () => {
+  /*describe('#initialize_market', async () => {
     it('should initialize market successfully', async () => {
       await program.methods
         .initializeMarket(new anchor.BN('1000000000'), new anchor.BN('1000000'))
@@ -437,7 +445,7 @@ describe('simple-serum', () => {
       assert(market.eventQ.equals(eventQPda));
       assert(market.authority.equals(authority.publicKey));
     });
-  });
+  });*/
 //steps to execute when there is new bid order (Fermi)
   describe('#new_order', async () => {
     it('New order - buy @ 99 successful', async () => {
@@ -455,16 +463,16 @@ describe('simple-serum', () => {
             market: marketPda,
             coinVault,
             pcVault,
-            coinMint: coinMint.publicKey,
-            pcMint: pcMint.publicKey,
+            coinMint: coinMint,
+            pcMint: pcMint,
             payer: authorityPcTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
-            authority: authority.publicKey,
+            authority: authority_custom.publicKey,
           })
-          .signers([authority])
+          .signers([authority_custom])
           .rpc();
 
         console.log('place limit order buy price: 99');
@@ -496,16 +504,16 @@ describe('simple-serum', () => {
             market: marketPda,
             coinVault,
             pcVault,
-            coinMint: coinMint.publicKey,
-            pcMint: pcMint.publicKey,
+            coinMint: coinMint,
+            pcMint: pcMint,
             payer: authorityCoinTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
-            authority: authority.publicKey,
+            authority: authority_custom.publicKey,
           })
-          .signers([authority])
+          .signers([authority_custom])
           .rpc();
 
         console.log('place limit order ask price: 100');
@@ -524,7 +532,7 @@ describe('simple-serum', () => {
 }),
       it('New order - buy @ 101 successful', async () => {
       {
-        console.log(authorityBobPcTokenAccount.PublicKey);
+        //console.log(authorityBobPcTokenAccount.PublicKey);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
         const lol = eventQ['buf'][1];
         console.log("warp");
@@ -542,16 +550,16 @@ describe('simple-serum', () => {
             market: marketPda,
             coinVault,
             pcVault,
-            coinMint: coinMint.publicKey,
-            pcMint: pcMint.publicKey,
+            coinMint: coinMint,
+            pcMint: pcMint,
             payer: authorityPcTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
-            authority: authority.publicKey,
+            authority: authority_custom.publicKey,
           })
-          .signers([authority])
+          .signers([authority_custom])
           .rpc();
 
         console.log('place limit order buy price: 101');
