@@ -2,8 +2,8 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/simple_serum';
-import idl from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/idl/simple_serum.json";
-import solblog_keypair from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/deploy/simple_serum-keypair.json"
+import idl from "/Users/dm/Documents/blob_solana/wallet/Fermi-orderbook/target/idl/simple_serum.json";
+import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
 import { decodeEventQueue, decodeRequestQueue } from './queue';
 
 //make sure this is executed with solblock keypair path (Fermi)
@@ -348,7 +348,7 @@ describe('simple-serum', () => {
       false,
     ); */
 
-    
+
 
     await createAssociatedTokenAccount(
       provider,
@@ -363,8 +363,8 @@ describe('simple-serum', () => {
       authority_custom.publicKey,
     );
     console.log("created ATA");
-    console.log(authorityCoinTokenAccount);
-    console.log(authorityPcTokenAccount);
+    //console.log(authorityCoinTokenAccount);
+    //console.log(authorityPcTokenAccount);
     // create ATA for Bob
     /*await createAssociatedTokenAccount(
       provider,
@@ -395,6 +395,42 @@ describe('simple-serum', () => {
       authorityPcTokenAccount,
       BigInt('1000000000'),
     );*/
+    const custom = new anchor.web3.PublicKey("ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT");
+    console.log(custom)
+    /*
+    const customCoinTokenAccount = await spl.getAssociatedTokenAddress(
+      coinMint.publicKey,
+      custom,
+      false,
+    );
+    const customPcTokenAccount = await spl.getAssociatedTokenAddress(
+      pcMint.publicKey,
+      custom,
+      false,
+    );
+
+    console.log(customPcTokenAccount.toString());
+*/
+
+    const custom_ata_coin = new anchor.web3.PublicKey("4oy7v1heRg8WNN8bUznoRH8YjnYRZyQewVe7Byp9StjK");
+    const custom_ata_pc = new anchor.web3.PublicKey("7e9vnc5d9sZcddPcETyyJQWumt5kTWbr27E55u9CWodh");
+    await mintTo(
+      provider,
+      coinMint,
+      custom_ata_coin,
+      BigInt('100000000000'),
+    );
+    console.log("airdrop done");
+
+    console.log("sent to");
+    console.log(custom_ata_pc.toString());
+
+    await mintTo(
+      provider,
+      pcMint,
+      custom_ata_pc,
+      BigInt('10000000000'),
+    );
 
     console.log("minting PC tokens to Bob");
     // Mint pc tokens to bobs ATA
