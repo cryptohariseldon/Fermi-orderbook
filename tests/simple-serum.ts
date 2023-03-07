@@ -5,6 +5,12 @@ import { SimpleSerum } from '../target/types/simple_serum';
 import idl from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/idl/simple_serum.json";
 import solblog_keypair from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/target/deploy/simple_serum-keypair.json"
 import { decodeEventQueue, decodeRequestQueue } from './queue';
+import { fstat } from 'fs';
+import * as fs from 'fs';
+import owner_keypair from "/Users/hetalkenaudekar/Desktop/Fermi-orderbook/owner_keypair.json";
+//const owner_keypair = fs.readFileSync('/Users/hetalkenaudekar/Desktop/Fermi-orderbook/owner_keypair.json', 'utf-8');
+//const account_owner = anchor.web3.Keypair.generate();
+//fs.writeFileSync('./owner_keypair.json', JSON.stringify(Array.from(account_owner.secretKey)));
 
 //make sure this is executed with solblock keypair path (Fermi)
 const getDevPgmId = () => {
@@ -201,7 +207,12 @@ describe('simple-serum', () => {
 
   //const authority = anchor.web3.Keypair.generate();
   const authority = new anchor.web3.PublicKey("t49Apab6yTXpsmy8V5vQyUL9EPzDwsPsbAjet8JQQCZ")
-  const authority_custom = anchor.web3.Keypair.generate();
+  //const authority_custom = anchor.web3.Keypair.generate();
+  const authority_custom
+   = anchor.web3.Keypair.fromSecretKey(
+    new Uint8Array(owner_keypair)
+)
+  console.log(authority_custom.publicKey.toString());
   const authority_bob = anchor.web3.Keypair.generate();
 
   console.log("alice {}", authority);
@@ -350,7 +361,7 @@ describe('simple-serum', () => {
 
     
 
-    await createAssociatedTokenAccount(
+    /*await createAssociatedTokenAccount(
       provider,
       coinMint,
       authorityCoinTokenAccount,
@@ -361,7 +372,7 @@ describe('simple-serum', () => {
       pcMint,
       authorityPcTokenAccount,
       authority_custom.publicKey,
-    );
+    );*/
     console.log("created ATA");
     console.log(authorityCoinTokenAccount);
     console.log(authorityPcTokenAccount);

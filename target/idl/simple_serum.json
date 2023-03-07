@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
   "name": "simple_serum",
-  "metadata": {"address":"ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT"},
+  "metadata": {"address":"HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver"},
   "instructions": [
     {
       "name": "initializeMarket",
