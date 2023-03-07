@@ -81,6 +81,26 @@ const mintTo = async (
   await provider.sendAndConfirm(tx, []);
 };
 
+const mintToCustom = async (
+  provider: anchor.AnchorProvider,
+  mint: anchor.web3.PublicKey,
+  ta: anchor.web3.PublicKey,
+  owner: anchor.web3.PublicKey,
+  amount: bigint,
+) => {
+  const tx = new anchor.web3.Transaction();
+  tx.add(
+    spl.createMintToInstruction(
+      mint,
+      ta,
+      owner,
+      amount,
+      [],
+    ),
+  );
+  await provider.sendAndConfirm(tx, []);
+};
+
 describe('simple-serum', () => {
   const provider = anchor.AnchorProvider.env();
 
@@ -190,7 +210,7 @@ describe('simple-serum', () => {
     //   pcVault,
     //   marketPda,
     // );
-
+    const custom = new anchor.web3.PublicKey("ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT");
     authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
       coinMint.publicKey,
       authority.publicKey,
@@ -199,6 +219,16 @@ describe('simple-serum', () => {
     authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
       pcMint.publicKey,
       authority.publicKey,
+      false,
+    );
+    const customCoinTokenAccount = await spl.getAssociatedTokenAddress(
+      coinMint.publicKey,
+      custom,
+      false,
+    );
+    const customPcTokenAccount = await spl.getAssociatedTokenAddress(
+      pcMint.publicKey,
+      custom,
       false,
     );
     await createAssociatedTokenAccount(
@@ -226,6 +256,36 @@ describe('simple-serum', () => {
       authorityPcTokenAccount,
       BigInt('1000000000'),
     );
+    console.log("sent to");
+    console.log(authorityPcTokenAccount.toString());
+    //MintTo custom
+    /*
+    const custom_ata_coin = new anchor.web3.PublicKey("4oy7v1heRg8WNN8bUznoRH8YjnYRZyQewVe7Byp9StjK");
+    const custom_ata_pc = new anchor.web3.PublicKey("7e9vnc5d9sZcddPcETyyJQWumt5kTWbr27E55u9CWodh");
+    await mintToCustom(
+      provider,
+      coinMint.publicKey,
+      custom_ata_pc,
+      provider.wallet.publicKey,
+      BigInt('100000000000'),
+    );
+
+    console.log("sent to");
+    console.log(custom_ata_pc.toString());
+
+    await mintToCustom(
+      provider,
+      pcMint.publicKey,
+      custom_ata_pc,
+      provider.wallet.publicKey,
+      BigInt('10000000000'),
+    );
+
+    console.log("sent to");
+    console.log(custom_ata_pc.toString());
+    //MintTo custom
+*/
+
   });
 
   describe('#initialize_market', async () => {
