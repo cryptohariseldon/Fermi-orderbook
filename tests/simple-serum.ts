@@ -4,6 +4,7 @@ import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/simple_serum';
 import idl from "/Users/dm/Documents/blob_solana/wallet/Fermi-orderbook/target/idl/simple_serum.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/fermi-orderbook/target/deploy/simple_serum-keypair.json"
+
 import { decodeEventQueue, decodeRequestQueue } from './queue';
 
 //make sure this is executed with solblock keypair path (Fermi)
@@ -381,7 +382,7 @@ describe('simple-serum', () => {
     );*/
 
 
-   /* await mintTo(
+   await mintTo(
       provider,
       coinMint,
       authorityCoinTokenAccount,
@@ -394,7 +395,8 @@ describe('simple-serum', () => {
       pcMint,
       authorityPcTokenAccount,
       BigInt('1000000000'),
-    );*/
+    );
+
     const custom = new anchor.web3.PublicKey("ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT");
     console.log(custom)
     /*
@@ -412,8 +414,9 @@ describe('simple-serum', () => {
     console.log(customPcTokenAccount.toString());
 */
 
-    const custom_ata_coin = new anchor.web3.PublicKey("4oy7v1heRg8WNN8bUznoRH8YjnYRZyQewVe7Byp9StjK");
-    const custom_ata_pc = new anchor.web3.PublicKey("7e9vnc5d9sZcddPcETyyJQWumt5kTWbr27E55u9CWodh");
+    const custom_ata_coin = new anchor.web3.PublicKey("H2cZK8LEgqEBUL52Px6fkTWMVAHrhVPi5VWwztRmRw6u");
+
+    const custom_ata_pc = new anchor.web3.PublicKey("FHZwM7ssjwau2WfriJpf2yHSuUhxbgjcmySoGSV3x6Vx");
     await mintTo(
       provider,
       coinMint,
@@ -489,9 +492,9 @@ describe('simple-serum', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(99),
+            new anchor.BN(105),
             new anchor.BN(1),
-            new anchor.BN(99).mul(new anchor.BN(1000000)),
+            new anchor.BN(105).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -530,9 +533,9 @@ describe('simple-serum', () => {
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(100),
+            new anchor.BN(110),
             new anchor.BN(1),
-            new anchor.BN(0),
+            new anchor.BN(110),
             { limit: {} },
           )
           .accounts({
@@ -576,9 +579,9 @@ describe('simple-serum', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(10),
+            new anchor.BN(103),
             new anchor.BN(1),
-            new anchor.BN(10).mul(new anchor.BN(1000000)),
+            new anchor.BN(103).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({

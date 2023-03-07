@@ -1202,6 +1202,11 @@ impl<'a> OrderBook<'a> {
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
             });
+            // Check if the event queue is full
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
             event_q
                 .push_back(maker_fill)
                 .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
@@ -1213,7 +1218,10 @@ impl<'a> OrderBook<'a> {
             //if order is filled, delete (ask) order.
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
-
+                if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                    // If it is full, remove the oldest event from the queue
+                    let _ = event_q.pop_front();
+                };
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1250,7 +1258,10 @@ impl<'a> OrderBook<'a> {
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
             to_release.jit_data = jit_data;
-
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
 
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
@@ -1288,12 +1299,17 @@ impl<'a> OrderBook<'a> {
 
         msg!("[OrderBook.new_bid] coin_qty_to_post: {}", coin_qty_to_post);
         msg!("[OrderBook.new_bid] pc_qty_to_keep_locked: {}", pc_qty_to_keep_locked);
-
+        // If it is full, remove the oldest event from the queue
+        let _ = event_q.pop_front();
+    }
         let out = {
             let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
             to_release.unlock_native_pc(native_qty_unlocked);
-
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
             Event::new(EventView::Out {
                 side: Side::Bid,
                 release_funds: false,
@@ -1320,6 +1336,11 @@ impl<'a> OrderBook<'a> {
                     // boot out the least aggressive bid
                     msg!("bids full! booting...");
                     let order = self.bids.delete_worst()?;
+                    if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                        // If it is full, remove the oldest event from the queue
+                        let _ = event_q.pop_front();
+                    };
+
                     let out = Event::new(EventView::Out {
                         side: Side::Bid,
                         release_funds: true,
@@ -1404,7 +1425,10 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
-
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Bid,
                 maker: true,
@@ -1424,6 +1448,10 @@ impl<'a> OrderBook<'a> {
 
             if best_bid.qty == 0 {
                 let best_bid_id = best_bid.order_id;
+                if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                    // If it is full, remove the oldest event from the queue
+                    let _ = event_q.pop_front();
+                };
                 event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Bid,
@@ -1449,7 +1477,10 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_native_pc(net_taker_pc_qty);
             to_release.debit_coin(coin_lots_traded);
-
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
             if native_taker_pc_qty > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Ask,
@@ -1487,6 +1518,10 @@ impl<'a> OrderBook<'a> {
                     // boot out the least aggressive offer
                     msg!("offers full! booting...");
                     let order = self.asks.delete_worst()?;
+                    if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                        // If it is full, remove the oldest event from the queue
+                        let _ = event_q.pop_front();
+                    };
                     let out = Event::new(EventView::Out {
                         side: Side::Ask,
                         release_funds: true,
@@ -1508,6 +1543,10 @@ impl<'a> OrderBook<'a> {
                 }
             }
         } else {
+            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                // If it is full, remove the oldest event from the queue
+                let _ = event_q.pop_front();
+            };
             to_release.unlock_coin(unfilled_qty);
             let out = Event::new(EventView::Out {
                 side: Side::Ask,
