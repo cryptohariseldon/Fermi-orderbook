@@ -118,7 +118,7 @@ const createMintBob = async (
   );
   await provider.sendAndConfirm(tx, [mint]);
 };
-
+/*
 console.log("create ATA");
 const createAssociatedTokenAccountBob = async (
   provider: anchor.AnchorProvider,
@@ -158,7 +158,7 @@ const mintToBob = async (
     ),
   );
   await provider.sendAndConfirm(tx, [auth]);
-};
+};*/
 
 //execute this on website opening (Fermi)
 describe('simple-serum', () => {
@@ -397,41 +397,64 @@ describe('simple-serum', () => {
       BigInt('1000000000'),
     );
 
-    const custom = new anchor.web3.PublicKey("ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT");
+    const custom = new anchor.web3.PublicKey("42Dg1Y97EQuwAfj4ovzD76myhRE5ZJkCySuTzHoRcxxH");
     console.log(custom)
+
     /*
     const customCoinTokenAccount = await spl.getAssociatedTokenAddress(
       coinMint.publicKey,
       custom,
       false,
-    );
+    ); */
     const customPcTokenAccount = await spl.getAssociatedTokenAddress(
-      pcMint.publicKey,
+      pcMint,
       custom,
       false,
     );
-
     console.log(customPcTokenAccount.toString());
-*/
+/*
 
-    const custom_ata_coin = new anchor.web3.PublicKey("H2cZK8LEgqEBUL52Px6fkTWMVAHrhVPi5VWwztRmRw6u");
-
-    const custom_ata_pc = new anchor.web3.PublicKey("FHZwM7ssjwau2WfriJpf2yHSuUhxbgjcmySoGSV3x6Vx");
-    await mintTo(
+    await createAssociatedTokenAccount(
       provider,
       coinMint,
-      custom_ata_coin,
-      BigInt('100000000000'),
+      customCoinTokenAccount,
+      authority_custom.publicKey,
     );
+    await createAssociatedTokenAccount(
+      provider,
+      pcMint,
+      customPcTokenAccount,
+      authority_custom.publicKey,
+    );
+*/
+    //console.log(customPcTokenAccount.toString());
+
+
+    //const custom_ata_coin = new anchor.web3.PublicKey("H2cZK8LEgqEBUL52Px6fkTWMVAHrhVPi5VWwztRmRw6u");
+
+    const custom_ata_pc = new anchor.web3.PublicKey("54EjXUWQitej4UZYYbb4QNJLN1nAFmwW7AkuC19UGQoV");
+    /*await mintTo(
+      provider,
+      coinMint,
+      customCoinTokenAccount,
+      BigInt('100000000000'),
+    ); */
     console.log("airdrop done");
 
     console.log("sent to");
     console.log(custom_ata_pc.toString());
 
-    await mintTo(
+    await createAssociatedTokenAccount(
       provider,
       pcMint,
       custom_ata_pc,
+      custom,
+    );
+
+    await mintTo(
+      provider,
+      pcMint,
+      customPcTokenAccount,
       BigInt('10000000000'),
     );
 
