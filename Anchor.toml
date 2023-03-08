@@ -9,8 +9,8 @@ fermi_dex = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT"
 url = "https://api.apr.dev"
 
 [provider]
-#cluster ="devnet"
-cluster="localnet"
+cluster ="devnet"
+#cluster="localnet"
 wallet = "/Users/dm/.config/solana/id.json"
 
 [scripts]
