@@ -6,7 +6,7 @@ skip-lint = false
 fermi_dex = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT"
 
 [registry]
-url = "https://api.apr.dev"
+url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
 
 [provider]
 cluster ="devnet"
