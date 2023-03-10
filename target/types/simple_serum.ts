@@ -88,109 +88,6 @@ export type SimpleSerum = {
       ]
     },
     {
-      "name": "finaliseMatches",
-      "accounts": [
-        {
-          "name": "openOrdersOwner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openOrdersCounterparty",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "coinVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pcVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "coinMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "pcMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "bids",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "asks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "reqQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "event1Slot",
-          "type": "u8"
-        },
-        {
-          "name": "event2Slot",
-          "type": "u8"
-        },
-        {
-          "name": "orderId",
-          "type": "u128"
-        },
-        {
-          "name": "authorityCounterparty",
-          "type": "publicKey"
-        }
-      ]
-    },
-    {
       "name": "newOrder",
       "accounts": [
         {
@@ -464,9 +361,54 @@ export type SimpleSerum = {
             "type": {
               "array": [
                 "u128",
-                8
+                16
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "openOrdersAbs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "isInitialized",
+            "type": "bool"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u8"
+          },
+          {
+            "name": "isBidBits",
+            "type": "u8"
+          },
+          {
+            "name": "orders",
+            "type": {
+              "array": [
+                "u128",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "coordinator",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
           }
         ]
       }
@@ -732,41 +674,6 @@ export type SimpleSerum = {
               },
               {
                 "name": "native_qty_still_locked",
-                "type": "u64"
-              },
-              {
-                "name": "order_id",
-                "type": "u128"
-              },
-              {
-                "name": "owner",
-                "type": "publicKey"
-              },
-              {
-                "name": "owner_slot",
-                "type": "u8"
-              }
-            ]
-          },
-          {
-            "name": "Finalise",
-            "fields": [
-              {
-                "name": "side",
-                "type": {
-                  "defined": "Side"
-                }
-              },
-              {
-                "name": "maker",
-                "type": "bool"
-              },
-              {
-                "name": "native_qty_paid",
-                "type": "u64"
-              },
-              {
-                "name": "native_qty_received",
                 "type": "u64"
               },
               {
@@ -987,109 +894,6 @@ export const IDL: SimpleSerum = {
       ]
     },
     {
-      "name": "finaliseMatches",
-      "accounts": [
-        {
-          "name": "openOrdersOwner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openOrdersCounterparty",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "coinVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pcVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "coinMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "pcMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "bids",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "asks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "reqQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "event1Slot",
-          "type": "u8"
-        },
-        {
-          "name": "event2Slot",
-          "type": "u8"
-        },
-        {
-          "name": "orderId",
-          "type": "u128"
-        },
-        {
-          "name": "authorityCounterparty",
-          "type": "publicKey"
-        }
-      ]
-    },
-    {
       "name": "newOrder",
       "accounts": [
         {
@@ -1363,9 +1167,54 @@ export const IDL: SimpleSerum = {
             "type": {
               "array": [
                 "u128",
-                8
+                16
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "openOrdersAbs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "isInitialized",
+            "type": "bool"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u8"
+          },
+          {
+            "name": "isBidBits",
+            "type": "u8"
+          },
+          {
+            "name": "orders",
+            "type": {
+              "array": [
+                "u128",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "coordinator",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
           }
         ]
       }
@@ -1631,41 +1480,6 @@ export const IDL: SimpleSerum = {
               },
               {
                 "name": "native_qty_still_locked",
-                "type": "u64"
-              },
-              {
-                "name": "order_id",
-                "type": "u128"
-              },
-              {
-                "name": "owner",
-                "type": "publicKey"
-              },
-              {
-                "name": "owner_slot",
-                "type": "u8"
-              }
-            ]
-          },
-          {
-            "name": "Finalise",
-            "fields": [
-              {
-                "name": "side",
-                "type": {
-                  "defined": "Side"
-                }
-              },
-              {
-                "name": "maker",
-                "type": "bool"
-              },
-              {
-                "name": "native_qty_paid",
-                "type": "u64"
-              },
-              {
-                "name": "native_qty_received",
                 "type": "u64"
               },
               {

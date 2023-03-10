@@ -1203,7 +1203,8 @@ impl<'a> OrderBook<'a> {
                 owner_slot: best_offer.owner_slot,
             });
             // Check if the event queue is full
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full() {
+            //if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1218,7 +1219,7 @@ impl<'a> OrderBook<'a> {
             //if order is filled, delete (ask) order.
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
-                if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                if event_q.full(){
                     // If it is full, remove the oldest event from the queue
                     let _ = event_q.pop_front();
                 };
@@ -1258,7 +1259,7 @@ impl<'a> OrderBook<'a> {
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
             to_release.jit_data = jit_data;
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full(){
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1300,13 +1301,14 @@ impl<'a> OrderBook<'a> {
         msg!("[OrderBook.new_bid] coin_qty_to_post: {}", coin_qty_to_post);
         msg!("[OrderBook.new_bid] pc_qty_to_keep_locked: {}", pc_qty_to_keep_locked);
         // If it is full, remove the oldest event from the queue
-        let _ = event_q.pop_front();
-    }
+        //let _ = event_q.pop_front();
+
+
         let out = {
             let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
             to_release.unlock_native_pc(native_qty_unlocked);
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full(){
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1336,7 +1338,7 @@ impl<'a> OrderBook<'a> {
                     // boot out the least aggressive bid
                     msg!("bids full! booting...");
                     let order = self.bids.delete_worst()?;
-                    if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                    if event_q.full(){
                         // If it is full, remove the oldest event from the queue
                         let _ = event_q.pop_front();
                     };
@@ -1425,7 +1427,7 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full(){
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1448,7 +1450,7 @@ impl<'a> OrderBook<'a> {
 
             if best_bid.qty == 0 {
                 let best_bid_id = best_bid.order_id;
-                if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                if event_q.full(){
                     // If it is full, remove the oldest event from the queue
                     let _ = event_q.pop_front();
                 };
@@ -1477,7 +1479,7 @@ impl<'a> OrderBook<'a> {
 
             to_release.credit_native_pc(net_taker_pc_qty);
             to_release.debit_coin(coin_lots_traded);
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full(){
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1518,7 +1520,7 @@ impl<'a> OrderBook<'a> {
                     // boot out the least aggressive offer
                     msg!("offers full! booting...");
                     let order = self.asks.delete_worst()?;
-                    if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+                    if event_q.full(){
                         // If it is full, remove the oldest event from the queue
                         let _ = event_q.pop_front();
                     };
@@ -1543,7 +1545,7 @@ impl<'a> OrderBook<'a> {
                 }
             }
         } else {
-            if event_q.len() >= MAX_EVENT_QUEUE_SIZE {
+            if event_q.full(){
                 // If it is full, remove the oldest event from the queue
                 let _ = event_q.pop_front();
             };
@@ -1565,6 +1567,7 @@ impl<'a> OrderBook<'a> {
         Ok(None)
     }
 }
+
 
 pub struct CancelOrderParams {
     side: Side,
@@ -1720,6 +1723,54 @@ pub struct OpenOrders {
     free_slot_bits: u8,
     is_bid_bits: u8,
     orders: [u128; 16],
+}
+
+pub struct TokensStruct {
+    tokenMint: Pubkey,
+    totalBalance: u64,
+    lockedBalance: u64,
+}
+
+#[account]
+#[derive(Default)]
+pub struct OpenOrdersAbs {
+    is_initialized: bool,
+
+    // not linked to a specific market
+    // market: Pubkey,
+    authority: Pubkey,
+
+    // balances held in tokens struct
+    // native_coin_free: u64,
+    // native_pc_free: u64,
+
+    // native_coin_total: u64,
+    // native_pc_total: u64,
+
+
+    free_slot_bits: u8,
+    is_bid_bits: u8,
+    // Four assets, balances stored at predefined slots
+    //tokens: [<TokensStuct>; 4],
+    orders: [u128; 16],
+}
+
+
+
+pub struct TokensStructSimple {
+    tokenMint: Pubkey,
+    totalBalance: u64,
+}
+
+pub struct Addres {
+    tokenMint: Pubkey,
+    totalBalance: u64,
+}
+
+#[account]
+#[derive(Default)]
+pub struct Coordinator{
+    tokens: u64
 }
 
 impl OpenOrders {
