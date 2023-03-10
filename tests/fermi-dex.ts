@@ -108,8 +108,8 @@ describe('fermi-dex', () => {
   anchor.setProvider(provider);
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
-  // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  let programId = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT";
+  // let programId = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT";
+  let programId = "NRE3yo6zP2URLNThemzKyJ63WU49QqKGmF1ei62zsjH";
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();

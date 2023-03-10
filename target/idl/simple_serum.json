@@ -292,7 +292,7 @@
                 {
                   "defined": "Event"
                 },
-                8
+                1000
               ]
             }
           }
@@ -361,7 +361,7 @@
             "type": {
               "array": [
                 "u128",
-                16
+                8
               ]
             }
           }
@@ -388,6 +388,17 @@
           {
             "name": "isBidBits",
             "type": "u8"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "array": [
+                {
+                  "defined": "TokensStruct"
+                },
+                8
+              ]
+            }
           },
           {
             "name": "orders",
@@ -801,5 +812,8 @@
       "name": "Error",
       "msg": "Error"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "NRE3yo6zP2URLNThemzKyJ63WU49QqKGmF1ei62zsjH"
+  }
 }

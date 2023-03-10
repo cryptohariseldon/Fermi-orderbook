@@ -3,14 +3,15 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-fermi_dex = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT"
+fermi_dex = "NRE3yo6zP2URLNThemzKyJ63WU49QqKGmF1ei62zsjH"
 
 [registry]
-url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
+#url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
+url = "http://127.0.0.1:8899"
 
 [provider]
-cluster ="devnet"
-#cluster="localnet"
+#cluster ="devnet"
+cluster="localnet"
 wallet = "/Users/dm/.config/solana/id.json"
 
 [scripts]

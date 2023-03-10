@@ -292,7 +292,7 @@ export type SimpleSerum = {
                 {
                   "defined": "Event"
                 },
-                8
+                1000
               ]
             }
           }
@@ -361,7 +361,7 @@ export type SimpleSerum = {
             "type": {
               "array": [
                 "u128",
-                16
+                8
               ]
             }
           }
@@ -388,6 +388,17 @@ export type SimpleSerum = {
           {
             "name": "isBidBits",
             "type": "u8"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "array": [
+                {
+                  "defined": "TokensStruct"
+                },
+                8
+              ]
+            }
           },
           {
             "name": "orders",
@@ -1098,7 +1109,7 @@ export const IDL: SimpleSerum = {
                 {
                   "defined": "Event"
                 },
-                8
+                1000
               ]
             }
           }
@@ -1167,7 +1178,7 @@ export const IDL: SimpleSerum = {
             "type": {
               "array": [
                 "u128",
-                16
+                8
               ]
             }
           }
@@ -1194,6 +1205,17 @@ export const IDL: SimpleSerum = {
           {
             "name": "isBidBits",
             "type": "u8"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "array": [
+                {
+                  "defined": "TokensStruct"
+                },
+                8
+              ]
+            }
           },
           {
             "name": "orders",

@@ -9,7 +9,7 @@ use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
 
-declare_id!("MQhVTudr2JBV75jt8vcnKrLZRedpb9EpFUhePvAoVus");
+declare_id!("NRE3yo6zP2URLNThemzKyJ63WU49QqKGmF1ei62zsjH");
 
 #[program]
 pub mod simple_serum {
@@ -67,7 +67,7 @@ pub mod simple_serum {
         let bids = &mut ctx.accounts.bids;
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
-        let event_q = &mut ctx.accounts.event_q;
+        let event_q = &mut ctx.accounts.event_q.load_mut()?;
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -507,8 +507,9 @@ impl EventView {
     }
 }
 
-// #[repr(packed)]
-#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[repr(packed)]
+// #[derive(Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[zero_copy]
 pub struct Event {
     event_flags: u8,
     owner_slot: u8,
@@ -622,7 +623,8 @@ impl Event {
 }
 
 // #[repr(packed)]
-#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[zero_copy]
 pub struct EventQueueHeader {
     head: u64,
     count: u64,
@@ -652,12 +654,21 @@ impl EventQueueHeader {
     }
 }
 
-#[account]
-#[derive(Default)]
+#[account(zero_copy)]
+// #[derive(Default)]
 pub struct EventQueue {
     header: EventQueueHeader,
-    buf: [Event; 8], // TODO: Somehow it can only has 8 elements at most
+    buf: [Event; 1000], // TODO: Somehow it can only has 8 elements at most
+    //LOL just use zero-copy.
 }
+
+/*
+#[account(zero_copy)]
+pub struct EventQueueTwo {
+    //header: EventQueueHeader,
+    buf: [Event; 1000], // TODO: Somehow it can only has 8 elements at most
+    //LOL just use zero-copy.
+} */
 
 impl EventQueue {
     pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 8 * Event::MAX_SIZE;
@@ -679,7 +690,7 @@ impl EventQueue {
 
     #[inline]
     pub fn push_back(&mut self, value: Event) -> Result<()> {
-        require!(!self.full(), ErrorCode::QueueAlreadyFull);
+        //require!(!self.full(), ErrorCode::QueueAlreadyFull);
 
         let slot = ((self.header.head() + self.header.count()) as usize) % self.buf.len();
         self.buf[slot] = value;
@@ -1681,7 +1692,9 @@ pub struct InitializeMarket<'info> {
         seeds = [b"event-q".as_ref(), market.key().as_ref()],
         bump,
     )]
-    pub event_q: Box<Account<'info, EventQueue>>,
+    // #[account(zero)]
+    pub event_q: AccountLoader<'info, EventQueue>,
+    //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -1722,17 +1735,20 @@ pub struct OpenOrders {
 
     free_slot_bits: u8,
     is_bid_bits: u8,
-    orders: [u128; 16],
+    orders: [u128; 8],
 }
 
-pub struct TokensStruct {
+#[repr(packed)]
+#[zero_copy]
+//#[derive(Clone, Default, AnchorSerialize, AnchorDeserialize)]
+struct TokensStruct {
     tokenMint: Pubkey,
     totalBalance: u64,
     lockedBalance: u64,
 }
 
-#[account]
-#[derive(Default)]
+#[account(zero_copy)]
+//#[derive(Default)]
 pub struct OpenOrdersAbs {
     is_initialized: bool,
 
@@ -1751,7 +1767,11 @@ pub struct OpenOrdersAbs {
     free_slot_bits: u8,
     is_bid_bits: u8,
     // Four assets, balances stored at predefined slots
-    //tokens: [<TokensStuct>; 4],
+    //tokens: ,
+    //#[account(zero)]
+    tokens: [TokensStruct; 8],
+    //AccountLoader<'info, TokenStruct>,
+
     orders: [u128; 16],
 }
 
@@ -1952,8 +1972,12 @@ pub struct NewOrder<'info> {
 
     #[account(mut)]
     pub req_q: Box<Account<'info, RequestQueue>>,
-    #[account(mut)]
-    pub event_q: Box<Account<'info, EventQueue>>,
+    //#[account(mut)]
+    //pub event_q: Box<Account<'info, EventQueue>>,
+
+    //extend length of event_q using zero copy
+    #[account(zero)]
+    event_q: AccountLoader<'info, EventQueue>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
