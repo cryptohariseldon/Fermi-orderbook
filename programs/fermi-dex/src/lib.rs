@@ -12,7 +12,7 @@ use resp;
 declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 
 #[program]
-pub mod fermi_dex {
+pub mod fermi_dex_new {
     use super::*;
 
     pub fn initialize_market(
@@ -414,6 +414,7 @@ pub mod fermi_dex {
             })?;
         }
         msg!("matched amount {}", matched_amount_coin);
+        /*
         if matched_amount_coin > 0 {
                 // transfer from depositor
                 let transfer_ix = Transfer {
@@ -426,7 +427,7 @@ pub mod fermi_dex {
                 anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
                     _ => error!(ErrorCode::TransferFailed),
                 })?;
-            }
+            }*/
 
 
 
@@ -854,7 +855,7 @@ impl EventQueueHeader {
 #[repr(packed)]
 pub struct EventQueue {
     header: EventQueueHeader,
-    buf: [Event; 8], // TODO: Somehow it can only has 8 elements at most
+    buf: [Event; 100], // TODO: Somehow it can only has 8 elements at most
 }
 
 /*
@@ -1437,6 +1438,7 @@ impl<'a> OrderBook<'a> {
                     owner: best_offer.owner,
                     owner_slot: best_offer.owner_slot,
                 });
+                let idx = 9;
                 event_q.buf[idx as usize] = event_out;
 /*
                     .push_back(Event::new(EventView::Out {
@@ -1903,6 +1905,7 @@ pub struct InitializeMarket<'info> {
     )]
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(
+        //zero,
         init,
         payer = authority,
         space = 8 * 1024,
