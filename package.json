@@ -2,7 +2,7 @@
   "name": "Fermi-orderbook",
   "packageManager": "yarn@3.4.1",
   "dependencies": {
-    "@project-serum/anchor": "0.19.0",
+    "@project-serum/anchor": "0.25.0",
     "@solana/buffer-layout": "^4.0.1",
     "@solana/spl-token": "^0.2.0",
     "anchor": "^1.4.1",

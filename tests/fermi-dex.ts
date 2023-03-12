@@ -1,7 +1,7 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../target/types/fermi_dex';
+import { FermiDex } from '../target/types/fermi_dex';
 import idl from "../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 
@@ -508,7 +508,10 @@ describe('fermi-dex', () => {
       console.log(asks);
       const eventQ = await program.account.eventQueue.fetch(eventQPda);
       console.log(eventQ);
-      console.log(JSON.stringify(eventQ['buf'][3].finalised));//.toNumber())
+      console.log(eventQ['buf'][3].nativeQtyPaid);//.toNumber());
+
+      console.log(new anchor.BN(eventQ['buf'][3].nativeQtyPaid));//.toNumber());
+      //console.log(JSON.stringify(eventQ['buf'][3].finalised.toNumber()));
     };
   });
   });
