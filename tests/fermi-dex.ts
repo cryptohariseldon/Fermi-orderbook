@@ -508,6 +508,7 @@ describe('fermi-dex', () => {
       console.log(asks);
       const eventQ = await program.account.eventQueue.fetch(eventQPda);
       console.log(eventQ);
+      console.log(JSON.stringify(eventQ['buf'][3].finalised));//.toNumber())
     };
   });
   });

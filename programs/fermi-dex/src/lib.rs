@@ -12,7 +12,7 @@ use resp;
 declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 
 #[program]
-pub mod fermi_dex_new {
+pub mod fermi_dex {
     use super::*;
 
     pub fn initialize_market(
@@ -92,8 +92,8 @@ pub mod fermi_dex_new {
         // Allow only two events, with the same order-id.
         let mut order_id_general: u128 = 0;
         let mut first_event_done: bool = false;
-        for parsed_event in events {
 
+        for parsed_event in events {
                 if !first_event_done {
                     order_id_general = parsed_event.order_id;
                     first_event_done = true;
@@ -104,7 +104,7 @@ pub mod fermi_dex_new {
                 //EventView::Fill => {
                 //let mut side = parsedEventFlag::from_side(side);
                 //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
-                let mut sider = parsed_event.event_flags;
+                //let mut sider = parsed_event.event_flags;
                 //msg!("the side is {}", sider);
                 let side = Side::Bid;
                 msg!("orderid is {}", parsed_event.order_id);
@@ -120,7 +120,8 @@ pub mod fermi_dex_new {
                     msg!("the available funds is {}", available_funds);
                     msg!("the required funds are {}", qty_pc);
 
-                    let mut remaining_funds = available_funds - qty_pc;
+                    // let mut remaining_funds = available_funds - qty_pc;
+                    let remaining_funds = 2;
 
                     //require!(available_funds >= qty_pc, Error);
                     if remaining_funds > 1 {
@@ -129,12 +130,14 @@ pub mod fermi_dex_new {
                     //10);
                     open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
                     //open_orders_auth.lock_free_pc(qty_pc);
-                    open_orders_auth.native_pc_free -= qty_pc;
+                    // open_orders_auth.native_pc_free -= qty_pc;
+                    //open_orders_auth.native_coin_free -= native_qty_released;
+
 
                     msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
                     msg!("Newly locked PC for bidder {}", qty_pc);
-                    /*
-                    let maker_fill = Event::new(EventView::Finalise {
+                    let fin: u8 = 1;
+                    let taker_fill = Event::new(EventView::Finalise {
                         side: Side::Ask,
                         maker: true,
                         native_qty_paid:  parsed_event.native_qty_released,
@@ -142,11 +145,18 @@ pub mod fermi_dex_new {
                         order_id: parsed_event.order_id,
                         owner: parsed_event.owner,
                         owner_slot: parsed_event.owner_slot,
+                        finalised: fin,
                     });
-                    event_q
-                        .push_back(maker_fill)
-                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
-                */}
+                    //let idx = event_q.as_mut().unwrap().head + 1;
+                    let idx = event1_slot;
+                    event_q.as_mut().unwrap().buf[idx as usize] = taker_fill;
+
+
+                    //let lenevents = event_q.len();
+                    //let idx = lenevents +1;
+
+
+                }
                     // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
 
                 },
@@ -159,17 +169,33 @@ pub mod fermi_dex_new {
                     //revert if asker JIT fails.
                     //msg!("the available funds is {}", available_funds);
                     //let mut remaining_funds = available_funds - qty_coin;
-                    let mut remaining_funds = available_funds - qty_coin;
+                    // let mut remaining_funds = available_funds - qty_coin;
+                    let remaining_funds = 2;
                     if remaining_funds > 1 {
                     // edit balances, assuming counterparty tx. goes through
                     open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
                     //10);
                     open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
                     //open_orders_auth.lock_free_pc(qty_pc);
-                    open_orders_auth.native_coin_free -= qty_coin;
+                    // open_orders_auth.native_coin_free -= qty_coin;
+                    let fin: u8 = 1;
 
                     msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
                     msg!("Newly locked coins for asker {}", qty_coin);
+                    let taker_fill = Event::new(EventView::Finalise {
+                        side: Side::Ask,
+                        maker: true,
+                        native_qty_paid:  parsed_event.native_qty_paid,
+                        native_qty_received: parsed_event.native_qty_released,
+                        order_id: parsed_event.order_id,
+                        owner: parsed_event.owner,
+                        owner_slot: parsed_event.owner_slot,
+                        finalised: fin,
+                    });
+                    //let idx = event_q.as_mut().unwrap().head + 1;
+                    let idx = event2_slot;
+                    event_q.as_mut().unwrap().buf[idx as usize] = taker_fill;
+                    // event_q.as_mut().unwrap().head +=1;
                 }
 
 
@@ -651,6 +677,7 @@ pub enum EventView {
         order_id: u128,
         owner: Pubkey,
         owner_slot: u8,
+        finalised: u8,
     },
     Out {
         side: Side,
@@ -660,6 +687,7 @@ pub enum EventView {
         order_id: u128,
         owner: Pubkey,
         owner_slot: u8,
+        finalised: u8,
     },
     Finalise {
         side: Side,
@@ -669,6 +697,7 @@ pub enum EventView {
         order_id: u128,
         owner: Pubkey,
         owner_slot: u8,
+        finalised: u8,
     },
 }
 
@@ -691,6 +720,8 @@ pub struct Event {
 
     order_id: u128,
     owner: Pubkey,
+    finalised: u8,
+
 }
 
 impl Event {
@@ -707,11 +738,13 @@ impl Event {
                 order_id,
                 owner,
                 owner_slot,
+                finalised,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
                 if maker {
                     flags |= EventFlag::Maker;
                 }
+                let mut finalised: u8 = 0;
                 Event {
                     event_flags: flags.bits(),
                     owner_slot,
@@ -719,6 +752,7 @@ impl Event {
                     native_qty_paid,
                     order_id,
                     owner,
+                    finalised,
                 }
             },
 
@@ -730,18 +764,22 @@ impl Event {
                 order_id,
                 owner,
                 owner_slot,
+                finalised,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Out;
                 if release_funds {
                     flags |= EventFlag::ReleaseFunds;
                 }
+                let mut finalised: u8 = 0;
                 Event {
                     event_flags: flags.bits(),
                     owner_slot,
+                    //finalised: finalised,
                     native_qty_released: native_qty_unlocked,
                     native_qty_paid: native_qty_still_locked,
                     order_id,
                     owner,
+                    finalised,
                 }
 
             },
@@ -754,18 +792,22 @@ impl Event {
                 order_id,
                 owner,
                 owner_slot,
+                finalised,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
                 if maker {
                     flags |= EventFlag::Maker;
                 }
+                //let mut finalsed= true;
                 Event {
                     event_flags: flags.bits(),
                     owner_slot,
+                    //finalised: finalised,
                     native_qty_released: native_qty_received,
                     native_qty_paid,
                     order_id,
                     owner,
+                    finalised,
                 }
         }
     }
@@ -1420,6 +1462,7 @@ impl<'a> OrderBook<'a> {
                 order_id: best_offer.order_id,
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
+                finalised: 0,
             });
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
@@ -1445,6 +1488,7 @@ impl<'a> OrderBook<'a> {
                     order_id: best_offer_id,
                     owner: best_offer.owner,
                     owner_slot: best_offer.owner_slot,
+                    finalised: 0,
                 });
                 let idx = event_q.head + 1;
                 msg!("event id is {}", idx);
@@ -1497,6 +1541,7 @@ impl<'a> OrderBook<'a> {
                     order_id,
                     owner,
                     owner_slot,
+                    finalised: 0,
                 });
                 let idx = event_q.head + 1;
                 msg!("event id is {}", idx);
@@ -1544,6 +1589,7 @@ impl<'a> OrderBook<'a> {
                 order_id,
                 owner,
                 owner_slot,
+                finalised: 0,
             })
         };
         let idx = event_q.head + 1;
@@ -1576,6 +1622,7 @@ impl<'a> OrderBook<'a> {
                         order_id: order.order_id,
                         owner: order.owner,
                         owner_slot: order.owner_slot,
+                        finalised: 0,
                     });
                     let idx = event_q.head + 1;
                     msg!("event id is {}", idx);
@@ -1679,6 +1726,7 @@ impl<'a> OrderBook<'a> {
                 order_id: best_bid.order_id,
                 owner: best_bid.owner,
                 owner_slot: best_bid.owner_slot,
+                finalised: 0,
             });
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
@@ -1702,6 +1750,7 @@ impl<'a> OrderBook<'a> {
                     order_id: best_bid_id,
                     owner: best_bid.owner,
                     owner_slot: best_bid.owner_slot,
+                    finalised: 0,
                 });
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = out;
@@ -1742,6 +1791,7 @@ impl<'a> OrderBook<'a> {
                     order_id,
                     owner,
                     owner_slot,
+                    finalised: 0,
                 });
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = taker_fill;
@@ -1782,6 +1832,7 @@ impl<'a> OrderBook<'a> {
                         order_id: order.order_id,
                         owner: order.owner,
                         owner_slot: order.owner_slot,
+                        finalised: 0,
                     });
                     let idx = event_q.head + 1;
                     msg!("idx is {}", idx);
@@ -1809,6 +1860,7 @@ impl<'a> OrderBook<'a> {
                 order_id,
                 owner,
                 owner_slot,
+                finalised: 0,
             });
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = out;
