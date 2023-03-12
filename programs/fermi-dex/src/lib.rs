@@ -9,7 +9,7 @@ use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
 
-declare_id!("9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT");
+declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 
 #[program]
 pub mod fermi_dex {
@@ -67,7 +67,7 @@ pub mod fermi_dex {
         let bids = &mut ctx.accounts.bids;
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
-        let event_q = &mut ctx.accounts.event_q;
+        let event_q = &mut ctx.accounts.event_q.load_mut();
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -76,14 +76,14 @@ pub mod fermi_dex {
         // Verification steps
         // consume eventQ, check event_slot for matching order_id
 
-        let event1: Event = event_q.buf[usize::from(event1_slot)];
-        let event2: Event = event_q.buf[usize::from(event2_slot)];
+        let event1: Event =  event_q.as_mut().unwrap().buf[usize::from(event1_slot)];
+        let event2: Event =  event_q.as_mut().unwrap().buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
         require!(event1.owner == open_orders_auth.key(), Error);
         require!(event2.owner == open_orders_cpty.key(), Error);
 
-        let events: Vec<Event> = vec![event1, event2];
+        let events = [event1, event2];
         // check if owner = authority or counterparty_authority
         // check side of event
         // Execute event fill
@@ -206,7 +206,7 @@ pub mod fermi_dex {
         let bids = &mut ctx.accounts.bids;
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
-        let event_q = &mut ctx.accounts.event_q;
+        let event_q = &mut ctx.accounts.event_q.load_mut();
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -276,6 +276,9 @@ pub mod fermi_dex {
         }
 
         let order_id = req_q.gen_order_id(limit_price, side);
+        if open_orders.free_slot_bits == 0 {
+            open_orders.remove_order(0);
+        }
         let owner_slot = open_orders.add_order(order_id, side)?;
         let request = RequestView::NewOrder {
             side,
@@ -299,7 +302,7 @@ pub mod fermi_dex {
         let mut order_book = OrderBook { bids, asks, market };
 
         // matching occurs at this stage
-        order_book.process_request(&request, event_q, &mut proceeds)?;
+        order_book.process_request(&request, &mut event_q.as_mut().unwrap(), &mut proceeds)?;
         //msg!(event_q[1].side);
         //let jit_data = vec![];
 
@@ -845,19 +848,24 @@ impl EventQueueHeader {
     }
 }
 
-#[account]
-#[derive(Default)]
+//#[account]
+//#[derive(Default)]
+#[account(zero_copy)]
+#[repr(packed)]
 pub struct EventQueue {
     header: EventQueueHeader,
     buf: [Event; 8], // TODO: Somehow it can only has 8 elements at most
 }
 
+/*
 impl EventQueue {
     pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 8 * Event::MAX_SIZE;
 
     #[inline]
     pub fn len(&self) -> u64 {
-        self.header.count()
+        let count_ptr = &self.header.count() as *const u64;
+        let count = unsafe { std::ptr::read_unaligned(count_ptr) };
+                return count;
     }
 
     #[inline]
@@ -872,15 +880,20 @@ impl EventQueue {
 
     #[inline]
     pub fn push_back(&mut self, value: Event) -> Result<()> {
-        require!(!self.full(), ErrorCode::QueueAlreadyFull);
+        if self.full() {
+            let _ = self.pop_front();
+        }
+
+        //let slot = Some(peek_front_mut());
+        let _ = self.pop_front();
 
         let slot = ((self.header.head() + self.header.count()) as usize) % self.buf.len();
         self.buf[slot] = value;
 
         let count = self.header.count();
-        self.header.set_count(count + 1);
+        //self.header.set_count(count + 1);
 
-        self.header.incr_event_id();
+        //self.header.incr_event_id();
 
         Ok(())
     }
@@ -933,12 +946,14 @@ impl EventQueue {
         }
     }
 }
+*/
 
 struct EventQueueIterator<'a> {
     queue: &'a EventQueue,
     index: u64,
 }
 
+/*
 impl<'a> Iterator for EventQueueIterator<'a> {
     type Item = &'a Event;
 
@@ -952,7 +967,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
             Some(item)
         }
     }
-}
+}*/
 
 // User owner value to track counterparty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
@@ -1398,9 +1413,12 @@ impl<'a> OrderBook<'a> {
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
             });
-            event_q
-                .push_back(maker_fill)
-                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+            //let lenevents = event_q.len();
+            //let idx = lenevents +1;
+            let idx = 9;
+            event_q.buf[idx as usize] = maker_fill;
+                //.push_back(maker_fill)
+                //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
             best_offer.qty -= trade_qty;
             coin_qty_remaining -= trade_qty;
@@ -1410,7 +1428,17 @@ impl<'a> OrderBook<'a> {
             if best_offer.qty == 0 {
                 let best_offer_id = best_offer.order_id;
 
-                event_q
+                let event_out = Event::new(EventView::Out {
+                    side: Side::Ask,
+                    release_funds: true,
+                    native_qty_unlocked: 0,
+                    native_qty_still_locked: 0,
+                    order_id: best_offer_id,
+                    owner: best_offer.owner,
+                    owner_slot: best_offer.owner_slot,
+                });
+                event_q.buf[idx as usize] = event_out;
+/*
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
                         release_funds: true,
@@ -1420,7 +1448,7 @@ impl<'a> OrderBook<'a> {
                         owner: best_offer.owner,
                         owner_slot: best_offer.owner_slot,
                     }))
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
                 self.asks.delete(best_offer_id)?;
             }
 
@@ -1458,9 +1486,12 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                 });
+                let idx = 9;
+                event_q.buf[idx as usize] = taker_fill;
+/*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| ErrorCode::QueueAlreadyFull)?;
+                    .map_err(|_| ErrorCode::QueueAlreadyFull)?;*/
             }
         }
 
@@ -1500,9 +1531,12 @@ impl<'a> OrderBook<'a> {
                 owner_slot,
             })
         };
+        let idx = 9;
+        event_q.buf[idx as usize] = out;
+/*
         event_q
             .push_back(out)
-            .map_err(|_| ErrorCode::QueueAlreadyFull)?;
+            .map_err(|_| ErrorCode::QueueAlreadyFull)?;*/
 
             //post order to OB
         if pc_qty_to_keep_locked > 0 {
@@ -1526,9 +1560,12 @@ impl<'a> OrderBook<'a> {
                         owner: order.owner,
                         owner_slot: order.owner_slot,
                     });
+                    let idx =9;
+                    event_q.buf[idx as usize] = out;
+/*
                     event_q
                         .push_back(out)
-                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?; */
                     self.bids.insert(Order {
                         order_id,
                         qty: coin_qty_to_post,
@@ -1623,9 +1660,12 @@ impl<'a> OrderBook<'a> {
                 owner: best_bid.owner,
                 owner_slot: best_bid.owner_slot,
             });
+            let idx = 9;
+            event_q.buf[idx as usize] = maker_fill;
+/*
             event_q
                 .push_back(maker_fill)
-                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
 
             best_bid.qty -= trade_qty;
             unfilled_qty -= trade_qty;
@@ -1633,7 +1673,18 @@ impl<'a> OrderBook<'a> {
 
             if best_bid.qty == 0 {
                 let best_bid_id = best_bid.order_id;
-                event_q
+                let out = Event::new(EventView::Out {
+                    side: Side::Bid,
+                    release_funds: true,
+                    native_qty_unlocked: 0,
+                    native_qty_still_locked: 0,
+                    order_id: best_bid_id,
+                    owner: best_bid.owner,
+                    owner_slot: best_bid.owner_slot,
+                });
+                let idx = 9;
+                event_q.buf[idx as usize] = out;
+                /*event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Bid,
                         release_funds: true,
@@ -1643,7 +1694,7 @@ impl<'a> OrderBook<'a> {
                         owner: best_bid.owner,
                         owner_slot: best_bid.owner_slot,
                     }))
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
                 self.bids.delete(best_bid_id)?;
             }
 
@@ -1670,9 +1721,12 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                 });
+                let idx = 9;
+                event_q.buf[idx as usize] = taker_fill;
+/*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
             }
         }
 
@@ -1706,9 +1760,12 @@ impl<'a> OrderBook<'a> {
                         owner: order.owner,
                         owner_slot: order.owner_slot,
                     });
+                    let idx = 9;
+                    event_q.buf[idx as usize] = out;
+/*
                     event_q
                         .push_back(out)
-                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                        .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
                     self.asks.insert(Order {
                         order_id,
                         qty: unfilled_qty,
@@ -1728,9 +1785,12 @@ impl<'a> OrderBook<'a> {
                 owner,
                 owner_slot,
             });
+            let idx = 9;
+            event_q.buf[idx as usize] = out;
+/*
             event_q
                 .push_back(out)
-                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
         }
 
         Ok(None)
@@ -1845,11 +1905,13 @@ pub struct InitializeMarket<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + EventQueue::MAX_SIZE,
+        space = 8 * 1024,
         seeds = [b"event-q".as_ref(), market.key().as_ref()],
         bump,
     )]
-    pub event_q: Box<Account<'info, EventQueue>>,
+    pub event_q: AccountLoader<'info, EventQueue>,
+
+    //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -2084,7 +2146,9 @@ pub struct NewMatch<'info>{
     #[account(mut)]
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(mut)]
-    pub event_q: Box<Account<'info, EventQueue>>,
+    pub event_q: AccountLoader<'info, EventQueue>,
+
+    //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -2152,7 +2216,8 @@ pub struct NewOrder<'info> {
     #[account(mut)]
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(mut)]
-    pub event_q: Box<Account<'info, EventQueue>>,
+    //pub event_q: Box<Account<'info, EventQueue>>,
+    pub event_q: AccountLoader<'info, EventQueue>,
 
     #[account(mut)]
     pub authority: Signer<'info>,

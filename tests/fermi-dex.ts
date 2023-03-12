@@ -2,7 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
-import idl from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/idl/fermi_dex.json";
+import idl from "../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 
 
@@ -109,7 +109,7 @@ describe('fermi-dex', () => {
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  let programId = "9jZqvXEbhYoWmCPokoLxxWgk5uu3N6MsgcULZz9dFrbT";
+  let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
