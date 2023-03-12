@@ -80,8 +80,8 @@ pub mod fermi_dex_new {
         let event2: Event =  event_q.as_mut().unwrap().buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
-        require!(event1.owner == open_orders_auth.key(), Error);
-        require!(event2.owner == open_orders_cpty.key(), Error);
+        //require!(event1.owner == open_orders_auth.key(), Error);
+        //require!(event2.owner == open_orders_cpty.key(), Error);
 
         let events = [event1, event2];
         // check if owner = authority or counterparty_authority
@@ -99,7 +99,7 @@ pub mod fermi_dex_new {
                     first_event_done = true;
                 }
                 else {
-                    require!(parsed_event.order_id == order_id_general, Error);
+                    //require!(parsed_event.order_id == order_id_general, Error);
                 }
                 //EventView::Fill => {
                 //let mut side = parsedEventFlag::from_side(side);
@@ -855,16 +855,22 @@ impl EventQueueHeader {
 #[repr(packed)]
 pub struct EventQueue {
     header: EventQueueHeader,
+    head: u64,
     buf: [Event; 100], // TODO: Somehow it can only has 8 elements at most
 }
 
-/*
+
 impl EventQueue {
     pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 8 * Event::MAX_SIZE;
 
     #[inline]
     pub fn len(&self) -> u64 {
-        let count_ptr = &self.header.count() as *const u64;
+        return self.head;
+    }
+        /*
+    #[inline]
+    pub fn len(&self) -> u64 {
+        let count_ptr = &self.header.clone().count() as *const u64;
         let count = unsafe { std::ptr::read_unaligned(count_ptr) };
                 return count;
     }
@@ -930,6 +936,7 @@ impl EventQueue {
         Ok(value)
     }
 
+
     // TODO:
     // #[inline]
     // pub fn revert_pushes(&mut self, desired_len: u64) -> DexResult<()> {
@@ -945,9 +952,9 @@ impl EventQueue {
             queue: self,
             index: 0,
         }
-    }
+    }*/
 }
-*/
+
 
 struct EventQueueIterator<'a> {
     queue: &'a EventQueue,
@@ -1416,8 +1423,9 @@ impl<'a> OrderBook<'a> {
             });
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
-            let idx = 9;
+            let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
+            event_q.head +=1;
                 //.push_back(maker_fill)
                 //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
@@ -1438,8 +1446,10 @@ impl<'a> OrderBook<'a> {
                     owner: best_offer.owner,
                     owner_slot: best_offer.owner_slot,
                 });
-                let idx = 9;
+                let idx = event_q.head + 1;
+                msg!("event id is {}", idx);
                 event_q.buf[idx as usize] = event_out;
+                event_q.head +=1;
 /*
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1488,8 +1498,11 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                 });
-                let idx = 9;
+                let idx = event_q.head + 1;
+                msg!("event id is {}", idx);
+
                 event_q.buf[idx as usize] = taker_fill;
+                event_q.head +=1;
 /*
                 event_q
                     .push_back(taker_fill)
@@ -1533,8 +1546,10 @@ impl<'a> OrderBook<'a> {
                 owner_slot,
             })
         };
-        let idx = 9;
+        let idx = event_q.head + 1;
+        msg!("event id is {}", idx);
         event_q.buf[idx as usize] = out;
+        event_q.head +=1;
 /*
         event_q
             .push_back(out)
@@ -1562,8 +1577,11 @@ impl<'a> OrderBook<'a> {
                         owner: order.owner,
                         owner_slot: order.owner_slot,
                     });
-                    let idx =9;
+                    let idx = event_q.head + 1;
+                    msg!("event id is {}", idx);
+
                     event_q.buf[idx as usize] = out;
+                    event_q.head +=1;
 /*
                     event_q
                         .push_back(out)
@@ -1662,8 +1680,9 @@ impl<'a> OrderBook<'a> {
                 owner: best_bid.owner,
                 owner_slot: best_bid.owner_slot,
             });
-            let idx = 9;
+            let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
+            event_q.head +=1;
 /*
             event_q
                 .push_back(maker_fill)
@@ -1684,8 +1703,9 @@ impl<'a> OrderBook<'a> {
                     owner: best_bid.owner,
                     owner_slot: best_bid.owner_slot,
                 });
-                let idx = 9;
+                let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = out;
+                event_q.head +=1;
                 /*event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Bid,
@@ -1723,8 +1743,9 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                 });
-                let idx = 9;
+                let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = taker_fill;
+                event_q.head +=1;
 /*
                 event_q
                     .push_back(taker_fill)
@@ -1762,8 +1783,10 @@ impl<'a> OrderBook<'a> {
                         owner: order.owner,
                         owner_slot: order.owner_slot,
                     });
-                    let idx = 9;
+                    let idx = event_q.head + 1;
+                    msg!("idx is {}", idx);
                     event_q.buf[idx as usize] = out;
+                    event_q.head +=1;
 /*
                     event_q
                         .push_back(out)
@@ -1787,8 +1810,9 @@ impl<'a> OrderBook<'a> {
                 owner,
                 owner_slot,
             });
-            let idx = 9;
+            let idx = event_q.head + 1;
             event_q.buf[idx as usize] = out;
+            event_q.head +=1;
 /*
             event_q
                 .push_back(out)
