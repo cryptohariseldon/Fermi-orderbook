@@ -9,7 +9,9 @@ use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
 
-declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
+//declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
+//local
+declare_id!("GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ");
 
 #[program]
 pub mod fermi_dex {
@@ -67,7 +69,7 @@ pub mod fermi_dex {
         let bids = &mut ctx.accounts.bids;
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
-        let event_q = &mut ctx.accounts.event_q.load_mut();
+        let event_q = &mut ctx.accounts.event_q.load_mut()?;
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -76,8 +78,8 @@ pub mod fermi_dex {
         // Verification steps
         // consume eventQ, check event_slot for matching order_id
 
-        let event1: Event =  event_q.as_mut().unwrap().buf[usize::from(event1_slot)];
-        let event2: Event =  event_q.as_mut().unwrap().buf[usize::from(event2_slot)];
+        let event1: Event =  event_q.buf[usize::from(event1_slot)];
+        let event2: Event =  event_q.buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
         //require!(event1.owner == open_orders_auth.key(), Error);
@@ -95,7 +97,7 @@ pub mod fermi_dex {
 
         for parsed_event in events {
                 if !first_event_done {
-                    order_id_general = parsed_event.order_id;
+                    order_id_general = parsed_event.clone().order_id;
                     first_event_done = true;
                 }
                 else {
@@ -149,7 +151,7 @@ pub mod fermi_dex {
                     });
                     //let idx = event_q.as_mut().unwrap().head + 1;
                     let idx = event1_slot;
-                    event_q.as_mut().unwrap().buf[idx as usize] = taker_fill;
+                    event_q.buf[idx as usize] = taker_fill;
 
 
                     //let lenevents = event_q.len();
@@ -194,7 +196,7 @@ pub mod fermi_dex {
                     });
                     //let idx = event_q.as_mut().unwrap().head + 1;
                     let idx = event2_slot;
-                    event_q.as_mut().unwrap().buf[idx as usize] = taker_fill;
+                    event_q.buf[idx as usize] = taker_fill;
                     // event_q.as_mut().unwrap().head +=1;
                 }
 
@@ -709,8 +711,9 @@ impl EventView {
     }
 }
 
-// #[repr(packed)]
-#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+//#[repr(packed)]
+//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[zero_copy]
 pub struct Event {
     event_flags: u8,
     owner_slot: u8,
@@ -1603,6 +1606,7 @@ impl<'a> OrderBook<'a> {
 
             //post order to OB
         if pc_qty_to_keep_locked > 0 {
+            msg!("bid inserted");
             let insert_result = self.bids.insert(Order {
                 order_id,
                 qty: coin_qty_to_post,

@@ -109,7 +109,8 @@ describe('fermi-dex', () => {
   //const programId = getDevPgmId();
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
-  let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
+  //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
+  let programId = "GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ";
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -332,9 +333,9 @@ describe('fermi-dex', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(99),
-            new anchor.BN(1),
-            new anchor.BN(99).mul(new anchor.BN(1000000)),
+            new anchor.BN(95),
+            new anchor.BN(4),
+            new anchor.BN(95).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -374,7 +375,7 @@ describe('fermi-dex', () => {
           .newOrder(
             { ask: {} },
             new anchor.BN(100),
-            new anchor.BN(1),
+            new anchor.BN(4),
             new anchor.BN(100),
             { limit: {} },
           )
@@ -414,7 +415,7 @@ describe('fermi-dex', () => {
           .newOrder(
             { bid: {} },
             new anchor.BN(101),
-            new anchor.BN(1),
+            new anchor.BN(4),
             new anchor.BN(101).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
@@ -504,8 +505,10 @@ describe('fermi-dex', () => {
       console.log(openOrders);
       const bids = await program.account.orders.fetch(bidsPda);
       console.log(bids);
+      console.log(bidsPda);
       const asks = await program.account.orders.fetch(asksPda);
       console.log(asks);
+      console.log(asksPda);
       const eventQ = await program.account.eventQueue.fetch(eventQPda);
       console.log(eventQ);
       console.log(JSON.stringify(eventQ['buf'][3].finalised));//.toNumber())
