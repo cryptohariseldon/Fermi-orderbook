@@ -1,7 +1,7 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../target/types/fermi_dex';
+import { FermiDex } from '../target/types/fermi_dex';
 import idl from "../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 
@@ -136,6 +136,9 @@ describe('fermi-dex', () => {
   let openOrdersPda: anchor.web3.PublicKey;
   let openOrdersPdaBump: number;
 
+  let openOrdersAbsPda: anchor.web3.PublicKey;
+  let openOrdersAbsPdaBump: number;
+
   const authority = anchor.web3.Keypair.generate();
 
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
@@ -190,6 +193,15 @@ describe('fermi-dex', () => {
         ],
         program.programId,
       );
+
+      [openOrdersAbsPda, openOrdersAbsPdaBump] =
+        await anchor.web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from('open-orders-abs', 'utf-8'),
+            authority.publicKey.toBuffer(),
+          ],
+          program.programId,
+        );
 
     coinVault = await spl.getAssociatedTokenAddress(
       coinMint.publicKey,
@@ -340,6 +352,7 @@ describe('fermi-dex', () => {
           )
           .accounts({
             openOrders: openOrdersPda,
+            openOrdersAbstract: openOrdersAbsPda,
             market: marketPda,
             coinVault,
             pcVault,
@@ -381,6 +394,7 @@ describe('fermi-dex', () => {
           )
           .accounts({
             openOrders: openOrdersPda,
+            openOrdersAbstract: openOrdersAbsPda,
             market: marketPda,
             coinVault,
             pcVault,
@@ -421,6 +435,7 @@ describe('fermi-dex', () => {
           )
           .accounts({
             openOrders: openOrdersPda,
+            openOrdersAbstract: openOrdersAbsPda,
             market: marketPda,
             coinVault,
             pcVault,
@@ -483,6 +498,7 @@ describe('fermi-dex', () => {
         .accounts({
           openOrdersOwner: openOrdersPda,
           openOrdersCounterparty: openOrdersPda,
+          openOrdersAbstract: openOrdersAbsPda,
           market: marketPda,
           coinVault,
           pcVault,
@@ -511,7 +527,7 @@ describe('fermi-dex', () => {
       console.log(asksPda);
       const eventQ = await program.account.eventQueue.fetch(eventQPda);
       console.log(eventQ);
-      console.log(JSON.stringify(eventQ['buf'][3].finalised));//.toNumber())
+      console.log(JSON.stringify(eventQ.buf[3].finalised));//.toNumber())
     };
   });
   });

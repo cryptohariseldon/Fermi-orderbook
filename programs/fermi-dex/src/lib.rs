@@ -36,6 +36,10 @@ pub mod fermi_dex {
         market.req_q = ctx.accounts.req_q.key();
         market.event_q = ctx.accounts.event_q.key();
         market.authority = ctx.accounts.authority.key();
+        //let foo = &mut ctx.accounts.event_q.load_init();
+        //foo.authority = *ctx.accounts.authority.key;
+
+        //msg!("data {}", data);
 
         Ok(())
     }
@@ -62,6 +66,10 @@ pub mod fermi_dex {
         let open_orders_auth = &mut ctx.accounts.open_orders_owner;
         let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
 
+        let open_orders_abs_auth = &mut ctx.accounts.open_orders_abstract_owner;
+        let open_orders_abs_cpty = &mut ctx.accounts.open_orders_abstract_counterparty;
+
+
         let market =  &ctx.accounts.market;
         let coin_vault = &ctx.accounts.coin_vault;
         let pc_vault = &ctx.accounts.pc_vault;
@@ -69,7 +77,9 @@ pub mod fermi_dex {
         let bids = &mut ctx.accounts.bids;
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
-        let event_q = &mut ctx.accounts.event_q.load_mut()?;
+        //let event_q = &mut ctx.accounts.event_q.load_mut()?;
+        let event_q = &mut ctx.accounts.event_q.load_init()?;
+
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -117,7 +127,7 @@ pub mod fermi_dex {
                     //qty to fill
                     let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
                     //check openorders balance
-                    let mut available_funds = open_orders_auth.native_pc_free * 10;
+                    let mut available_funds = open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty * 10;
                     //revert if Bidder JIT fails.
                     msg!("the available funds is {}", available_funds);
                     msg!("the required funds are {}", qty_pc);
@@ -128,12 +138,16 @@ pub mod fermi_dex {
                     //require!(available_funds >= qty_pc, Error);
                     if remaining_funds > 1 {
                     // edit balances, assuming counterparty tx. goes through
-                    open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                    //open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+
+                    open_orders_abs_auth.tokens[usize::from(token_coin_slot)].qty += open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty;
+
                     //10);
-                    open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                    open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty = open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty * 10;
                     //open_orders_auth.lock_free_pc(qty_pc);
-                    // open_orders_auth.native_pc_free -= qty_pc;
+                    // open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty -= qty_pc;
                     //open_orders_auth.native_coin_free -= native_qty_released;
+                    open_orders_abs_auth.tokens[usize::from(token_coin_slot)].qty -= native_qty_released;
 
 
                     msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
@@ -150,8 +164,18 @@ pub mod fermi_dex {
                         finalised: fin,
                     });
                     //let idx = event_q.as_mut().unwrap().head + 1;
+
                     let idx = event1_slot;
                     event_q.buf[idx as usize] = taker_fill;
+                    /*
+                    msg!("event.side: {}", "Ask");
+                    msg!("event.maker: {}", "true");
+                    msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
+                    msg!("event.native_qty_received:{}", qty_pc);
+                    msg!("event.order_id:{}", parsed_event.order_id));
+                    msg!("event.owner:{}", parsed_event.owner));*/
+
+
 
 
                     //let lenevents = event_q.len();
@@ -159,7 +183,7 @@ pub mod fermi_dex {
 
 
                 }
-                    // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
+                    // open_orders_abs_auth.tokens[usize::from(token_pc_slot)].qty += parsed_event.native_qty_released;
 
                 },
                     Side::Ask => {
@@ -225,8 +249,11 @@ pub mod fermi_dex {
         max_coin_qty: u64,
         max_native_pc_qty: u64,
         order_type: OrderType,
+        token_pc_slot: u64,
+        token_coin_slot: u64,
     ) -> Result<()> {
         let open_orders = &mut ctx.accounts.open_orders;
+        let open_orders_abs = &mut ctx.accounts.open_orders_abstract;
         let market = &mut ctx.accounts.market;
         let coin_vault = &ctx.accounts.coin_vault;
         let pc_vault = &ctx.accounts.pc_vault;
@@ -235,6 +262,8 @@ pub mod fermi_dex {
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
         let event_q = &mut ctx.accounts.event_q.load_mut();
+        //let event_q = &mut ctx.accounts.event_q.load_init()?;
+
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -253,6 +282,17 @@ pub mod fermi_dex {
                 ErrorCode::WrongAuthority
             );
         }
+
+        if !open_orders_abs.is_initialized {
+            open_orders_abs.init(authority.key())?;
+            open_orders_abs.tokens[1].mint = pc_mint.key();
+            open_orders_abs.tokens[2].mint = coin_mint.key();
+        } else {
+            require!(
+                open_orders_abs.authority.key() == authority.key(),
+                ErrorCode::WrongAuthority
+            );
+        }
         // let nonce = market.vault_signer_nonce;
         // let market_pubkey = market.pubkey();
         //let  market_seeds:&[&[u8]] = gen_vault_signer_seeds([b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()]);
@@ -267,7 +307,7 @@ pub mod fermi_dex {
             Side::Bid => {
                 let lock_qty_native = max_native_pc_qty;
                 native_pc_qty_locked = Some(lock_qty_native);
-                let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
+                let free_qty_to_lock = lock_qty_native.min(open_orders_abs.tokens[usize::from(token_pc_slot)].qty);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
@@ -276,7 +316,8 @@ pub mod fermi_dex {
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
-                open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                //open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                open_orders_abs.tokens[usize::from(token_pc_slot)].qty += deposit_amount;
                 market.pc_deposits_total = market
                     .pc_deposits_total
                     .checked_add(deposit_amount)
@@ -287,7 +328,7 @@ pub mod fermi_dex {
                 let lock_qty_native = max_coin_qty
                     .checked_mul(market.coin_lot_size)
                     .ok_or(error!(ErrorCode::InsufficientFunds))?;
-                let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
+                let free_qty_to_lock = lock_qty_native.min(open_orders_abs.tokens[usize::from(token_coin_slot)].qty);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
@@ -295,7 +336,8 @@ pub mod fermi_dex {
                 counterparty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
-                open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
+                open_orders_abs.tokens[usize::from(token_coin_slot)].qty += deposit_amount;
+                //open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
                 market.coin_deposits_total = market
                     .coin_deposits_total
                     .checked_add(deposit_amount)
@@ -603,6 +645,7 @@ pub struct JitStruct {
         owner: Pubkey,
         owner_slot: u8,
     }
+
 // #[repr(packed)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct RequestQueueHeader {
@@ -897,7 +940,7 @@ impl EventQueueHeader {
 //#[account]
 //#[derive(Default)]
 #[account(zero_copy)]
-#[repr(packed)]
+//#[repr(packed)]
 pub struct EventQueue {
     header: EventQueueHeader,
     head: u64,
@@ -1985,8 +2028,9 @@ pub struct InitializeMarket<'info> {
     )]
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(
-        //zero,
+        //zero
         init,
+        //mut,
         payer = authority,
         space = 8 * 1024,
         seeds = [b"event-q".as_ref(), market.key().as_ref()],
@@ -2038,11 +2082,40 @@ pub struct OpenOrders {
     orders: [u128; 8],
 }
 
+#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+pub struct TokenStruct {
+    mint: Pubkey,
+    qty: u64,
+}
+
+#[account]
+#[derive(Default)]
+pub struct OpenOrdersAbs {
+    is_initialized: bool,
+    authority: Pubkey,
+    tokens: [TokenStruct; 4],
+    free_slot_bits: u8,
+}
+
+impl OpenOrdersAbs {
+    //pub const MAX_SIZE: usize = 1 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8 * 16;
+
+    fn init(&mut self, authority: Pubkey) -> Result<()> {
+        //require!(!self.is_initialized, ErrorCode::AlreadyInitialized);
+
+        self.is_initialized = true;
+        self.authority = authority;
+        self.free_slot_bits = std::u8::MAX;
+
+        Ok(())
+    }
+}
+
 impl OpenOrders {
     pub const MAX_SIZE: usize = 1 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8 * 16;
 
     fn init(&mut self, market: Pubkey, authority: Pubkey) -> Result<()> {
-        require!(!self.is_initialized, ErrorCode::AlreadyInitialized);
+        //require!(!self.is_initialized, ErrorCode::AlreadyInitialized);
 
         self.is_initialized = true;
         self.market = market;
@@ -2194,6 +2267,12 @@ pub struct NewMatch<'info>{
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
     #[account(
+        seeds = [b"open-orders-abs".as_ref(), authority.key().as_ref()],
+        bump,
+    )]
+    pub open_orders_owner_abstract: Box<Account<'info, OpenOrdersAbs>>,
+
+    #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
     )]
@@ -2261,6 +2340,15 @@ pub struct NewOrder<'info> {
         bump,
     )]
     pub open_orders: Box<Account<'info, OpenOrders>>,
+
+    #[account(
+        init_if_needed,
+        space = 8 + OpenOrders::MAX_SIZE,
+        payer = authority,
+        seeds = [b"open-orders-abs".as_ref(), authority.key().as_ref()],
+        bump,
+    )]
+    pub open_orders_abstract: Box<Account<'info, OpenOrdersAbs>>,
 
     #[account(
         seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
