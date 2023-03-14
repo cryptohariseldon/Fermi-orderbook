@@ -1,2 +1,0 @@
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/Users/dm/Documents/blob_solana/final/Fermi-orderbook/target/release/build/typenum-a1d5cf8b3c031b29/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/Users/dm/Documents/blob_solana/final/Fermi-orderbook/target/release/build/typenum-a1d5cf8b3c031b29/out/op.rs

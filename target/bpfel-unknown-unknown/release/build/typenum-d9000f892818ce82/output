@@ -1,2 +1,0 @@
-cargo:rustc-env=TYPENUM_BUILD_CONSTS=/Users/dm/Documents/blob_solana/final/Fermi-orderbook/target/bpfel-unknown-unknown/release/build/typenum-d9000f892818ce82/out/consts.rs
-cargo:rustc-env=TYPENUM_BUILD_OP=/Users/dm/Documents/blob_solana/final/Fermi-orderbook/target/bpfel-unknown-unknown/release/build/typenum-d9000f892818ce82/out/op.rs
