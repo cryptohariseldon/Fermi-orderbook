@@ -140,7 +140,7 @@ pub mod fermi_dex {
                     msg!("Newly locked PC for bidder {}", qty_pc);
                     let fin: u8 = 1;
                     let taker_fill = Event::new(EventView::Finalise {
-                        side: Side::Ask,
+                        side: Side::Bid,
                         maker: true,
                         native_qty_paid:  parsed_event.native_qty_released,
                         native_qty_received: qty_pc,
@@ -153,7 +153,6 @@ pub mod fermi_dex {
                     let idx = event1_slot;
                     event_q.buf[idx as usize] = taker_fill;
 
-                    msg!("event.idx: {}", idx);
                     msg!("event.side: {}", "Ask");
                     msg!("event.maker: {}", "true");
                     msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
@@ -162,8 +161,6 @@ pub mod fermi_dex {
                     msg!("event.owner:{}", parsed_event.owner);
                     msg!("event.owner_slot:{}", parsed_event.owner_slot);
                     msg!("event.finalised: {}", fin);
-
-
 
 
 
@@ -214,7 +211,6 @@ pub mod fermi_dex {
                     event_q.buf[idx as usize] = taker_fill;
                     // event_q.as_mut().unwrap().head +=1;
 
-                    msg!("event.idx: {}", idx);
                     msg!("event.side: {}", "Ask");
                     msg!("event.maker: {}", "true");
                     msg!("event.native_qty_paid: {}", parsed_event.native_qty_paid);
@@ -222,7 +218,7 @@ pub mod fermi_dex {
                     msg!("event.order_id:{}", parsed_event.order_id);
                     msg!("event.owner:{}", parsed_event.owner);
                     msg!("event.owner_slot:{}", parsed_event.owner_slot);
-                    msg!("event.finalised: {}", fin);
+                    msg!("event.finalised: {}", "fin");
 
 
                 }
@@ -454,7 +450,7 @@ pub mod fermi_dex {
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
 
-
+        // Demo code for directly jitting liquidity form user wallet, instead of JITing from vault. Not implemented, may be done in the future.
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -1474,15 +1470,15 @@ impl<'a> OrderBook<'a> {
             */
             let jit_struct = JitStruct {
                 side: Side::Bid,
-                maker: true,
-                native_qty_paid: trade_qty * coin_lot_size,
-                native_qty_received: native_maker_pc_qty,
-                order_id: best_offer.order_id,
-                owner: best_offer.owner,
-                owner_slot: best_offer.owner_slot,
+                maker: false,
+                native_qty_paid: native_maker_pc_qty,
+                native_qty_received: trade_qty * coin_lot_size,
+                order_id: order_id,
+                owner: owner,
+                owner_slot: owner_slot,
             };
             jit_data.push(jit_struct);
-            /*msg!("data pushed to jitstruct");
+            msg!("data pushed to jitstruct");
             msg!("event.side: {}", "Bid");
             msg!("event.maker: {}", "false");
             msg!("event.native_qty_paid: {}", native_maker_pc_qty);
@@ -1490,7 +1486,7 @@ impl<'a> OrderBook<'a> {
             msg!("event.order.id {}", best_offer.order_id);
             msg!("event.owner {}", best_offer.owner);
             msg!("owner_slot {}", best_offer.owner_slot);
-            msg!("event.finalised: {}", "0"); */
+            msg!("event.finalised: {}", "0");
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1510,7 +1506,6 @@ impl<'a> OrderBook<'a> {
                 //.push_back(maker_fill)
                 //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
-                msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
                 msg!("event.maker: {}", "true");
                 msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
@@ -1519,8 +1514,6 @@ impl<'a> OrderBook<'a> {
                 msg!("event.owner {}", best_offer.owner);
                 msg!("owner_slot {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
-                msg!("event.counterparty_orderid: {}", order_id);
-
 
 
             best_offer.qty -= trade_qty;
@@ -1546,14 +1539,13 @@ impl<'a> OrderBook<'a> {
                 event_q.buf[idx as usize] = event_out;
                 event_q.head +=1;
 
-                msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
                 msg!("event.release_funds: {}", "true");
                 msg!("event.native_qty_unlocked: {}", "0");
                 msg!("event.native_qty_still_locked: {}", "0");
                 msg!("event.order_id: {}", best_offer_id);
                 msg!("event.owner: {}", best_offer.owner);
-                msg!("event.owner_slot: {}", best_offer.owner_slot);
+                msg!("event.owner: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
 
 
@@ -1612,8 +1604,7 @@ impl<'a> OrderBook<'a> {
                 event_q.buf[idx as usize] = taker_fill;
                 event_q.head +=1;
 
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Bid");
+                msg!("event.side: {}", "Ask");
                 msg!("event.maker: {}", "false");
                 msg!("event.native_qty_paid: {}", native_pc_paid);
                 msg!("event.native_qty_received: {}", coin_lots_received * coin_lot_size);
@@ -1621,8 +1612,6 @@ impl<'a> OrderBook<'a> {
                 msg!("event.owner: {}", owner);
                 msg!("event.owner_slot: {}", owner_slot);
                 msg!("event.finalised: {}", "0");
-
-
 
 
 /*
@@ -1673,14 +1662,12 @@ impl<'a> OrderBook<'a> {
         event_q.buf[idx as usize] = outer;
         event_q.head +=1;
         };
-        let idx = event_q.head;
+
 
         let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
             to_release.unlock_native_pc(native_qty_unlocked);
-
-        msg!("event.idx: {}", idx);
-        msg!("event.side: {}", "Ask");
+       msg!("event.side: {}", "Ask");
         msg!("event.release_funds: {}", "false");
         msg!("event.native_qty_unlocked: {}", native_qty_unlocked);
         msg!("event.native_qty_still_locked: {}", native_qty_still_locked);
@@ -1724,7 +1711,6 @@ impl<'a> OrderBook<'a> {
                     event_q.buf[idx as usize] = out;
                     event_q.head +=1;
 
-                    msg!("event.idx: {}", idx);
                     msg!("event.side: {}", "Bid");
                     msg!("event.release_funds: {}", "true");
                     msg!("event.native_qty_unlocked: {}", order.qty * order.price() * pc_lot_size);
@@ -1842,8 +1828,6 @@ impl<'a> OrderBook<'a> {
             msg!("event.owner: {}", best_bid.owner);
             msg!("event.owner_slot: {}", best_bid.owner_slot);
             msg!("event.finalised: {}", "0");
-            msg!("event.counterparty_orderid: {}", order_id);
-
 /*
             event_q
                 .push_back(maker_fill)
@@ -1869,7 +1853,6 @@ impl<'a> OrderBook<'a> {
                 event_q.buf[idx as usize] = out;
                 event_q.head +=1;
 
-                msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Bid");
                 msg!("event.release_funds: {}", "true");
                 msg!("event.native_qty_unlocked: {}", "0");
@@ -1922,8 +1905,6 @@ impl<'a> OrderBook<'a> {
                 event_q.buf[idx as usize] = taker_fill;
                 event_q.head +=1;
 
-                msg!("event.idx: {}", idx);
-                msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
                 msg!("event.maker: {}", "false");
                 msg!("event.native_qty_paid: {}", coin_lots_traded * coin_lot_size);
@@ -1978,7 +1959,6 @@ impl<'a> OrderBook<'a> {
                     event_q.buf[idx as usize] = out;
                     event_q.head +=1;
 
-                    msg!("event.idx: {}", idx);
                     msg!("event.side: {}", "Ask");
                     msg!("event.release_funds: {}", true);
                     msg!("event.native_qty_unlocked: {}", order.qty * coin_lot_size);
@@ -1986,7 +1966,7 @@ impl<'a> OrderBook<'a> {
                     msg!("event.order_id: {}", order.order_id);
                     msg!("event.owner: {}", order.owner);
                     msg!("event.owner_slot: {}", order.owner_slot);
-                    msg!("event.finalised: {}", "0");
+                    msg!("event.finalised: {}", 0);
 
 /*
                     event_q
@@ -2016,7 +1996,6 @@ impl<'a> OrderBook<'a> {
             event_q.buf[idx as usize] = out;
             event_q.head +=1;
 
-            msg!("event.idx: {}", idx);
             msg!("event.side: {}", "Ask");
             msg!("event.release_funds: {}", false);
             msg!("event.native_qty_unlocked: {}", unfilled_qty * coin_lot_size);

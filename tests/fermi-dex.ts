@@ -333,9 +333,9 @@ describe('fermi-dex', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(95),
-            new anchor.BN(4),
-            new anchor.BN(95).mul(new anchor.BN(1000000)),
+            new anchor.BN(20),
+            new anchor.BN(1),
+            new anchor.BN(20).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -374,9 +374,9 @@ describe('fermi-dex', () => {
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(100),
-            new anchor.BN(4),
-            new anchor.BN(100),
+            new anchor.BN(25),
+            new anchor.BN(1),
+            new anchor.BN(25),
             { limit: {} },
           )
           .accounts({
@@ -414,9 +414,9 @@ describe('fermi-dex', () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(101),
-            new anchor.BN(4),
-            new anchor.BN(101).mul(new anchor.BN(1000000)),
+            new anchor.BN(26),
+            new anchor.BN(1),
+            new anchor.BN(26).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({

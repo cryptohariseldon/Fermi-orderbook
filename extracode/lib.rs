@@ -149,24 +149,21 @@ pub mod fermi_dex {
                         owner_slot: parsed_event.owner_slot,
                         finalised: fin,
                     });
+/*
+                    let taker_fille = Event {
+                            side: Side::Ask,
+                            maker: true,
+                            native_qty_paid:  parsed_event.native_qty_released,
+                            native_qty_received: qty_pc,
+                            order_id: parsed_event.order_id,
+                            owner: parsed_event.owner,
+                            owner_slot: parsed_event.owner_slot,
+                            finalised: fin,
+                        };*/
+
                     //let idx = event_q.as_mut().unwrap().head + 1;
                     let idx = event1_slot;
                     event_q.buf[idx as usize] = taker_fill;
-
-                    msg!("event.idx: {}", idx);
-                    msg!("event.side: {}", "Ask");
-                    msg!("event.maker: {}", "true");
-                    msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
-                    msg!("event.native_qty_received:{}", qty_pc);
-                    msg!("event.order_id:{}", parsed_event.order_id);
-                    msg!("event.owner:{}", parsed_event.owner);
-                    msg!("event.owner_slot:{}", parsed_event.owner_slot);
-                    msg!("event.finalised: {}", fin);
-
-
-
-
-
 
 
                     //let lenevents = event_q.len();
@@ -180,7 +177,7 @@ pub mod fermi_dex {
                     Side::Ask => {
                 //if side=="Ask"{
                     //qty to fill
-                    let mut qty_coin = parsed_event.native_qty_paid;
+                    let mut qty_coin = &parsed_event.native_qty_paid;
                     //check openorders balance
                     let mut available_funds = open_orders_cpty.native_coin_free * 10;
                     //revert if asker JIT fails.
@@ -213,18 +210,6 @@ pub mod fermi_dex {
                     let idx = event2_slot;
                     event_q.buf[idx as usize] = taker_fill;
                     // event_q.as_mut().unwrap().head +=1;
-
-                    msg!("event.idx: {}", idx);
-                    msg!("event.side: {}", "Ask");
-                    msg!("event.maker: {}", "true");
-                    msg!("event.native_qty_paid: {}", parsed_event.native_qty_paid);
-                    msg!("event.native_qty_received:{}", parsed_event.native_qty_released);
-                    msg!("event.order_id:{}", parsed_event.order_id);
-                    msg!("event.owner:{}", parsed_event.owner);
-                    msg!("event.owner_slot:{}", parsed_event.owner_slot);
-                    msg!("event.finalised: {}", fin);
-
-
                 }
 
 
@@ -738,7 +723,7 @@ impl EventView {
     }
 }
 
-//#[repr(packed)]
+#[repr(packed)]
 //#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 #[zero_copy]
 pub struct Event {
@@ -1473,7 +1458,7 @@ impl<'a> OrderBook<'a> {
             })?;
             */
             let jit_struct = JitStruct {
-                side: Side::Bid,
+                side: Side::Ask,
                 maker: true,
                 native_qty_paid: trade_qty * coin_lot_size,
                 native_qty_received: native_maker_pc_qty,
@@ -1482,15 +1467,7 @@ impl<'a> OrderBook<'a> {
                 owner_slot: best_offer.owner_slot,
             };
             jit_data.push(jit_struct);
-            /*msg!("data pushed to jitstruct");
-            msg!("event.side: {}", "Bid");
-            msg!("event.maker: {}", "false");
-            msg!("event.native_qty_paid: {}", native_maker_pc_qty);
-            msg!("event.native_qty_received {}", trade_qty * coin_lot_size);
-            msg!("event.order.id {}", best_offer.order_id);
-            msg!("event.owner {}", best_offer.owner);
-            msg!("owner_slot {}", best_offer.owner_slot);
-            msg!("event.finalised: {}", "0"); */
+            msg!("data pushed to jitstruct");
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1509,19 +1486,6 @@ impl<'a> OrderBook<'a> {
             event_q.head +=1;
                 //.push_back(maker_fill)
                 //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "true");
-                msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
-                msg!("event.native_qty_received {}", native_maker_pc_qty);
-                msg!("event.order.id {}", best_offer.order_id);
-                msg!("event.owner {}", best_offer.owner);
-                msg!("owner_slot {}", best_offer.owner_slot);
-                msg!("event.finalised: {}", "0");
-                msg!("event.counterparty_orderid: {}", order_id);
-
-
 
             best_offer.qty -= trade_qty;
             coin_qty_remaining -= trade_qty;
@@ -1545,18 +1509,6 @@ impl<'a> OrderBook<'a> {
                 msg!("event id is {}", idx);
                 event_q.buf[idx as usize] = event_out;
                 event_q.head +=1;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Ask");
-                msg!("event.release_funds: {}", "true");
-                msg!("event.native_qty_unlocked: {}", "0");
-                msg!("event.native_qty_still_locked: {}", "0");
-                msg!("event.order_id: {}", best_offer_id);
-                msg!("event.owner: {}", best_offer.owner);
-                msg!("event.owner_slot: {}", best_offer.owner_slot);
-                msg!("event.finalised: {}", "0");
-
-
 /*
                     .push_back(Event::new(EventView::Out {
                         side: Side::Ask,
@@ -1611,20 +1563,6 @@ impl<'a> OrderBook<'a> {
 
                 event_q.buf[idx as usize] = taker_fill;
                 event_q.head +=1;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Bid");
-                msg!("event.maker: {}", "false");
-                msg!("event.native_qty_paid: {}", native_pc_paid);
-                msg!("event.native_qty_received: {}", coin_lots_received * coin_lot_size);
-                msg!("event.order_id: {}", order_id);
-                msg!("event.owner: {}", owner);
-                msg!("event.owner_slot: {}", owner_slot);
-                msg!("event.finalised: {}", "0");
-
-
-
-
 /*
                 event_q
                     .push_back(taker_fill)
@@ -1658,7 +1596,7 @@ impl<'a> OrderBook<'a> {
             let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
             to_release.unlock_native_pc(native_qty_unlocked);
 
-            let outer = Event::new(EventView::Out {
+            Event::new(EventView::Out {
                 side: Side::Bid,
                 release_funds: false,
                 native_qty_unlocked,
@@ -1667,28 +1605,12 @@ impl<'a> OrderBook<'a> {
                 owner,
                 owner_slot,
                 finalised: 0,
-            });
-            let idx = event_q.head + 1;
-        msg!("event id is {}", idx);
-        event_q.buf[idx as usize] = outer;
-        event_q.head +=1;
+            })
         };
-        let idx = event_q.head;
-
-        let native_qty_still_locked = pc_qty_to_keep_locked * pc_lot_size;
-            let native_qty_unlocked = native_pc_qty_remaining - native_qty_still_locked;
-            to_release.unlock_native_pc(native_qty_unlocked);
-
-        msg!("event.idx: {}", idx);
-        msg!("event.side: {}", "Ask");
-        msg!("event.release_funds: {}", "false");
-        msg!("event.native_qty_unlocked: {}", native_qty_unlocked);
-        msg!("event.native_qty_still_locked: {}", native_qty_still_locked);
-        msg!("event.order_id: {}", order_id);
-        msg!("event.owner: {}", owner);
-        msg!("owner_slot: {}", owner_slot);
-        msg!("event.finalised: {}", "0");
-
+        let idx = event_q.head + 1;
+        msg!("event id is {}", idx);
+        event_q.buf[idx as usize] = out;
+        event_q.head +=1;
 /*
         event_q
             .push_back(out)
@@ -1723,15 +1645,6 @@ impl<'a> OrderBook<'a> {
 
                     event_q.buf[idx as usize] = out;
                     event_q.head +=1;
-
-                    msg!("event.idx: {}", idx);
-                    msg!("event.side: {}", "Bid");
-                    msg!("event.release_funds: {}", "true");
-                    msg!("event.native_qty_unlocked: {}", order.qty * order.price() * pc_lot_size);
-                    msg!("event.order_id: {}", order.order_id);
-                    msg!("event.order: {}", order.owner);
-                    msg!("event.owner_slot: {}", order.owner_slot);
-                    msg!("event.finalised: {}", "0");
 /*
                     event_q
                         .push_back(out)
@@ -1834,16 +1747,6 @@ impl<'a> OrderBook<'a> {
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
-
-            msg!("event.side: {}", "Ask");
-            msg!("event.maker: {}", "true");
-            msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
-            msg!("event.order_id: {}", best_bid.order_id);
-            msg!("event.owner: {}", best_bid.owner);
-            msg!("event.owner_slot: {}", best_bid.owner_slot);
-            msg!("event.finalised: {}", "0");
-            msg!("event.counterparty_orderid: {}", order_id);
-
 /*
             event_q
                 .push_back(maker_fill)
@@ -1868,18 +1771,6 @@ impl<'a> OrderBook<'a> {
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = out;
                 event_q.head +=1;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Bid");
-                msg!("event.release_funds: {}", "true");
-                msg!("event.native_qty_unlocked: {}", "0");
-                msg!("event.native_qty_locked: {}", "0");
-                msg!("event.order_id: {}", best_bid_id);
-                msg!("event.owner: {}", best_bid.owner);
-                msg!("event.owner_slot: {}", best_bid.owner_slot);
-                msg!("event.finalised: {}", "0");
-
-
                 /*event_q
                     .push_back(Event::new(EventView::Out {
                         side: Side::Bid,
@@ -1921,20 +1812,6 @@ impl<'a> OrderBook<'a> {
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = taker_fill;
                 event_q.head +=1;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "false");
-                msg!("event.native_qty_paid: {}", coin_lots_traded * coin_lot_size);
-                msg!("event.native_qty_received: {}", net_taker_pc_qty);
-                msg!("event.order_id: {}", order_id);
-                msg!("event.owner: {}", owner);
-                msg!("event.owner_slot: {}", owner_slot);
-                msg!("event.finalised: {}", "0");
-
-
-
 /*
                 event_q
                     .push_back(taker_fill)
@@ -1977,17 +1854,6 @@ impl<'a> OrderBook<'a> {
                     msg!("idx is {}", idx);
                     event_q.buf[idx as usize] = out;
                     event_q.head +=1;
-
-                    msg!("event.idx: {}", idx);
-                    msg!("event.side: {}", "Ask");
-                    msg!("event.release_funds: {}", true);
-                    msg!("event.native_qty_unlocked: {}", order.qty * coin_lot_size);
-                    msg!("event.native_qty_still_locked: {}", "0");
-                    msg!("event.order_id: {}", order.order_id);
-                    msg!("event.owner: {}", order.owner);
-                    msg!("event.owner_slot: {}", order.owner_slot);
-                    msg!("event.finalised: {}", "0");
-
 /*
                     event_q
                         .push_back(out)
@@ -2015,16 +1881,6 @@ impl<'a> OrderBook<'a> {
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = out;
             event_q.head +=1;
-
-            msg!("event.idx: {}", idx);
-            msg!("event.side: {}", "Ask");
-            msg!("event.release_funds: {}", false);
-            msg!("event.native_qty_unlocked: {}", unfilled_qty * coin_lot_size);
-            msg!("event.native_qty_still_locked: {}", "0");
-            msg!("event.order_id: {}", order_id);
-            msg!("event.owner: {}", owner);
-            msg!("event.owner.slot: {}", owner_slot);
-            msg!("event.finalised: {}", "0");
 /*
             event_q
                 .push_back(out)
@@ -2034,6 +1890,39 @@ impl<'a> OrderBook<'a> {
         Ok(None)
     }
 }
+/*
+pub fn cancel_order(
+    side: Side, orderId: u8, owner_slot: u8
+) -> Result <()> {
+    let open_orders = &mut ctx.accounts.open_orders;
+    let market = &mut ctx.accounts.market;
+    let bids = &mut ctx.accounts.bids;
+    let asks = &mut ctx.accounts.asks;
+    let authority = &ctx.accounts.authority;
+    //let event_q = &ctx.accounts.eventq;
+
+
+    require!(
+        open_orders.authority.key() == authority.key(),
+        ErrorCode::WrongAuthority
+    );
+    require!(
+        open_orders.orders[usize::from(owner_slot)] == orderId,
+        ErrorCode::WrongAuthority
+    );
+    open_orders.remove(owner_slot);
+    let mut order_book = OrderBook { bids, asks, market };
+    let cancelparams = CancelOrderParams {
+        side: side,
+        order_id: orderId,
+        expected_owner: authority.key(),
+        expected_owner_slot: owner_slot
+    }l
+
+    order_book.cancel_order(cancelparams)
+
+
+} */
 
 pub struct CancelOrderParams {
     side: Side,
@@ -2043,13 +1932,23 @@ pub struct CancelOrderParams {
 }
 
 impl<'a> OrderBook<'a> {
-    fn cancel_order(&mut self, params: CancelOrderParams, event_q: &mut EventQueue) -> Result<()> {
+    fn cancel_order(&mut self, params: CancelOrderParams, eventq: &mut EventQueue ) -> Result<()> {
         let CancelOrderParams {
             side,
             order_id,
             expected_owner,
             expected_owner_slot,
         } = params;
+        //Verification
+        match side {
+        Side::Bid => {
+            self.bids.delete(order_id);
+        }
+        Side::Ask => {
+            self.asks.delete(order_id);
+        }
+    }
+
 
         // if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
         //     if leaf_node.owner() == expected_owner && leaf_node.owner_slot() == expected_owner_slot
