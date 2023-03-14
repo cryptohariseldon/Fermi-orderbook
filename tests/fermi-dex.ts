@@ -110,7 +110,7 @@ describe('fermi-dex', () => {
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
-  let programId = "GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ";
+  let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -137,7 +137,7 @@ describe('fermi-dex', () => {
   let openOrdersPdaBump: number;
 
   const authority = anchor.web3.Keypair.generate();
-
+  console.log(authority);
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
 
@@ -474,14 +474,15 @@ describe('fermi-dex', () => {
         openOrdersPda,
       );
       console.log(base_order_id);
+      console.log(authority.PublicKey)
       console.log('test finalise match with event slot + order id');
       await program.methods
         .finaliseMatches(
           owner_slot,
           base_event_slot,
           new anchor.BN(0),
-          authority.PublicKey,
-          authority.PublicKey,
+          authority.publicKey,
+          authority.publicKey,
           { bid: {} },
         )
         .accounts({
@@ -514,6 +515,8 @@ describe('fermi-dex', () => {
       const eventQ = await program.account.eventQueue.fetch(eventQPda);
       console.log(eventQ);
       console.log(JSON.stringify(eventQ['buf'][3].finalised));//.toNumber())
+      console.log(authority)
+
     };
   });
   });

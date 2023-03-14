@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ");
+declare_id!("TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN");
 
 #[program]
 pub mod fermi_dex {
@@ -82,12 +82,17 @@ pub mod fermi_dex {
 
 
         let parsed_event: Event =  event_q.buf[usize::from(cpty_event_slot)];
+
         let order = open_orders_auth.orders[usize::from(owner_slot)];
         //let event2: Event =  event_q.buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
         //require!(parsed_event.cpty == owner, Error);
         //require!(parsed_event.owner == authority_cpty, Error);
+        msg!("event_owner: {}", parsed_event.owner);
+        msg!("cpty: {}", authority_cpty);
+        msg!("ooauth: {}", open_orders_auth.authority);
+        msg!("oocpty: {}", open_orders_cpty.authority);
 
         //require!(open_orders_auth.authority == owner, Error);
         //require!(open_orders_cpty.authority == authority_cpty, Error);
@@ -156,14 +161,14 @@ pub mod fermi_dex {
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "true");
+                msg!("event.maker: {}", "false");
                 msg!("event.native_qty_paid: {}", parsed_event.native_qty_paid);
                 msg!("event.native_qty_received:{}", parsed_event.native_qty_released);
                 msg!("event.order_id:{}", parsed_event.order_id);
                 msg!("event.owner:{}", parsed_event.owner);
                 msg!("event.owner_slot:{}", parsed_event.owner_slot);
                 msg!("event.finalised: {}", fin);
-                msg!("event.cpty: {}", owner);
+                //msg!("event.cpty_orderid: {}", orderId);
 
                 // 2. Adjust Balances for cpty
 
@@ -232,13 +237,15 @@ pub mod fermi_dex {
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "true");
+                msg!("event.maker: {}", "false");
                 msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
                 msg!("event.native_qty_received:{}", qty_paid);
                 msg!("event.order_id:{}", parsed_event.order_id);
                 msg!("event.owner:{}", parsed_event.owner);
                 msg!("event.owner_slot:{}", parsed_event.owner_slot);
                 msg!("event.finalised: {}", fin);
+                //msg!("event.cpty_orderid: {}", order_id);
+
             }
         }
             Ok(())
@@ -613,7 +620,7 @@ pub mod fermi_dex {
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
 
-
+        /*
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -626,10 +633,10 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
-        }
+        } */
         msg!("matched amount {}", matched_amount_coin);
-        /*
-        if matched_amount_coin > 0 {
+
+        if deposit_amount > 0 {
                 // transfer from depositor
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
@@ -638,10 +645,10 @@ pub mod fermi_dex {
                 };
                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
                 //let marginal_deposit = cpi_ctx * 2 / 100
-                anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
+                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                     _ => error!(ErrorCode::TransferFailed),
                 })?;
-            }*/
+            }
 
 
 
@@ -899,9 +906,9 @@ impl EventView {
     }
 }
 
-//[repr(packed)]
-#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
-//#[zero_copy]
+//#[repr(packed)]
+//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[zero_copy]
 pub struct Event {
     event_flags: u8,
     owner_slot: u8,
@@ -915,8 +922,10 @@ pub struct Event {
     //cpty: Pubkey,
 }
 
+
+
 impl Event {
-    pub const MAX_SIZE: usize = 1 + 1 + 8 + 8 + 16 + 32 + 32 + 1;
+    pub const MAX_SIZE: usize = 1 + 1 + 8 + 8 + 16 + 32 + 1 + 32;
 
     #[inline(always)]
     pub fn new(view: EventView) -> Self {
@@ -1100,7 +1109,7 @@ pub struct EventQueue {
 
 
 impl EventQueue {
-    pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 6 * Event::MAX_SIZE;
+    pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 20 * Event::MAX_SIZE;
 
     #[inline]
     pub fn len(&self) -> u64 {
@@ -1594,6 +1603,56 @@ impl<'a> OrderBook<'a> {
         //general vec ->
         // let mut jit_data: Vec<JitStruct> = vec![];
         // begin matching order
+
+        // move orderbook insertion to before matching
+        msg!("bid inserted");
+        let insert_result = self.bids.insert(Order {
+            order_id,
+            qty: max_coin_qty,
+            owner,
+            owner_slot,
+        });
+        if let Err(err) = insert_result {
+            if err == error!(ErrorCode::OrdersAlreadyFull) {
+                // boot out the least aggressive bid
+                msg!("bids full! booting...");
+                let order = self.bids.delete_worst()?;
+                let out = Event::new(EventView::Out {
+                    side: Side::Bid,
+                    release_funds: true,
+                    native_qty_unlocked: order.qty * order.price() * pc_lot_size,
+                    native_qty_still_locked: 0,
+                    order_id: order.order_id,
+                    owner: order.owner,
+                    owner_slot: order.owner_slot,
+                    finalised: 0,
+                });
+                let idx = event_q.head + 1;
+                msg!("event id is {}", idx);
+
+                event_q.buf[idx as usize] = out;
+                event_q.head +=1;
+
+                msg!("event.idx: {}", idx);
+                msg!("event.side: {}", "Bid");
+                msg!("event.release_funds: {}", "true");
+                msg!("event.native_qty_unlocked: {}", order.qty * order.price() * pc_lot_size);
+                msg!("event.order_id: {}", order.order_id);
+                msg!("event.order: {}", order.owner);
+                msg!("event.owner_slot: {}", order.owner_slot);
+                msg!("event.finalised: {}", "0");
+/*
+                event_q
+                    .push_back(out)
+                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?; */
+                self.bids.insert(Order {
+                    order_id,
+                    qty: max_coin_qty,
+                    owner,
+                    owner_slot,
+                })?;
+            }
+}
         let crossed;
         let done = loop {
             let best_offer = match self.find_bbo_mut(Side::Ask) {
@@ -1683,7 +1742,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.maker: {}", "true");
                 msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
                 msg!("event.native_qty_received: {}", native_maker_pc_qty);
-                msg!("event.order.id: {}", best_offer.order_id);
+                msg!("event.order_id: {}", best_offer.order_id);
                 msg!("event.owner: {}", best_offer.owner);
                 msg!("owner_slot: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -1736,7 +1795,7 @@ impl<'a> OrderBook<'a> {
                         owner_slot: best_offer.owner_slot,
                     }))
                     .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
-                self.asks.delete(best_offer_id)?;
+                //self.asks.delete(best_offer_id)?;
             }
 
             break false;
@@ -1864,14 +1923,9 @@ impl<'a> OrderBook<'a> {
             .map_err(|_| ErrorCode::QueueAlreadyFull)?;*/
 
             //post order to OB
+            /*
         if pc_qty_to_keep_locked > 0 {
-            msg!("bid inserted");
-            let insert_result = self.bids.insert(Order {
-                order_id,
-                qty: coin_qty_to_post,
-                owner,
-                owner_slot,
-            });
+
             if let Err(err) = insert_result {
                 if err == error!(ErrorCode::OrdersAlreadyFull) {
                     // boot out the least aggressive bid
@@ -1912,8 +1966,8 @@ impl<'a> OrderBook<'a> {
                         owner_slot,
                     })?;
                 }
-            }
-        }
+            } 
+        } */
 
         Ok(None)
     }
@@ -1954,6 +2008,56 @@ impl<'a> OrderBook<'a> {
 
         //begin matching
         let crossed;
+
+        let insert_result = self.asks.insert(Order {
+            order_id,
+            qty: unfilled_qty,
+            owner,
+            owner_slot,
+        });
+        if let Err(err) = insert_result {
+            if err == error!(ErrorCode::OrdersAlreadyFull) {
+                // boot out the least aggressive offer
+                msg!("offers full! booting...");
+                let order = self.asks.delete_worst()?;
+                let out = Event::new(EventView::Out {
+                    side: Side::Ask,
+                    release_funds: true,
+                    native_qty_unlocked: order.qty * coin_lot_size,
+                    native_qty_still_locked: 0,
+                    order_id: order.order_id,
+                    owner: order.owner,
+                    owner_slot: order.owner_slot,
+                    finalised: 0,
+                });
+                let idx = event_q.head + 1;
+                msg!("idx is {}", idx);
+                event_q.buf[idx as usize] = out;
+                event_q.head +=1;
+
+                msg!("event.idx: {}", idx);
+                msg!("event.side: {}", "Ask");
+                msg!("event.release_funds: {}", true);
+                msg!("event.native_qty_unlocked: {}", order.qty * coin_lot_size);
+                msg!("event.native_qty_still_locked: {}", "0");
+                msg!("event.order_id: {}", order.order_id);
+                msg!("event.owner: {}", order.owner);
+                msg!("event.owner_slot: {}", order.owner_slot);
+                msg!("event.finalised: {}", "0");
+
+/*
+                event_q
+                    .push_back(out)
+                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                self.asks.insert(Order {
+                    order_id,
+                    qty: unfilled_qty,
+                    owner,
+                    owner_slot,
+                })?;
+            }
+        }
+
         let done = loop {
             let best_bid = match self.find_bbo_mut(Side::Bid) {
                 Err(_) => {
@@ -2004,15 +2108,18 @@ impl<'a> OrderBook<'a> {
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
-
+            msg!("event.idx: {}", idx);
             msg!("event.side: {}", "Ask");
             msg!("event.maker: {}", "true");
             msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
+            msg!("event.native_qty_received: {}", trade_qty * coin_lot_size);
             msg!("event.order_id: {}", best_bid.order_id);
             msg!("event.owner: {}", best_bid.owner);
             msg!("event.owner_slot: {}", best_bid.owner_slot);
             msg!("event.finalised: {}", "0");
             msg!("event.cpty_orderid: {}", order_id);
+
+
 
 /*
             event_q
@@ -2061,7 +2168,7 @@ impl<'a> OrderBook<'a> {
                         owner_slot: best_bid.owner_slot,
                     }))
                     .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
-                self.bids.delete(best_bid_id)?;
+                //self.bids.delete(best_bid_id)?;
             }
 
             break false;
@@ -2093,7 +2200,6 @@ impl<'a> OrderBook<'a> {
                 event_q.head +=1;
 
                 msg!("event.idx: {}", idx);
-                msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
                 msg!("event.maker: {}", "false");
                 msg!("event.native_qty_paid: {}", coin_lots_traded * coin_lot_size);
@@ -2122,12 +2228,13 @@ impl<'a> OrderBook<'a> {
         }
 
         if post_allowed && !crossed && unfilled_qty > 0 {
-            let insert_result = self.asks.insert(Order {
+        /*    let insert_result = self.asks.insert(Order {
                 order_id,
                 qty: unfilled_qty,
                 owner,
                 owner_slot,
-            });
+            }); */
+            /*
             if let Err(err) = insert_result {
                 if err == error!(ErrorCode::OrdersAlreadyFull) {
                     // boot out the least aggressive offer
@@ -2169,7 +2276,7 @@ impl<'a> OrderBook<'a> {
                         owner_slot,
                     })?;
                 }
-            }
+            }*/
         } else {
             to_release.unlock_coin(unfilled_qty);
             let out = Event::new(EventView::Out {

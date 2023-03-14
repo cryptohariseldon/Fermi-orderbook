@@ -86,12 +86,9 @@ pub mod fermi_dex {
         //require!(event2.owner == open_orders_cpty.key(), Error);
 
         let events = [event1, event2];
-        // check if owner = authority or counterparty_authority
-        // check side of event
-        // Execute event fill
-        // assume party A
+        //check if events are corresponding trades -> native_pc_paid = native_pc_recieved
 
-        // Allow only two events, with the same order-id.
+
         let mut order_id_general: u128 = 0;
         let mut first_event_done: bool = false;
 
@@ -736,7 +733,7 @@ pub struct Event {
     order_id: u128,
     owner: Pubkey,
     finalised: u8,
-
+    
 }
 
 impl Event {
