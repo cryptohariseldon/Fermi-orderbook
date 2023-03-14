@@ -50,18 +50,19 @@ pub mod fermi_dex {
 
 
     //pub fn crank()
-
+    // pass a matched event with trade and cpty details
     pub fn finalise_matches(
         ctx: Context<NewMatch>,
         owner_slot: u8,
         cpty_event_slot: u8,
         orderId: u128,
-        authority_counterparty: Pubkey,
+        authority_cpty: Pubkey,
+        owner: Pubkey,
         owner_side: Side,
     ) -> Result<()> {
 
         let open_orders_auth = &mut ctx.accounts.open_orders_owner;
-        let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+        let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
 
         let market =  &ctx.accounts.market;
         let coin_vault = &ctx.accounts.coin_vault;
@@ -77,18 +78,19 @@ pub mod fermi_dex {
         let pc_mint = &ctx.accounts.pc_mint;
 
         // Verification steps
-        // consume eventQ, check event_slot for matching order_id
+
 
         let parsed_event: Event =  event_q.buf[usize::from(cpty_event_slot)];
         let order = open_orders_auth.orders[usize::from(owner_slot)];
         //let event2: Event =  event_q.buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
-        //require!(parsed_event.owner == open_orders_auth.key(), Error);
-        //require!(event2.owner == open_orders_cpty.key(), Error);
+        //require!(parsed_event.cpty == owner, Error);
+        require!(parsed_event.owner == authority_cpty, Error);
 
-        //let events = [parsed_event];
-        //let side = parsed_event.side;
+        require!(open_orders_auth.authority == owner, Error);
+        require!(open_orders_cpty.authority == authority_cpty, Error);
+
         match owner_side {
             Side::Ask => {
                 // Owner is asker, cpty is bidder (owner gets pc, gives coin)
@@ -110,7 +112,7 @@ pub mod fermi_dex {
                 msg!("the owner available funds (pc) is {}", available_funds_user);
                 msg!("the owner required funds (pc) are {}", qty_recieved);
 
-                // edit balances, assuming counterparty tx. goes through
+                // edit balances, assuming cpty tx. goes through
                 //open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
                 //10);
                 //open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
@@ -144,6 +146,7 @@ pub mod fermi_dex {
                     owner: parsed_event.owner,
                     owner_slot: parsed_event.owner_slot,
                     finalised: fin,
+                    cpty: owner,
                 });
                 //let idx = event_q.as_mut().unwrap().head + 1;
                 let idx = cpty_event_slot;
@@ -159,9 +162,9 @@ pub mod fermi_dex {
                 msg!("event.owner:{}", parsed_event.owner);
                 msg!("event.owner_slot:{}", parsed_event.owner_slot);
                 msg!("event.finalised: {}", fin);
-                msg!("event.counterparty: {}", authority.key());
+                msg!("event.cpty: {}", owner);
 
-                // 2. Adjust Balances for counterparty
+                // 2. Adjust Balances for cpty
 
             },
 
@@ -184,7 +187,7 @@ pub mod fermi_dex {
                 msg!("the owner required funds (coin) are {}", qty_recieved);
 
                 // let mut remaining_funds = available_funds - qty_pc;
-                // edit balances, assuming counterparty tx. goes through
+                // edit balances, assuming cpty tx. goes through
                 open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
                 //10);
                 open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
@@ -220,6 +223,7 @@ pub mod fermi_dex {
                     owner: parsed_event.owner,
                     owner_slot: parsed_event.owner_slot,
                     finalised: fin,
+                    cpty: authority.key(),
                 });
                 //let idx = event_q.as_mut().unwrap().head + 1;
                 let idx = cpty_event_slot;
@@ -239,7 +243,7 @@ pub mod fermi_dex {
             Ok(())
 
     }
-        // check if owner = authority or counterparty_authority
+        // check if owner = authority or cpty_authority
         // check side of event
         // Execute event fill
         // assume party A
@@ -282,7 +286,7 @@ pub mod fermi_dex {
 
                     //require!(available_funds >= qty_pc, Error);
                     if remaining_funds > 1 {
-                    // edit balances, assuming counterparty tx. goes through
+                    // edit balances, assuming cpty tx. goes through
                     open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
                     //10);
                     open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
@@ -344,7 +348,7 @@ pub mod fermi_dex {
                     // let mut remaining_funds = available_funds - qty_coin;
                     let remaining_funds = 2;
                     if remaining_funds > 1 {
-                    // edit balances, assuming counterparty tx. goes through
+                    // edit balances, assuming cpty tx. goes through
                     open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
                     //10);
                     open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
@@ -384,7 +388,7 @@ pub mod fermi_dex {
 
 
                     // require!(available_funds >= qty_coin, Error);
-                    // edit balances, assuming counterparty tx. goes through
+                    // edit balances, assuming cpty tx. goes through
                     // open_orders_cpty.credit_unlocked_pc(parsed_event.native_qty_paid);
                     // open_orders_cpty.lock_free_coin(qty_coin);
                     //open_orders_cpty.native_coin_free -= qty_coin;
@@ -442,7 +446,7 @@ pub mod fermi_dex {
         //MODIFIED : Do not lock collateral in openorders at this stage.
         let deposit_amount;
         let deposit_vault;
-        let counterparty_vault;
+        let cpty_vault;
         let native_pc_qty_locked;
         match side {
             Side::Bid => {
@@ -453,7 +457,7 @@ pub mod fermi_dex {
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = pc_vault;
-                counterparty_vault = coin_vault;
+                cpty_vault = coin_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
@@ -473,7 +477,7 @@ pub mod fermi_dex {
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = coin_vault;
-                counterparty_vault = pc_vault;
+                cpty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
                 open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
@@ -559,7 +563,7 @@ pub mod fermi_dex {
             /*
             let transfer_ix = Transfer {
                 from: payer.to_account_info(),
-                to: counterparty_vault.to_account_info(),
+                to: cpty_vault.to_account_info(),
                 authority: authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -585,7 +589,7 @@ pub mod fermi_dex {
                 /*
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
-                    to: counterparty_vault.to_account_info(),
+                    to: cpty_vault.to_account_info(),
                     authority: authority.to_account_info(),
                 };
                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -684,7 +688,7 @@ pub mod fermi_dex {
              /*
              let transfer_ix = Transfer {
                  from: payer.to_account_info(),
-                 to: counterparty_vault.to_account_info(),
+                 to: cpty_vault.to_account_info(),
                  authority: authority.to_account_info(),
              };
              let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -861,6 +865,7 @@ pub enum EventView {
         owner: Pubkey,
         owner_slot: u8,
         finalised: u8,
+        cpty: Pubkey,
     },
     Out {
         side: Side,
@@ -881,6 +886,7 @@ pub enum EventView {
         owner: Pubkey,
         owner_slot: u8,
         finalised: u8,
+        cpty: Pubkey,
     },
 }
 
@@ -892,9 +898,9 @@ impl EventView {
     }
 }
 
-//#[repr(packed)]
-//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
-#[zero_copy]
+//[repr(packed)]
+#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+//#[zero_copy]
 pub struct Event {
     event_flags: u8,
     owner_slot: u8,
@@ -905,11 +911,11 @@ pub struct Event {
     order_id: u128,
     owner: Pubkey,
     finalised: u8,
-
+    //cpty: Pubkey,
 }
 
 impl Event {
-    pub const MAX_SIZE: usize = 1 + 1 + 8 + 8 + 16 + 32;
+    pub const MAX_SIZE: usize = 1 + 1 + 8 + 8 + 16 + 32 + 32 + 1;
 
     #[inline(always)]
     pub fn new(view: EventView) -> Self {
@@ -923,6 +929,7 @@ impl Event {
                 owner,
                 owner_slot,
                 finalised,
+                cpty,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
                 if maker {
@@ -937,6 +944,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    //cpty,
                 }
             },
 
@@ -955,6 +963,7 @@ impl Event {
                     flags |= EventFlag::ReleaseFunds;
                 }
                 let mut finalised: u8 = 0;
+                let mut cpty: Pubkey = owner;
                 Event {
                     event_flags: flags.bits(),
                     owner_slot,
@@ -964,6 +973,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    //cpty
                 }
 
             },
@@ -977,6 +987,7 @@ impl Event {
                 owner,
                 owner_slot,
                 finalised,
+                cpty,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
                 if maker {
@@ -992,6 +1003,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    //cpty,
                 }
         }
     }
@@ -1082,12 +1094,12 @@ impl EventQueueHeader {
 pub struct EventQueue {
     header: EventQueueHeader,
     head: u64,
-    buf: [Event; 100], // TODO: Somehow it can only has 8 elements at most
+    buf: [Event; 100], // Used zero_copy to expand eventsQ size
 }
 
 
 impl EventQueue {
-    pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 8 * Event::MAX_SIZE;
+    pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 6 * Event::MAX_SIZE;
 
     #[inline]
     pub fn len(&self) -> u64 {
@@ -1203,7 +1215,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
     }
 }*/
 
-// User owner value to track counterparty
+// User owner value to track cpty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
     order_id: u128,
@@ -1611,12 +1623,12 @@ impl<'a> OrderBook<'a> {
             }
 
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
-            //transfer tokens from counterparty to vault upon matching
+            //transfer tokens from cpty to vault upon matching
             /*
-            let counterparty = best_offer.owner;
+            let cpty = best_offer.owner;
             txn_ix = Transfer {
-                from: counterparty.to_account_info(),
-                to: coin_vault.to_account_info(), // as counterparty is Asker => supplies coins
+                from: cpty.to_account_info(),
+                to: coin_vault.to_account_info(), // as cpty is Asker => supplies coins
                 authority:
             }
             let token_program = coin_mint;
@@ -1655,6 +1667,7 @@ impl<'a> OrderBook<'a> {
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
                 finalised: 0,
+                cpty: owner,
             });
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
@@ -1673,7 +1686,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.owner: {}", best_offer.owner);
                 msg!("owner_slot: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
-                msg!("event.counterparty_orderid: {}", order_id);
+                msg!("event.cpty_orderid: {}", order_id);
 
 
 
@@ -1748,7 +1761,7 @@ impl<'a> OrderBook<'a> {
             to_release.debit_native_pc(native_pc_paid);
             to_release.jit_data = jit_data;
 
-
+            // multiple possible counterparties
             if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Bid,
@@ -1759,6 +1772,7 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                     finalised: 0,
+                    cpty: owner,
                 });
                 let idx = event_q.head + 1;
                 msg!("event id is {}", idx);
@@ -1984,6 +1998,7 @@ impl<'a> OrderBook<'a> {
                 owner: best_bid.owner,
                 owner_slot: best_bid.owner_slot,
                 finalised: 0,
+                cpty: owner,
             });
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
@@ -1996,7 +2011,7 @@ impl<'a> OrderBook<'a> {
             msg!("event.owner: {}", best_bid.owner);
             msg!("event.owner_slot: {}", best_bid.owner_slot);
             msg!("event.finalised: {}", "0");
-            msg!("event.counterparty_orderid: {}", order_id);
+            msg!("event.cpty_orderid: {}", order_id);
 
 /*
             event_q
@@ -2060,7 +2075,6 @@ impl<'a> OrderBook<'a> {
             to_release.credit_native_pc(net_taker_pc_qty);
             to_release.debit_coin(coin_lots_traded);
             to_release.jit_data = jit_data;
-
             if native_taker_pc_qty > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Ask,
@@ -2071,11 +2085,12 @@ impl<'a> OrderBook<'a> {
                     owner,
                     owner_slot,
                     finalised: 0,
+                    cpty: owner,
                 });
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = taker_fill;
                 event_q.head +=1;
-                
+
                 msg!("event.idx: {}", idx);
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
@@ -2507,7 +2522,7 @@ pub struct NewMatch<'info>{
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
     )]
-    pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
+    pub open_orders_cpty: Box<Account<'info, OpenOrders>>,
 
     #[account(
         seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
@@ -2547,7 +2562,7 @@ pub struct NewMatch<'info>{
     pub authority: Signer<'info>,
 
     //#[account(mut)]
-    //pub authority_counterparty: Account<'info, AccountInfo>,
+    //pub authority_cpty: Account<'info, AccountInfo>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
