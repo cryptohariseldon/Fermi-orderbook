@@ -468,21 +468,25 @@ describe('fermi-dex', () => {
         }
       }
       let base_order_id = 1844674407370955161601;
-      let base_event_slot = 1;
-      let base_event_slot2 = 2;
-
+      let base_event_slot = 3;
+      let owner_slot = 2;
+      const openOrders = await program.account.openOrders.fetch(
+        openOrdersPda,
+      );
       console.log(base_order_id);
       console.log('test finalise match with event slot + order id');
       await program.methods
         .finaliseMatches(
+          owner_slot,
           base_event_slot,
-          base_event_slot2,
           new anchor.BN(0),
           authority.PublicKey,
+          authority.PublicKey,
+          { bid: {} },
         )
         .accounts({
           openOrdersOwner: openOrdersPda,
-          openOrdersCounterparty: openOrdersPda,
+          openOrdersCpty: openOrdersPda,
           market: marketPda,
           coinVault,
           pcVault,
@@ -499,9 +503,7 @@ describe('fermi-dex', () => {
         .rpc();
 
       console.log('test finalise match with event slot + order id');
-      const openOrders = await program.account.openOrders.fetch(
-        openOrdersPda,
-      );
+
       console.log(openOrders);
       const bids = await program.account.orders.fetch(bidsPda);
       console.log(bids);

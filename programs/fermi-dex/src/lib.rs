@@ -51,8 +51,9 @@ pub mod fermi_dex {
 
     //pub fn crank()
     // pass a matched event with trade and cpty details
+    // counterparty must be maker.
     pub fn finalise_matches(
-        ctx: Context<NewMatch>,
+        ctx: Context<FinaliseMatch>,
         owner_slot: u8,
         cpty_event_slot: u8,
         orderId: u128,
@@ -86,10 +87,10 @@ pub mod fermi_dex {
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
         //require!(parsed_event.cpty == owner, Error);
-        require!(parsed_event.owner == authority_cpty, Error);
+        //require!(parsed_event.owner == authority_cpty, Error);
 
-        require!(open_orders_auth.authority == owner, Error);
-        require!(open_orders_cpty.authority == authority_cpty, Error);
+        //require!(open_orders_auth.authority == owner, Error);
+        //require!(open_orders_cpty.authority == authority_cpty, Error);
 
         match owner_side {
             Side::Ask => {
@@ -215,7 +216,7 @@ pub mod fermi_dex {
                 msg!("Newly locked PC for bidder {}", qty_recieved);
                 let fin: u8 = 1;
                 let taker_fill = Event::new(EventView::Finalise {
-                    side: Side::Ask,
+                    side: Side::Bid,
                     maker: true,
                     native_qty_paid:  parsed_event.native_qty_released,
                     native_qty_received: qty_paid,
@@ -2511,7 +2512,7 @@ impl OpenOrders {
 #[derive(Accounts)]
 //#[instruction(side: Side)]
 
-pub struct NewMatch<'info>{
+pub struct FinaliseMatch<'info>{
     #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
