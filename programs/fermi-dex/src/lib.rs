@@ -68,10 +68,7 @@ pub mod fermi_dex {
         let market =  &ctx.accounts.market;
         let coin_vault = &ctx.accounts.coin_vault;
         let pc_vault = &ctx.accounts.pc_vault;
-        // let payer = &ctx.accounts.payer;
-        //let bids = &mut ctx.accounts.bids;
-        //let asks = &mut ctx.accounts.asks;
-        //let req_q = &mut ctx.accounts.req_q;
+
         let event_q = &mut ctx.accounts.event_q.load_mut()?;
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
@@ -81,16 +78,16 @@ pub mod fermi_dex {
         // Verification steps
 
 
-        let parsed_event: Event =  event_q.buf[usize::from(cpty_event_slot)];
-
+        let parsed_event: Event = event_q.buf[usize::from(cpty_event_slot)];
+        require!(parsed_event.finalised == 0, Error);
         let order = open_orders_auth.orders[usize::from(owner_slot)];
         //let event2: Event =  event_q.buf[usize::from(event2_slot)];
 
         // VERIFY : event slots correspond with passed Open_orders accounts.
         //require!(parsed_event.cpty == owner, Error);
         //require!(parsed_event.owner == authority_cpty, Error);
-        msg!("event_owner: {}", parsed_event.owner);
-        msg!("cpty: {}", authority_cpty);
+        //msg!("event_owner: {}", parsed_event.owner);
+        //msg!("cpty: {}", authority_cpty);
         msg!("ooauth: {}", open_orders_auth.authority);
         msg!("oocpty: {}", open_orders_cpty.authority);
 
@@ -1966,7 +1963,7 @@ impl<'a> OrderBook<'a> {
                         owner_slot,
                     })?;
                 }
-            } 
+            }
         } */
 
         Ok(None)

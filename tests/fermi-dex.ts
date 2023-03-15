@@ -483,7 +483,7 @@ describe('fermi-dex', () => {
           new anchor.BN(0),
           authority.publicKey,
           authority.publicKey,
-          { bid: {} },
+          { ask: {} },
         )
         .accounts({
           openOrdersOwner: openOrdersPda,
