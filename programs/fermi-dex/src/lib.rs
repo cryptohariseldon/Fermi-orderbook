@@ -52,6 +52,185 @@ pub mod fermi_dex {
     //pub fn crank()
     // pass a matched event with trade and cpty details
     // counterparty must be maker.
+    /*
+    pub fn finalise_matches(
+        ctx: Context<FinaliseMatch>,
+        event1_slot: u8,
+        event2_slot: u8,
+        orderId: u128,
+        authority_counterparty: Pubkey,
+    ) -> Result<()> {
+
+        let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+        let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
+
+        let market =  &ctx.accounts.market;
+        let coin_vault = &ctx.accounts.coin_vault;
+        let pc_vault = &ctx.accounts.pc_vault;
+        // let payer = &ctx.accounts.payer;
+        let bids = &mut ctx.accounts.bids;
+        let asks = &mut ctx.accounts.asks;
+        let req_q = &mut ctx.accounts.req_q;
+        let event_q = &mut ctx.accounts.event_q.load_mut()?;
+        let authority = &ctx.accounts.authority;
+        let token_program = &ctx.accounts.token_program;
+        let coin_mint = &ctx.accounts.coin_mint;
+        let pc_mint = &ctx.accounts.pc_mint;
+
+        // Verification steps
+        // consume eventQ, check event_slot for matching order_id
+
+        let event1: Event =  event_q.buf[usize::from(event1_slot)];
+        let event2: Event =  event_q.buf[usize::from(event2_slot)];
+
+        // VERIFY : event slots correspond with passed Open_orders accounts.
+        //require!(event1.owner == open_orders_auth.key(), Error);
+        //require!(event2.owner == open_orders_cpty.key(), Error);
+
+        let events = [event1, event2];
+        //check if events are corresponding trades -> native_pc_paid = native_pc_recieved
+
+
+        let mut order_id_general: u128 = 0;
+        let mut first_event_done: bool = false;
+
+        for parsed_event in events {
+                if !first_event_done {
+                    order_id_general = parsed_event.clone().order_id;
+                    first_event_done = true;
+                }
+                else {
+                    //require!(parsed_event.order_id == order_id_general, Error);
+                }
+                //EventView::Fill => {
+                //let mut side = parsedEventFlag::from_side(side);
+                //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
+                //let mut sider = parsed_event.event_flags;
+                //msg!("the side is {}", sider);
+                let side = Side::Bid;
+                msg!("orderid is {}", parsed_event.order_id);
+                // require!(parsed_event.order_id == orderId, Error);
+                match side {
+                    Side::Bid => {
+                //if side=="Bid"{
+                    //qty to fill
+                    let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
+                    //check openorders balance
+                    let mut available_funds = open_orders_auth.native_pc_free * 10;
+                    //revert if Bidder JIT fails.
+                    msg!("the available funds is {}", available_funds);
+                    msg!("the required funds are {}", qty_pc);
+
+                    // let mut remaining_funds = available_funds - qty_pc;
+                    let remaining_funds = 2;
+
+                    //require!(available_funds >= qty_pc, Error);
+                    if remaining_funds > 1 {
+                    // edit balances, assuming counterparty tx. goes through
+                    open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                    //10);
+                    open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                    //open_orders_auth.lock_free_pc(qty_pc);
+                    // open_orders_auth.native_pc_free -= qty_pc;
+                    //open_orders_auth.native_coin_free -= native_qty_released;
+
+
+                    msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
+                    msg!("Newly locked PC for bidder {}", qty_pc);
+                    let fin: u8 = 1;
+                    let taker_fill = Event::new(EventView::Finalise {
+                        side: Side::Ask,
+                        maker: true,
+                        native_qty_paid:  parsed_event.native_qty_released,
+                        native_qty_received: qty_pc,
+                        order_id: parsed_event.order_id,
+                        owner: parsed_event.owner,
+                        owner_slot: parsed_event.owner_slot,
+                        finalised: fin,
+                        cpty: authority_counterparty,
+
+                    });
+/*
+                    let taker_fille = Event {
+                            side: Side::Ask,
+                            maker: true,
+                            native_qty_paid:  parsed_event.native_qty_released,
+                            native_qty_received: qty_pc,
+                            order_id: parsed_event.order_id,
+                            owner: parsed_event.owner,
+                            owner_slot: parsed_event.owner_slot,
+                            finalised: fin,
+                        };*/
+
+                    //let idx = event_q.as_mut().unwrap().head + 1;
+                    let idx = event1_slot;
+                    event_q.buf[idx as usize] = taker_fill;
+
+
+                    //let lenevents = event_q.len();
+                    //let idx = lenevents +1;
+
+
+                }
+                    // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
+
+                },
+                    Side::Ask => {
+                //if side=="Ask"{
+                    //qty to fill
+                    let mut qty_coin = &parsed_event.native_qty_paid;
+                    //check openorders balance
+                    let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                    //revert if asker JIT fails.
+                    //msg!("the available funds is {}", available_funds);
+                    //let mut remaining_funds = available_funds - qty_coin;
+                    // let mut remaining_funds = available_funds - qty_coin;
+                    let remaining_funds = 2;
+                    if remaining_funds > 1 {
+                    // edit balances, assuming counterparty tx. goes through
+                    open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
+                    //10);
+                    open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
+                    //open_orders_auth.lock_free_pc(qty_pc);
+                    // open_orders_auth.native_coin_free -= qty_coin;
+                    let fin: u8 = 1;
+
+                    msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
+                    msg!("Newly locked coins for asker {}", qty_coin);
+                    let taker_fill = Event::new(EventView::Finalise {
+                        side: Side::Ask,
+                        maker: true,
+                        native_qty_paid:  parsed_event.native_qty_paid,
+                        native_qty_received: parsed_event.native_qty_released,
+                        order_id: parsed_event.order_id,
+                        owner: parsed_event.owner,
+                        owner_slot: parsed_event.owner_slot,
+                        finalised: fin,
+                        cpty: authority_counterparty,
+                    });
+                    //let idx = event_q.as_mut().unwrap().head + 1;
+                    let idx = event2_slot;
+                    event_q.buf[idx as usize] = taker_fill;
+                    // event_q.as_mut().unwrap().head +=1;
+                }
+
+
+                    // require!(available_funds >= qty_coin, Error);
+                    // edit balances, assuming counterparty tx. goes through
+                    // open_orders_cpty.credit_unlocked_pc(parsed_event.native_qty_paid);
+                    // open_orders_cpty.lock_free_coin(qty_coin);
+                    //open_orders_cpty.native_coin_free -= qty_coin;
+
+                }
+            }
+                    }
+
+
+
+    Ok(())
+}
+*/
+
     pub fn finalise_matches(
         ctx: Context<FinaliseMatch>,
         owner_slot: u8,
@@ -103,14 +282,14 @@ pub mod fermi_dex {
 
                 let mut qty_coin = parsed_event.native_qty_paid;
                 //check openorders balance
-                let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                let mut available_funds = open_orders_cpty.native_coin_free ;
                 //revert if asker JIT fails.
                 msg!("the cpty available funds (coin) is {}", available_funds);
                 //let mut remaining_funds = available_funds - qty_coin;
                 //let mut required_funds = available_funds - qty_paid;
                 msg!("the cpty required funds (coin) is {}", qty_paid);
 
-                let mut available_funds_user = open_orders_auth.native_coin_free * 10;
+                let mut available_funds_user = open_orders_auth.native_coin_free ;
 
                 msg!("the owner available funds (pc) is {}", available_funds_user);
                 msg!("the owner required funds (pc) are {}", qty_recieved);
@@ -167,7 +346,6 @@ pub mod fermi_dex {
                 msg!("event.finalised: {}", fin);
                 //msg!("event.cpty_orderid: {}", orderId);
 
-                // 2. Adjust Balances for cpty
 
             },
 
@@ -176,15 +354,15 @@ pub mod fermi_dex {
                 let qty_paid = parsed_event.native_qty_released; //pc
                 let qty_recieved = parsed_event.native_qty_paid; //coin
 
-                let mut available_funds = open_orders_cpty.native_pc_free * 10;
+                let mut available_funds = open_orders_cpty.native_pc_free ;
                 //revert if asker JIT fails.
                 msg!("the cpty available funds (pc) is {}", available_funds);
                 //let mut remaining_funds = available_funds - qty_coin;
                 //let mut required_funds = available_funds - qty_paid;
                 msg!("the cpty required funds (pc) is {}", qty_paid);
-                //revert if Bidder JIT fails.
+                //TODO: revert with explicit error here if Bidder JIT fails. currently fails implicitly
 
-                let mut available_funds_user = open_orders_auth.native_coin_free * 10;
+                let mut available_funds_user = open_orders_auth.native_coin_free ;
 
                 msg!("the owner available funds (coin) is {}", available_funds_user);
                 msg!("the owner required funds (coin) are {}", qty_recieved);
@@ -193,7 +371,7 @@ pub mod fermi_dex {
                 // edit balances, assuming cpty tx. goes through
                 open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
                 //10);
-                open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                open_orders_auth.native_pc_free = open_orders_auth.native_pc_free ;
                 //open_orders_auth.lock_free_pc(qty_pc);
                 // open_orders_auth.native_pc_free -= qty_pc;
 
@@ -248,6 +426,8 @@ pub mod fermi_dex {
             Ok(())
 
     }
+
+
         // check if owner = authority or cpty_authority
         // check side of event
         // Execute event fill

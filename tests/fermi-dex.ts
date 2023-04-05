@@ -468,7 +468,7 @@ describe('fermi-dex', () => {
         }
       }
       let base_order_id = 1844674407370955161601;
-      let base_event_slot = 3;
+      let base_event_slot = 4;
       let owner_slot = 2;
       const openOrders = await program.account.openOrders.fetch(
         openOrdersPda,
