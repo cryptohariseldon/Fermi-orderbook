@@ -230,7 +230,7 @@ pub mod fermi_dex {
     Ok(())
 }
 */
-
+    // TODO -- add mandatory delay after order matching to allow MMs to supply JIT liquidity
     pub fn finalise_matches(
         ctx: Context<FinaliseMatch>,
         owner_slot: u8,
@@ -633,6 +633,7 @@ pub mod fermi_dex {
         let deposit_vault;
         let cpty_vault;
         let native_pc_qty_locked;
+        let marginal_deposit;
         match side {
             Side::Bid => {
                 let lock_qty_native = max_native_pc_qty;
@@ -641,12 +642,14 @@ pub mod fermi_dex {
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
+                marginal_amount = deposit_amount / 1000;
                 deposit_vault = pc_vault;
                 cpty_vault = coin_vault;
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
-                open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                //open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                open_orders.credit_unlocked_pc(marginal_amount);
                 market.pc_deposits_total = market
                     .pc_deposits_total
                     .checked_add(deposit_amount)
@@ -659,13 +662,15 @@ pub mod fermi_dex {
                     .ok_or(error!(ErrorCode::InsufficientFunds))?;
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
-                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
+                //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front -- implemented below.
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
+                marginal_amount = deposit_amount / 1000;
                 deposit_vault = coin_vault;
                 cpty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
-                open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
+                // open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
+                open_orders.credit_unlocked_coin(marginal_amount); //NEW- MARGINAL DEPOSIT SETTING
                 market.coin_deposits_total = market
                     .coin_deposits_total
                     .checked_add(deposit_amount)
@@ -812,8 +817,9 @@ pub mod fermi_dex {
             })?;
         } */
         msg!("matched amount {}", matched_amount_coin);
-
-        if deposit_amount > 0 {
+        let marginal_deposit = deposit_amount / 1000; //NEW -- marginal deposit -- tally with OO accounting done.
+        //if deposit_amount > 0 {
+        if marginal_deposit > 0 {
                 // transfer from depositor
                 let transfer_ix = Transfer {
                     from: payer.to_account_info(),
@@ -822,7 +828,7 @@ pub mod fermi_dex {
                 };
                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
                 //let marginal_deposit = cpi_ctx * 2 / 100
-                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                anchor_spl::token::transfer(cpi_ctx, marginal_deposit).map_err(|err| match err {
                     _ => error!(ErrorCode::TransferFailed),
                 })?;
             }
@@ -1401,7 +1407,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
         }
     }
 }*/
-
+//TODO - add timestamp of matching in order.
 // User owner value to track cpty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
