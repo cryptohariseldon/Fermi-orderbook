@@ -159,6 +159,14 @@ describe('fermi-dex', () => {
       ),
     );
 
+    //airdrop sol
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(
+        authority_second.publicKey,
+        2 * anchor.web3.LAMPORTS_PER_SOL,
+      ),
+    );
+
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
     //program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
@@ -443,27 +451,27 @@ describe('fermi-dex', () => {
             { limit: {} },
           )
           .accounts({
-            openOrders: openOrdersPda,
+            openOrders: openOrders_secondPda,
             market: marketPda,
             coinVault,
             pcVault,
             coinMint: coinMint.publicKey,
             pcMint: pcMint.publicKey,
-            payer: authorityCoinTokenAccount,
+            payer: authority_secondCoinTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
             authority: authority.publicKey,
           })
-          .signers([authority])
+          .signers([authority_second])
           .rpc();
 
         console.log('place limit order ask price: 100');
-        const openOrders = await program.account.openOrders.fetch(
-          openOrdersPda,
+        /*const openOrders_second = await program.account.openOrders.fetch(
+          openOrders_secondPda,
         );
-        console.log(openOrders);
+        console.log(openOrders_second);*/
         const bids = await program.account.orders.fetch(bidsPda);
         console.log(bids);
         const asks = await program.account.orders.fetch(asksPda);
@@ -550,7 +558,7 @@ describe('fermi-dex', () => {
         )
         .accounts({
           openOrdersOwner: openOrdersPda,
-          openOrdersCpty: openOrdersPda,
+          openOrdersCpty: openOrders_secondPda,
           market: marketPda,
           coinVault,
           pcVault,
