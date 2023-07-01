@@ -110,7 +110,8 @@ describe('fermi-dex', () => {
   //const program = anchor.workspace.SimpleSerum as anchor.Program<SimpleSerum>; //for new deploy
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
-  let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
+  //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
+  let programId = "Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -136,11 +137,18 @@ describe('fermi-dex', () => {
   let openOrdersPda: anchor.web3.PublicKey;
   let openOrdersPdaBump: number;
 
+
+  let openOrders_secondPda: anchor.web3.PublicKey;
+  let openOrders_secondPdaBump: number;
+
   const authority = anchor.web3.Keypair.generate();
+  const authority_second = anchor.web3.Keypair.generate();
+
   console.log(authority);
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
-
+  let authority_secondCoinTokenAccount: anchor.web3.PublicKey;
+  let authority_secondPcTokenAccount: anchor.web3.PublicKey;
   console.log('basics done')
 
   before(async () => {
@@ -214,6 +222,7 @@ describe('fermi-dex', () => {
     //   marketPda,
     // );
     const custom = new anchor.web3.PublicKey("ExPtCwVhSeChSc9Hqckxgssre1sUbCc8zRfy52A8B2fT");
+
     authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
       coinMint.publicKey,
       authority.publicKey,
@@ -251,16 +260,70 @@ describe('fermi-dex', () => {
       provider,
       coinMint.publicKey,
       authorityCoinTokenAccount,
-      BigInt('10000000000'),
+      BigInt('20000000000'),
     );
     await mintTo(
       provider,
       pcMint.publicKey,
       authorityPcTokenAccount,
-      BigInt('1000000000'),
+      BigInt('2000000000'),
     );
     console.log("sent to");
     console.log(authorityPcTokenAccount.toString());
+
+    //BOB
+
+    [openOrders_secondPda, openOrders_secondPdaBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from('open-orders', 'utf-8'),
+          marketPda.toBuffer(),
+          authority_second.publicKey.toBuffer(),
+        ],
+        program.programId,
+      );
+    console.log("It's Bob's turn to get airdrops")
+
+    authority_secondCoinTokenAccount = await spl.getAssociatedTokenAddress(
+      coinMint.publicKey,
+      authority_second.publicKey,
+      false,
+    );
+    authority_secondPcTokenAccount = await spl.getAssociatedTokenAddress(
+      pcMint.publicKey,
+      authority_second.publicKey,
+      false,
+    );
+
+    await createAssociatedTokenAccount(
+      provider,
+      coinMint.publicKey,
+      authority_secondCoinTokenAccount,
+      authority_second.publicKey,
+    );
+    await createAssociatedTokenAccount(
+      provider,
+      pcMint.publicKey,
+      authority_secondPcTokenAccount,
+      authority_second.publicKey,
+    );
+
+    await mintTo(
+      provider,
+      coinMint.publicKey,
+      authority_secondCoinTokenAccount,
+      BigInt('20000000000'),
+    );
+    await mintTo(
+      provider,
+      pcMint.publicKey,
+      authority_secondPcTokenAccount,
+      BigInt('2000000000'),
+    );
+    console.log("sent to");
+    console.log(authority_secondPcTokenAccount.toString());
+
+
     //MintTo custom
     /*
     const custom_ata_coin = new anchor.web3.PublicKey("4oy7v1heRg8WNN8bUznoRH8YjnYRZyQewVe7Byp9StjK");

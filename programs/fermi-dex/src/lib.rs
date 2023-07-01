@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN");
+declare_id!("Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m");
 
 #[program]
 pub mod fermi_dex {
@@ -797,7 +797,7 @@ pub mod fermi_dex {
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
 
-        /*
+
         if deposit_amount > 0 {
 
             let transfer_ix = Approve {
@@ -810,9 +810,9 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
-        } */
+        }
         msg!("matched amount {}", matched_amount_coin);
-
+        /*
         if deposit_amount > 0 {
                 // transfer from depositor
                 let transfer_ix = Transfer {
@@ -826,7 +826,8 @@ pub mod fermi_dex {
                     _ => error!(ErrorCode::TransferFailed),
                 })?;
             }
-
+ */
+ //REMOVE transfer and just get approval
 
 
            Ok(())
