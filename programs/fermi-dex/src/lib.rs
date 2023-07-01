@@ -4,7 +4,8 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount, Transfer, Approve},
 };
 //use solana_sdk::instruction::{AccountMeta, Instruction};
-
+// use solana_sdk::Clock;
+use anchor_lang::prelude::Clock;
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
@@ -36,6 +37,7 @@ pub mod fermi_dex {
         market.req_q = ctx.accounts.req_q.key();
         market.event_q = ctx.accounts.event_q.key();
         market.authority = ctx.accounts.authority.key();
+        //market.jitdata = ctx.accounts.authority.key();
 
         Ok(())
     }
@@ -230,7 +232,8 @@ pub mod fermi_dex {
     Ok(())
 }
 */
-    // TODO -- add mandatory delay after order matching to allow MMs to supply JIT liquidity
+    // TODO -- add mandatory delay after order matching to allow MMs to supply JIT liquidity <in prog>
+    // TODO -- define informative error codes
     pub fn finalise_matches(
         ctx: Context<FinaliseMatch>,
         owner_slot: u8,
@@ -253,16 +256,28 @@ pub mod fermi_dex {
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
         let pc_mint = &ctx.accounts.pc_mint;
+        let jitdata = &mut ctx.accounts.jitdata;
+
 
         // Verification steps
 
+        // 1. verify time delay for finalisation // 5 seconds
+        let clock = Clock::get()?;
+        let current_timestamp = clock.unix_timestamp;
+        require!(current_timestamp - jitdata.match_timestamp >= 5000, Error);
+
 
         let parsed_event: Event = event_q.buf[usize::from(cpty_event_slot)];
+
+        // 2. Verify order is not already finalised
         require!(parsed_event.finalised == 0, Error);
         let order = open_orders_auth.orders[usize::from(owner_slot)];
         //let event2: Event =  event_q.buf[usize::from(event2_slot)];
 
-        // VERIFY : event slots correspond with passed Open_orders accounts.
+        // 3. Verify trade quantity is not zero (not an unmatched order)
+        require!(parsed_event.native_qty_released > 0 && parsed_event.native_qty_paid > 0, Error);
+
+        // 4. VERIFY : event slots correspond with passed Open_orders accounts. <TODO -- Debug>
         //require!(parsed_event.cpty == owner, Error);
         //require!(parsed_event.owner == authority_cpty, Error);
         //msg!("event_owner: {}", parsed_event.owner);
@@ -279,6 +294,7 @@ pub mod fermi_dex {
                 // 1. Adjust Balances for owner
                 let qty_paid = parsed_event.native_qty_released; //coin token
                 let qty_recieved = parsed_event.native_qty_paid; //pc token
+
 
                 let mut qty_coin = parsed_event.native_qty_paid;
                 //check openorders balance
@@ -633,7 +649,7 @@ pub mod fermi_dex {
         let deposit_vault;
         let cpty_vault;
         let native_pc_qty_locked;
-        let marginal_deposit;
+        let marginal_amount;
         match side {
             Side::Bid => {
                 let lock_qty_native = max_native_pc_qty;
@@ -978,7 +994,13 @@ pub struct JitStruct {
         order_id: u128,
         owner: Pubkey,
         owner_slot: u8,
+        match_timestamp: i64,
     }
+
+pub struct JitStructs {
+    sorted: Vec<JitStructs>
+}
+
 // #[repr(packed)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct RequestQueueHeader {
@@ -1407,7 +1429,7 @@ impl<'a> Iterator for EventQueueIterator<'a> {
         }
     }
 }*/
-//TODO - add timestamp of matching in order.
+//TODO - add timestamp of matching in order <??>.
 // User owner value to track cpty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct Order {
@@ -1815,7 +1837,7 @@ impl<'a> OrderBook<'a> {
 
                 event_q.buf[idx as usize] = out;
                 event_q.head +=1;
-
+                // ORDER ADDED TO OB
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Bid");
                 msg!("event.release_funds: {}", "true");
@@ -1881,6 +1903,9 @@ impl<'a> OrderBook<'a> {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
             */
+            // record timestamp of match to ensure valid delay before finalisation.
+            let clock = Clock::get()?;
+            let current_timestamp = clock.unix_timestamp;
             let jit_struct = JitStruct {
                 side: Side::Bid,
                 maker: true,
@@ -1889,6 +1914,7 @@ impl<'a> OrderBook<'a> {
                 order_id: best_offer.order_id,
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
+                match_timestamp: current_timestamp,
             };
             jit_data.push(jit_struct);
             /*msg!("data pushed to jitstruct");
@@ -1900,6 +1926,8 @@ impl<'a> OrderBook<'a> {
             msg!("event.owner {}", best_offer.owner);
             msg!("owner_slot {}", best_offer.owner_slot);
             msg!("event.finalised: {}", "0"); */
+
+
 
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
@@ -1919,6 +1947,7 @@ impl<'a> OrderBook<'a> {
             event_q.head +=1;
                 //.push_back(maker_fill)
                 //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                // ORDER MATCHED
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
@@ -1930,6 +1959,7 @@ impl<'a> OrderBook<'a> {
                 msg!("owner_slot: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
                 msg!("event.cpty_orderid: {}", order_id);
+
 
 
 
@@ -2187,6 +2217,7 @@ impl<'a> OrderBook<'a> {
 
         let pc_lot_size = self.market.pc_lot_size;
         let coin_lot_size = self.market.coin_lot_size;
+        // TODO write jit_data vec to respective account.
         let mut jit_data = vec![];
 
         //begin matching
@@ -2263,7 +2294,9 @@ impl<'a> OrderBook<'a> {
             if trade_qty == 0 {
                 break true;
             }
-
+            // RECORD matching timestamp to ensure finalisation delay
+            let clock = Clock::get()?;
+            let current_timestamp = clock.unix_timestamp;
             let native_maker_pc_qty = trade_qty * trade_price * pc_lot_size;
             let jit_struct = JitStruct {
                 side: Side::Bid,
@@ -2273,6 +2306,8 @@ impl<'a> OrderBook<'a> {
                 order_id: best_bid.order_id,
                 owner: best_bid.owner,
                 owner_slot: best_bid.owner_slot,
+                match_timestamp: current_timestamp,
+
             };
             jit_data.push(jit_struct);
             msg!("data pushed to jitstruct");
@@ -2612,6 +2647,15 @@ pub struct InitializeMarket<'info> {
 
     //pub event_q: Box<Account<'info, EventQueue>>,
 
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + Market::MAX_SIZE,
+        seeds = [b"jitdata".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+        bump,
+    )]
+    pub jitdata: Box<Account<'info, JitData>>,
+
     #[account(mut)]
     pub authority: Signer<'info>,
 
@@ -2847,6 +2891,9 @@ pub struct FinaliseMatch<'info>{
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
 
+    #[account(mut)]
+    pub jitdata: AccountLoader<'info, >,
+    //oooo
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
