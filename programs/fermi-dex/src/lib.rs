@@ -646,7 +646,9 @@ pub mod fermi_dex {
                 //debug using  ==
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
-                open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                //open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
+                //^CHANGED - No credit to OO as collateral free order opening
+
                 market.pc_deposits_total = market
                     .pc_deposits_total
                     .checked_add(deposit_amount)
@@ -665,7 +667,9 @@ pub mod fermi_dex {
                 cpty_vault = pc_vault;
                 require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
-                open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
+                //open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
+                //^CHANGED - No credit to OO as collateral free order opening
+                // TODO - use marginal collateral instead of zero.
                 market.coin_deposits_total = market
                     .coin_deposits_total
                     .checked_add(deposit_amount)
