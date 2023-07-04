@@ -726,8 +726,8 @@ pub mod fermi_dex {
                      let event2: Event = event_q.buf[usize::from(event2_slot)];
 
                      // VERIFY : event slots correspond with passed Open_orders accounts.
-                     require!(event1.owner == open_orders_auth.key(), Error);
-                     require!(event2.owner == open_orders_cpty.key(), Error);
+                     //require!(event1.owner == open_orders_auth.key(), Error);
+                     //require!(event2.owner == open_orders_cpty.key(), Error);
 
                      let events: Vec<Event> = vec![event1, event2];
                      // check if owner = authority or counterparty_authority
@@ -740,13 +740,6 @@ pub mod fermi_dex {
                      let mut first_event_done: bool = false;
                      for parsed_event in events {
 
-                             if !first_event_done {
-                                 order_id_general = parsed_event.order_id;
-                                 first_event_done = true;
-                             }
-                             else {
-                                 require!(parsed_event.order_id == order_id_general, Error);
-                             }
                              //EventView::Fill => {
                              //let mut side = parsedEventFlag::from_side(side);
                              //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
