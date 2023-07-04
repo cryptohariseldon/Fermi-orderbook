@@ -888,9 +888,12 @@ pub mod fermi_dex {
                          //10);
                          open_orders_auth.native_pc_free = open_orders_auth.native_pc_free ;
 
-                         let mut deposit_amount = qty_recieved; //for test with matching, L1044
+                         let mut deposit_amount = qty_paid; //for test with matching, L1044
+                         let mut cpty_deposit_amt = qty_recieved; //coin
                          let mut deposit_vault = pc_vault;
+                         let mut cpty_deposit_vault = coin_vault;
                          let mut payer = pcpayer;
+                         let mut cptypayer = coinpayer;
                          //cpty_vault = pc_vault;
                          require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                          //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
@@ -907,11 +910,30 @@ pub mod fermi_dex {
                                  //let marginal_deposit = cpi_ctx * 2 / 100
                                  anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                      _ => error!(ErrorCode::TransferFailed),
+
                                  })?;
+                                 open_orders_auth.credit_unlocked_pc(deposit_amount);
+
                              }
+                        if cpty_deposit_amt > 0 {
+                                     // transfer from depositor
+                                     let transfer_ix = Transfer {
+                                         from: cptypayer.to_account_info(),
+                                         to: cpty_deposit_vault.to_account_info(),
+                                         authority: authority.to_account_info(),
+                                     };
+                                     let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                     //let marginal_deposit = cpi_ctx * 2 / 100
+                                     anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                         _ => error!(ErrorCode::TransferFailed),
+
+                                     })?;
+                                     open_orders_cpty.credit_unlocked_coin(deposit_amount);
+
+                                 }
+
 
                          // edit balances, assuming cpty tx. goes through
-                         open_orders_auth.credit_unlocked_coin(deposit_amount);
                          //open_orders_auth.lock_free_pc(qty_pc);
                          // open_orders_auth.native_pc_free -= qty_pc;
 
