@@ -231,201 +231,6 @@ pub mod fermi_dex {
 }
 */
 
-    pub fn finalise_matches(
-        ctx: Context<FinaliseMatch>,
-        owner_slot: u8,
-        cpty_event_slot: u8,
-        orderId: u128,
-        authority_cpty: Pubkey,
-        owner: Pubkey,
-        owner_side: Side,
-    ) -> Result<()> {
-
-        let open_orders_auth = &mut ctx.accounts.open_orders_owner;
-        let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
-
-        let market =  &ctx.accounts.market;
-        let coin_vault = &ctx.accounts.coin_vault;
-        let pc_vault = &ctx.accounts.pc_vault;
-
-        let event_q = &mut ctx.accounts.event_q.load_mut()?;
-        let authority = &ctx.accounts.authority;
-        let token_program = &ctx.accounts.token_program;
-        let coin_mint = &ctx.accounts.coin_mint;
-        let pc_mint = &ctx.accounts.pc_mint;
-
-        // Verification steps
-
-
-        let parsed_event: Event = event_q.buf[usize::from(cpty_event_slot)];
-        require!(parsed_event.finalised == 0, Error);
-        let order = open_orders_auth.orders[usize::from(owner_slot)];
-        //let event2: Event =  event_q.buf[usize::from(event2_slot)];
-
-        // VERIFY : event slots correspond with passed Open_orders accounts.
-        //require!(parsed_event.cpty == owner, Error);
-        //require!(parsed_event.owner == authority_cpty, Error);
-        //msg!("event_owner: {}", parsed_event.owner);
-        //msg!("cpty: {}", authority_cpty);
-        msg!("ooauth: {}", open_orders_auth.authority);
-        msg!("oocpty: {}", open_orders_cpty.authority);
-
-        //require!(open_orders_auth.authority == owner, Error);
-        //require!(open_orders_cpty.authority == authority_cpty, Error);
-
-        match owner_side {
-            Side::Ask => {
-                // Owner is asker, cpty is bidder (owner gets pc, gives coin)
-                // 1. Adjust Balances for owner
-                let qty_paid = parsed_event.native_qty_released; //coin token
-                let qty_recieved = parsed_event.native_qty_paid; //pc token
-
-                let mut qty_coin = parsed_event.native_qty_paid;
-                //check openorders balance
-                let mut available_funds = open_orders_cpty.native_coin_free ;
-                //revert if asker JIT fails.
-                msg!("the cpty available funds (coin) is {}", available_funds);
-                //let mut remaining_funds = available_funds - qty_coin;
-                //let mut required_funds = available_funds - qty_paid;
-                msg!("the cpty required funds (coin) is {}", qty_paid);
-
-                let mut available_funds_user = open_orders_auth.native_coin_free ;
-
-                msg!("the owner available funds (pc) is {}", available_funds_user);
-                msg!("the owner required funds (pc) are {}", qty_recieved);
-
-                // edit balances, assuming cpty tx. goes through
-                //open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
-                //10);
-                //open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
-                //open_orders_auth.lock_free_pc(qty_pc);
-                let fin: u8 = 1;
-
-                // Just-in-time BALANCE ADJUSTMENTS
-                //deduct coins from Owner
-                open_orders_auth.native_coin_free -= qty_paid;
-
-                //credit coins to cpty
-                open_orders_cpty.native_coin_free += qty_paid;
-
-                //deduct pc from cpty
-                open_orders_cpty.native_pc_free -= qty_recieved;
-
-                //credit pc to Owner
-                open_orders_auth.native_pc_free -= qty_recieved;
-
-
-                msg!("Newly available PC for asker {}", qty_recieved);
-                msg!("Newly locked coins for asker {}", qty_paid);
-                msg!("Newly available coins for bidder {}", qty_paid);
-                msg!("Newly locked PC for bidder {}", qty_recieved);
-                let taker_fill = Event::new(EventView::Finalise {
-                    side: Side::Ask,
-                    maker: true,
-                    native_qty_paid:  parsed_event.native_qty_paid,
-                    native_qty_received: parsed_event.native_qty_released,
-                    order_id: parsed_event.order_id,
-                    owner: parsed_event.owner,
-                    owner_slot: parsed_event.owner_slot,
-                    finalised: fin,
-                    cpty: owner,
-                });
-                //let idx = event_q.as_mut().unwrap().head + 1;
-                let idx = cpty_event_slot;
-                event_q.buf[idx as usize] = taker_fill;
-                // event_q.as_mut().unwrap().head +=1;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "false");
-                msg!("event.native_qty_paid: {}", parsed_event.native_qty_paid);
-                msg!("event.native_qty_received:{}", parsed_event.native_qty_released);
-                msg!("event.order_id:{}", parsed_event.order_id);
-                msg!("event.owner:{}", parsed_event.owner);
-                msg!("event.owner_slot:{}", parsed_event.owner_slot);
-                msg!("event.finalised: {}", fin);
-                //msg!("event.cpty_orderid: {}", orderId);
-
-
-            },
-
-            Side::Bid => {
-                // Owner is bidder, cpty is asker  (owner gets coin, gives pc)
-                let qty_paid = parsed_event.native_qty_released; //pc
-                let qty_recieved = parsed_event.native_qty_paid; //coin
-
-                let mut available_funds = open_orders_cpty.native_pc_free ;
-                //revert if asker JIT fails.
-                msg!("the cpty available funds (pc) is {}", available_funds);
-                //let mut remaining_funds = available_funds - qty_coin;
-                //let mut required_funds = available_funds - qty_paid;
-                msg!("the cpty required funds (pc) is {}", qty_paid);
-                //TODO: revert with explicit error here if Bidder JIT fails. currently fails implicitly
-
-                let mut available_funds_user = open_orders_auth.native_coin_free ;
-
-                msg!("the owner available funds (coin) is {}", available_funds_user);
-                msg!("the owner required funds (coin) are {}", qty_recieved);
-
-                // let mut remaining_funds = available_funds - qty_pc;
-                // edit balances, assuming cpty tx. goes through
-                open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
-                //10);
-                open_orders_auth.native_pc_free = open_orders_auth.native_pc_free ;
-                //open_orders_auth.lock_free_pc(qty_pc);
-                // open_orders_auth.native_pc_free -= qty_pc;
-
-                //deduct pc from owner
-                //open_orders_auth.native_coin_free -= qty_paid;
-
-                // Just-in-time BALANCE ADJUSTMENTS
-                //deduct coins from Cpty
-                open_orders_cpty.native_coin_free -= qty_paid;
-
-                //credit coins to Owner
-                open_orders_auth.native_coin_free += qty_paid;
-
-                //deduct pc from Owner
-                open_orders_auth.native_pc_free -= qty_recieved;
-
-                //credit pc to cpty
-                open_orders_cpty.native_pc_free -= qty_recieved;
-
-
-                msg!("Newly available coins for bidder {}", qty_paid);
-                msg!("Newly locked PC for bidder {}", qty_recieved);
-                let fin: u8 = 1;
-                let taker_fill = Event::new(EventView::Finalise {
-                    side: Side::Bid,
-                    maker: true,
-                    native_qty_paid:  parsed_event.native_qty_released,
-                    native_qty_received: qty_paid,
-                    order_id: parsed_event.order_id,
-                    owner: parsed_event.owner,
-                    owner_slot: parsed_event.owner_slot,
-                    finalised: fin,
-                    cpty: authority.key(),
-                });
-                //let idx = event_q.as_mut().unwrap().head + 1;
-                let idx = cpty_event_slot;
-                event_q.buf[idx as usize] = taker_fill;
-
-                msg!("event.idx: {}", idx);
-                msg!("event.side: {}", "Ask");
-                msg!("event.maker: {}", "false");
-                msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
-                msg!("event.native_qty_received:{}", qty_paid);
-                msg!("event.order_id:{}", parsed_event.order_id);
-                msg!("event.owner:{}", parsed_event.owner);
-                msg!("event.owner_slot:{}", parsed_event.owner_slot);
-                msg!("event.finalised: {}", fin);
-                //msg!("event.cpty_orderid: {}", order_id);
-
-            }
-        }
-            Ok(())
-
-    }
 
 
         // check if owner = authority or cpty_authority
@@ -816,6 +621,7 @@ pub mod fermi_dex {
             })?;
         }
         msg!("matched amount {}", matched_amount_coin);
+        //MOVE TRANSFER TO FINALIZE STEP
         /*
         if deposit_amount > 0 {
                 // transfer from depositor
@@ -887,6 +693,279 @@ pub mod fermi_dex {
              anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
+
+
+
+             pub fn finalise_matches(
+                 ctx: Context<FinaliseMatch>,
+                 owner_slot: u8,
+                 cpty_event_slot: u8,
+                 orderId: u128,
+                 authority_cpty: Pubkey,
+                 owner: Pubkey,
+                 owner_side: Side,
+             ) -> Result<()> {
+
+                 let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+                 let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
+
+                 let market =  &ctx.accounts.market;
+                 let coin_vault = &ctx.accounts.coin_vault;
+                 let pc_vault = &ctx.accounts.pc_vault;
+
+                 let event_q = &mut ctx.accounts.event_q.load_mut()?;
+                 let authority = &ctx.accounts.authority;
+                 let pcpayer = &ctx.accounts.pcpayer;
+                 let coinpayer = &ctx.accounts.coinpayer;
+                 let token_program = &ctx.accounts.token_program;
+                 let coin_mint = &ctx.accounts.coin_mint;
+                 let pc_mint = &ctx.accounts.pc_mint;
+
+                 // Verification steps
+
+
+                 let parsed_event: Event = event_q.buf[usize::from(cpty_event_slot)];
+                 require!(parsed_event.finalised == 0, Error);
+                 let order = open_orders_auth.orders[usize::from(owner_slot)];
+                 //let event2: Event =  event_q.buf[usize::from(event2_slot)];
+
+                 // VERIFY : event slots correspond with passed Open_orders accounts.
+                 //require!(parsed_event.cpty == owner, Error);
+                 //require!(parsed_event.owner == authority_cpty, Error);
+                 //msg!("event_owner: {}", parsed_event.owner);
+                 //msg!("cpty: {}", authority_cpty);
+                 msg!("ooauth: {}", open_orders_auth.authority);
+                 msg!("oocpty: {}", open_orders_cpty.authority);
+
+                 //require!(open_orders_auth.authority == owner, Error);
+                 //require!(open_orders_cpty.authority == authority_cpty, Error);
+
+                 match owner_side {
+                     Side::Ask => {
+                         // Owner is asker, cpty is bidder (owner gets pc, gives coin)
+                         // 1. Adjust Balances for owner
+                         let qty_paid = parsed_event.native_qty_released; //coin token
+                         let qty_recieved = parsed_event.native_qty_paid; //pc token
+
+                         let mut qty_coin = parsed_event.native_qty_paid;
+                         //check openorders balance
+                         let mut available_funds = open_orders_cpty.native_coin_free ;
+                         //revert if asker JIT fails.
+                         msg!("the cpty available funds (coin) is {}", available_funds);
+                         //let mut remaining_funds = available_funds - qty_coin;
+                         //let mut required_funds = available_funds - qty_paid;
+                         msg!("the cpty required funds (coin) is {}", qty_paid);
+
+                         let mut available_funds_user = open_orders_auth.native_coin_free ;
+
+                         msg!("the owner available funds (pc) is {}", available_funds_user);
+                         msg!("the owner required funds (pc) are {}", qty_recieved);
+
+                         let mut deposit_amount = qty_paid; //for test with matching, L1044
+                         let mut deposit_vault = pc_vault;
+                         let mut payer = pcpayer;
+                         //cpty_vault = pc_vault;
+                         require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                         //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                         //open_orders.credit_unlocked_coin(deposit_amount)
+                         //Define deposit_vault, payer, token_program ?
+                         if deposit_amount > 0 {
+                                 // transfer from depositor
+                                 let transfer_ix = Transfer {
+                                     from: payer.to_account_info(),
+                                     to: deposit_vault.to_account_info(),
+                                     authority: authority.to_account_info(),
+                                 };
+                                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                 //let marginal_deposit = cpi_ctx * 2 / 100
+                                 anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                     _ => error!(ErrorCode::TransferFailed),
+                                 })?;
+                             }
+
+                         // edit balances, assuming cpty tx. goes through
+                         open_orders_auth.credit_unlocked_pc(deposit_amount);
+
+                         let mut deposit_amount = qty_paid; //for test with matching, L1044
+                         let mut deposit_vault = coin_vault;
+                         let mut payer = pcpayer;
+                         //cpty_vault = pc_vault;
+                         require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                         //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                         //open_orders.credit_unlocked_coin(deposit_amount)
+                         //Define deposit_vault, payer, token_program ?
+                         if deposit_amount > 0 {
+                                 // transfer from depositor
+                                 let transfer_ix = Transfer {
+                                     from: payer.to_account_info(),
+                                     to: deposit_vault.to_account_info(),
+                                     authority: authority.to_account_info(),
+                                 };
+                                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                 //let marginal_deposit = cpi_ctx * 2 / 100
+                                 anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                     _ => error!(ErrorCode::TransferFailed),
+                                 })?;
+                             }
+
+                         // edit balances, assuming cpty tx. goes through
+                         open_orders_auth.credit_unlocked_coin(deposit_amount);
+                         //open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
+                         //10);
+                         //open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
+                         //open_orders_auth.lock_free_pc(qty_pc);
+                         let fin: u8 = 1;
+
+                         // Just-in-time BALANCE ADJUSTMENTS
+                         //deduct coins from Owner
+                         open_orders_auth.native_coin_free -= qty_paid;
+
+                         //credit coins to cpty
+                         open_orders_cpty.native_coin_free += qty_paid;
+
+                         //deduct pc from cpty
+                         open_orders_cpty.native_pc_free -= qty_recieved;
+
+                         //credit pc to Owner
+                         open_orders_auth.native_pc_free -= qty_recieved;
+
+
+                         msg!("Newly available PC for asker {}", qty_recieved);
+                         msg!("Newly locked coins for asker {}", qty_paid);
+                         msg!("Newly available coins for bidder {}", qty_paid);
+                         msg!("Newly locked PC for bidder {}", qty_recieved);
+                         let taker_fill = Event::new(EventView::Finalise {
+                             side: Side::Ask,
+                             maker: true,
+                             native_qty_paid:  parsed_event.native_qty_paid,
+                             native_qty_received: parsed_event.native_qty_released,
+                             order_id: parsed_event.order_id,
+                             owner: parsed_event.owner,
+                             owner_slot: parsed_event.owner_slot,
+                             finalised: fin,
+                             cpty: owner,
+                         });
+                         //let idx = event_q.as_mut().unwrap().head + 1;
+                         let idx = cpty_event_slot;
+                         event_q.buf[idx as usize] = taker_fill;
+                         // event_q.as_mut().unwrap().head +=1;
+
+                         msg!("event.idx: {}", idx);
+                         msg!("event.side: {}", "Ask");
+                         msg!("event.maker: {}", "false");
+                         msg!("event.native_qty_paid: {}", parsed_event.native_qty_paid);
+                         msg!("event.native_qty_received:{}", parsed_event.native_qty_released);
+                         msg!("event.order_id:{}", parsed_event.order_id);
+                         msg!("event.owner:{}", parsed_event.owner);
+                         msg!("event.owner_slot:{}", parsed_event.owner_slot);
+                         msg!("event.finalised: {}", fin);
+                         //msg!("event.cpty_orderid: {}", orderId);
+
+
+                     },
+
+                     Side::Bid => {
+                         // Owner is bidder, cpty is asker  (owner gets coin, gives pc)
+                         let qty_paid = parsed_event.native_qty_released; //pc
+                         let qty_recieved = parsed_event.native_qty_paid; //coin
+
+                         let mut available_funds = open_orders_cpty.native_pc_free ;
+                         //revert if asker JIT fails.
+                         msg!("the cpty available funds (pc) is {}", available_funds);
+                         //let mut remaining_funds = available_funds - qty_coin;
+                         //let mut required_funds = available_funds - qty_paid;
+                         msg!("the cpty required funds (pc) is {}", qty_paid);
+                         //TODO: revert with explicit error here if Bidder JIT fails. currently fails implicitly
+
+                         let mut available_funds_user = open_orders_auth.native_coin_free ;
+
+                         msg!("the owner available funds (coin) is {}", available_funds_user);
+                         msg!("the owner required funds (coin) are {}", qty_recieved);
+
+                         // let mut remaining_funds = available_funds - qty_pc;
+                         // edit balances, assuming cpty tx. goes through
+                         open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                         //10);
+                         open_orders_auth.native_pc_free = open_orders_auth.native_pc_free ;
+
+                         let mut deposit_amount = qty_recieved; //for test with matching, L1044
+                         let mut deposit_vault = pc_vault;
+                         let mut payer = pcpayer;
+                         //cpty_vault = pc_vault;
+                         require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                         //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                         //open_orders.credit_unlocked_coin(deposit_amount)
+                         //Define deposit_vault, payer, token_program ?
+                         if deposit_amount > 0 {
+                                 // transfer from depositor
+                                 let transfer_ix = Transfer {
+                                     from: payer.to_account_info(),
+                                     to: deposit_vault.to_account_info(),
+                                     authority: authority.to_account_info(),
+                                 };
+                                 let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                 //let marginal_deposit = cpi_ctx * 2 / 100
+                                 anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                     _ => error!(ErrorCode::TransferFailed),
+                                 })?;
+                             }
+
+                         // edit balances, assuming cpty tx. goes through
+                         open_orders_auth.credit_unlocked_coin(deposit_amount);
+                         //open_orders_auth.lock_free_pc(qty_pc);
+                         // open_orders_auth.native_pc_free -= qty_pc;
+
+                         //deduct pc from owner
+                         //open_orders_auth.native_coin_free -= qty_paid;
+
+                         // Just-in-time BALANCE ADJUSTMENTS
+                         //deduct coins from Cpty
+                         open_orders_cpty.native_coin_free -= qty_paid;
+
+                         //credit coins to Owner
+                         open_orders_auth.native_coin_free += qty_paid;
+
+                         //deduct pc from Owner
+                         open_orders_auth.native_pc_free -= qty_recieved;
+
+                         //credit pc to cpty
+                         open_orders_cpty.native_pc_free -= qty_recieved;
+
+
+                         msg!("Newly available coins for bidder {}", qty_paid);
+                         msg!("Newly locked PC for bidder {}", qty_recieved);
+                         let fin: u8 = 1;
+                         let taker_fill = Event::new(EventView::Finalise {
+                             side: Side::Bid,
+                             maker: true,
+                             native_qty_paid:  parsed_event.native_qty_released,
+                             native_qty_received: qty_paid,
+                             order_id: parsed_event.order_id,
+                             owner: parsed_event.owner,
+                             owner_slot: parsed_event.owner_slot,
+                             finalised: fin,
+                             cpty: authority.key(),
+                         });
+                         //let idx = event_q.as_mut().unwrap().head + 1;
+                         let idx = cpty_event_slot;
+                         event_q.buf[idx as usize] = taker_fill;
+
+                         msg!("event.idx: {}", idx);
+                         msg!("event.side: {}", "Ask");
+                         msg!("event.maker: {}", "false");
+                         msg!("event.native_qty_paid: {}", parsed_event.native_qty_released);
+                         msg!("event.native_qty_received:{}", qty_paid);
+                         msg!("event.order_id:{}", parsed_event.order_id);
+                         msg!("event.owner:{}", parsed_event.owner);
+                         msg!("event.owner_slot:{}", parsed_event.owner_slot);
+                         msg!("event.finalised: {}", fin);
+                         //msg!("event.cpty_orderid: {}", order_id);
+
+                     }
+                 }
+                     Ok(())
+
+             }
 
 
 
@@ -2846,6 +2925,19 @@ pub struct FinaliseMatch<'info>{
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
 
+    #[account(
+        mut,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        token::authority = authority,
+    )]
+    pub pcpayer: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        token::authority = authority,
+    )]
+    pub coinpayer: Account<'info, TokenAccount>,
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]

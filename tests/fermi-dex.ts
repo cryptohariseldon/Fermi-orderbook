@@ -557,6 +557,8 @@ describe('fermi-dex', () => {
           coinMint: coinMint.publicKey,
           pcMint: pcMint.publicKey,
           //payer: authorityPcTokenAccount,
+          pcpayer: authorityPcTokenAccount,
+          coinpayer: authorityCoinTokenAccount,
           bids: bidsPda,
           asks: asksPda,
           reqQ: reqQPda,
