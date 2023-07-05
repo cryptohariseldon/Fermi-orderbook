@@ -698,8 +698,8 @@ pub mod fermi_dex {
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
-                    // pc_vault: Pubkey,
-                    // coin_vault: Pubkey,
+                     pc_vault: Pubkey,
+                     coin_vault: Pubkey,
                      //orderId: u128,
                      //authority_counterparty: Pubkey,
                  ) -> Result<()> {
@@ -765,7 +765,7 @@ pub mod fermi_dex {
                                  msg!("the available funds is {}", available_funds);
                                  msg!("the required funds are {}", qty_pc);
                                  //Transfers
-/*
+
                                  let mut deposit_amount = qty_pc; //for test with matching, L1044
                                  let mut cpty_deposit_amt = qty_coin; //coin
                                  let mut deposit_vault = pc_vault;
@@ -811,7 +811,7 @@ pub mod fermi_dex {
                                              })?; */
                                              open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
 
-                                         }   */
+                                         }   
 
 
                                  //TODO - Make transfer conditional on remaining funds <0

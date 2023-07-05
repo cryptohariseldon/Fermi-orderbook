@@ -280,6 +280,14 @@
         {
           "name": "event2Slot",
           "type": "u8"
+        },
+        {
+          "name": "pcVault",
+          "type": "publicKey"
+        },
+        {
+          "name": "coinVault",
+          "type": "publicKey"
         }
       ]
     }

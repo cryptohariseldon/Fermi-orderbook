@@ -544,8 +544,8 @@ describe('fermi-dex', () => {
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
-      //  pcVault,
-        //coinVault,
+        pcVault,
+        coinVault,
         //new anchor.BN(0),
         //authority.PublicKey,
       )
