@@ -518,29 +518,34 @@ describe('fermi-dex', () => {
   {
     const eventsQ2 = await program.account.eventQueue.fetch(eventQPda);
     //let i = -1;
-    console.log(eventsQ2['buf'][1]);
+    //console.log(eventsQ2['buf'][1]);
     let order_id;
     let event_slot;
     console.log(authority);
+    /*
     for(let i=0; i<eventsQ2['buf'].length; i++){
       //i+=1;
       let event = eventsQ2['buf'][i];
-      console.log(event.flag);
+      //console.log(event.flag);
       if (event.flags=="0x1"){
         const event_slot = i;
         const order_id = event.order_id;
       }
-    }
+    } */
     let base_order_id = 498062089990157893629;
     let base_event_slot = 1;
     let base_event_slot2 = 2;
 
     console.log(base_order_id);
     console.log('test finalise match with event slot + order id');
+    console.log(authorityCoinTokenAccount.toString());
+    console.log(authorityPcTokenAccount.toString());
     await program.methods
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
+      //  pcVault,
+        //coinVault,
         //new anchor.BN(0),
         //authority.PublicKey,
       )
@@ -554,12 +559,12 @@ describe('fermi-dex', () => {
         coinMint: coinMint.publicKey,
         pcMint: pcMint.publicKey,
         //payer: authorityPcTokenAccount,
-        bids: bidsPda,
-        asks: asksPda,
+        //bids: bidsPda,
+        //asks: asksPda,
         reqQ: reqQPda,
         eventQ: eventQPda,
         pcpayer: authorityPcTokenAccount,
-        //coinpayer: authorityCoinTokenAccount, 
+        coinpayer: authorityCoinTokenAccount,
       })
       .signers([authority])
       .rpc();
