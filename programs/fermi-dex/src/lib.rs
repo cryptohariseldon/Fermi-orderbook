@@ -718,7 +718,7 @@ pub mod fermi_dex {
                      let token_program = &ctx.accounts.token_program;
                      let coin_mint = &ctx.accounts.coin_mint;
                      let pc_mint = &ctx.accounts.pc_mint;
-                     //let payerpc = &ctx.accounts.pcpayer;
+                     let payerpc = &ctx.accounts.pcpayer;
                      //let payercoin = &ctx.accounts.coinpayer;
 
                      // Verification steps
@@ -3284,14 +3284,14 @@ pub struct NewMatch<'info>{
 
     #[account(mut)]
     pub authority: Signer<'info>,
-    /*
+
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
-
+    /*
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,

@@ -495,6 +495,7 @@ describe('fermi-dex', () => {
             reqQ: reqQPda,
             eventQ: eventQPda,
             authority: authority.publicKey,
+
           })
           .signers([authority])
           .rpc();
@@ -557,8 +558,8 @@ describe('fermi-dex', () => {
         asks: asksPda,
         reqQ: reqQPda,
         eventQ: eventQPda,
-      /*  pcpayer: authorityPcTokenAccount,
-        coinpayer: authorityCoinTokenAccount, */
+        pcpayer: authorityPcTokenAccount,
+        //coinpayer: authorityCoinTokenAccount, 
       })
       .signers([authority])
       .rpc();
