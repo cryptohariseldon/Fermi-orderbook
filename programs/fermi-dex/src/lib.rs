@@ -694,12 +694,12 @@ pub mod fermi_dex {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
 
-             pub fn finalise_matches(
+    pub fn finalise_matches(
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
-                     orderId: u128,
-                     authority_counterparty: Pubkey,
+                     //orderId: u128,
+                     //authority_counterparty: Pubkey,
                  ) -> Result<()> {
 
                      let open_orders_auth = &mut ctx.accounts.open_orders_owner;
@@ -718,6 +718,8 @@ pub mod fermi_dex {
                      let token_program = &ctx.accounts.token_program;
                      let coin_mint = &ctx.accounts.coin_mint;
                      let pc_mint = &ctx.accounts.pc_mint;
+                     //let payerpc = &ctx.accounts.pcpayer;
+                     //let payercoin = &ctx.accounts.coinpayer;
 
                      // Verification steps
                      // consume eventQ, check event_slot for matching order_id
@@ -738,6 +740,7 @@ pub mod fermi_dex {
                      // Allow only two events, with the same order-id.
                      let mut order_id_general: u128 = 0;
                      let mut first_event_done: bool = false;
+
                      for parsed_event in events {
 
                              //EventView::Fill => {
@@ -753,16 +756,67 @@ pub mod fermi_dex {
                              //if side=="Bid"{
                                  //qty to fill
                                  let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
+                                 let mut qty_coin = parsed_event.native_qty_released ;
                                  //check openorders balance
-                                 let mut available_funds = open_orders_auth.native_pc_free * 10;
+                                 let mut available_funds = open_orders_auth.native_pc_free ;
                                  //revert if Bidder JIT fails.
                                  msg!("the available funds is {}", available_funds);
                                  msg!("the required funds are {}", qty_pc);
+                                 //Transfers
+                                 /*
+                                 let mut deposit_amount = qty_pc; //for test with matching, L1044
+                                 let mut cpty_deposit_amt = qty_coin; //coin
+                                 let mut deposit_vault = pc_vault;
+                                 let mut cpty_deposit_vault = coin_vault;
+                                 let mut payer = payerpc;
+                                 let mut cptypayer = payercoin;
+                                 //cpty_vault = pc_vault;
+                                 //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                                 //open_orders.credit_unlocked_coin(deposit_amount)
+                                 //Define deposit_vault, payer, token_program ?
 
-                                 let mut remaining_funds = available_funds - qty_pc;
+                                 if deposit_amount > 0 {
+                                         // transfer from depositor
+                                         /*
+                                         let transfer_ix = Transfer {
+                                             from: payer.to_account_info(),
+                                             to: deposit_vault.to_account_info(),
+                                             authority: authority.to_account_info(),
+                                         };
+                                         let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                         //let marginal_deposit = cpi_ctx * 2 / 100
+                                         anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                             _ => error!(ErrorCode::TransferFailed),
 
+                                         })?;*/
+                                         open_orders_auth.credit_unlocked_pc(deposit_amount);
+
+                                     }
+                                if cpty_deposit_amt > 0 {
+                                             // transfer from depositor
+                                             /*
+                                             let transfer_ix = Transfer {
+                                                 from: cptypayer.to_account_info(),
+                                                 to: cpty_deposit_vault.to_account_info(),
+                                                 authority: authority.to_account_info(),
+                                             };
+                                             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                             //let marginal_deposit = cpi_ctx * 2 / 100
+                                             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                                 _ => error!(ErrorCode::TransferFailed),
+
+                                             })?; */
+                                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+
+                                         }  */
+
+
+                                 //TODO - Make transfer conditional on remaining funds <0
+                                 //let mut remaining_funds = available_funds - qty_pc;
+                                 let mut remaining_funds = 0;
                                  //require!(available_funds >= qty_pc, Error);
-                                 if remaining_funds > 1 {
+                                 if remaining_funds > 0 {
                                  // edit balances, assuming counterparty tx. goes through
                                  open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
                                  //10);
@@ -795,6 +849,11 @@ pub mod fermi_dex {
                                  let mut qty_coin = parsed_event.native_qty_paid;
                                  //check openorders balance
                                  let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                                 // TODO - MAKE CONDITIONAL TRANSFER ONLY IF OO BAL is INSUFFICIENT
+                                 //TransferIx
+                                 //let mut payercoin =
+
+
                                  //revert if asker JIT fails.
                                  //msg!("the available funds is {}", available_funds);
                                  //let mut remaining_funds = available_funds - qty_coin;
@@ -3190,6 +3249,7 @@ pub struct NewMatch<'info>{
     )]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
+
     #[account(
         seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
         bump,
@@ -3224,6 +3284,21 @@ pub struct NewMatch<'info>{
 
     #[account(mut)]
     pub authority: Signer<'info>,
+    /*
+    #[account(
+        mut,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        token::authority = authority,
+    )]
+    pub pcpayer: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        token::authority = authority,
+    )]
+    pub coinpayer: Account<'info, TokenAccount>, */
+    //pub event_q: Box<Account<'info, EventQueue>>,
 
     //#[account(mut)]
     //pub authority_counterparty: Account<'info, AccountInfo>,

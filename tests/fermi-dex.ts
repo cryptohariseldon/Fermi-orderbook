@@ -531,8 +531,8 @@ describe('fermi-dex', () => {
       }
     }
     let base_order_id = 498062089990157893629;
-    let base_event_slot = 2;
-    let base_event_slot2 = 3;
+    let base_event_slot = 1;
+    let base_event_slot2 = 2;
 
     console.log(base_order_id);
     console.log('test finalise match with event slot + order id');
@@ -540,12 +540,13 @@ describe('fermi-dex', () => {
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
-        new anchor.BN(0),
-        authority.PublicKey,
+        //new anchor.BN(0),
+        //authority.PublicKey,
       )
       .accounts({
         openOrdersOwner: openOrdersPda,
         openOrdersCounterparty: openOrdersPda,
+        authority: authority.publicKey,
         market: marketPda,
         coinVault,
         pcVault,
@@ -556,7 +557,8 @@ describe('fermi-dex', () => {
         asks: asksPda,
         reqQ: reqQPda,
         eventQ: eventQPda,
-        authority: authority.publicKey,
+      /*  pcpayer: authorityPcTokenAccount,
+        coinpayer: authorityCoinTokenAccount, */
       })
       .signers([authority])
       .rpc();
