@@ -17,7 +17,12 @@ const getDevPgmId = () => {
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
+
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
+
+const secretKeySecond = JSON.parse(fs.readFileSync("./local-testing/id.json"));
+const keypair_second = Keypair.fromSecretKey(new Uint8Array(secretKey));
+
 
 const createMint = async (
   provider: anchor.AnchorProvider,
@@ -148,9 +153,12 @@ describe('fermi-dex', () => {
 
   //const authority = anchor.web3.Keypair.generate();
   const authority = keypair;
-  const authority_second = anchor.web3.Keypair.generate();
+  const authority_second = anchor.web3.Keypair.generate(); //keypair_second;
 
+  console.log("TWO USER TESTING");
   console.log(authority);
+  console.log(authority_second);
+
   let authorityCoinTokenAccount: anchor.web3.PublicKey;
   let authorityPcTokenAccount: anchor.web3.PublicKey;
   let authority_secondCoinTokenAccount: anchor.web3.PublicKey;
