@@ -4,6 +4,7 @@ import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
 import idl from "../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
+const fs = require('fs');
 
 
 const getDevPgmId = () => {
@@ -13,6 +14,10 @@ const getDevPgmId = () => {
     )
     return new anchor.web3.PublicKey(pgmKeypair.publicKey) // Address of the deployed program
 }
+
+const {Keypair} = require("@solana/web3.js");
+const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 const createMint = async (
   provider: anchor.AnchorProvider,
@@ -141,7 +146,8 @@ describe('fermi-dex', () => {
   let openOrders_secondPda: anchor.web3.PublicKey;
   let openOrders_secondPdaBump: number;
 
-  const authority = anchor.web3.Keypair.generate();
+  //const authority = anchor.web3.Keypair.generate();
+  const authority = keypair;
   const authority_second = anchor.web3.Keypair.generate();
 
   console.log(authority);
@@ -544,8 +550,10 @@ describe('fermi-dex', () => {
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
-        pcVault,
-        coinVault,
+        //pcVault,
+        //coinVault,
+        authorityPcTokenAccount,
+        authorityCoinTokenAccount,
         //new anchor.BN(0),
         //authority.PublicKey,
       )
@@ -569,6 +577,52 @@ describe('fermi-dex', () => {
       .signers([authority])
       .rpc();
 
+      // const anchor = require('@project-serum/anchor');
+      /*
+  const BN = require('bn.js');
+  const BufferLayout = require('buffer-layout');
+
+  // Define the layout for Event
+  const EventLayout = BufferLayout.struct([
+  BufferLayout.u8('event_flags'),
+  BufferLayout.u8('owner_slot'),
+  BufferLayout.u64('native_qty_released'),
+  BufferLayout.u64('native_qty_paid'),
+  BufferLayout.blob(16, 'order_id'),
+  BufferLayout.blob(32, 'owner'),
+  BufferLayout.u8('finalised'),
+  ]);
+
+  // Define the layout for EventQueueHeader
+  const EventQueueHeaderLayout = BufferLayout.struct([
+  BufferLayout.seq(BufferLayout.u64(), 3),
+  ]);
+
+  const EventQueueLayout = BufferLayout.struct([
+  EventQueueHeaderLayout,
+  BufferLayout.seq(EventLayout, 100, 'events'),
+  ]);
+
+  // Fetch the data from the program
+  const eventQPdax = await program.account.eventQueue.fetch(eventQPda);
+
+  // Convert the fetched data to a buffer
+  const dataBuffer = Buffer.from(eventQPdax);
+
+  // Decode the data using the layout
+  const eventQueue = EventQueueLayout.decode(dataBuffer);
+
+  // Convert fields to appropriate types
+  eventQueue.header = eventQueue.header.map(head => new BN(head, 10, "le").toNumber());
+  eventQueue.events = eventQueue.events.map(event => {
+  event.native_qty_released = new BN(event.native_qty_released, 10, "le").toNumber();
+  event.native_qty_paid = new BN(event.native_qty_paid, 10, "le").toNumber();
+  event.order_id = new BN(event.order_id, 16, "le").toString(10);
+  event.owner = new BN(event.owner, 16, "le").toString(16);
+  return event;
+  });
+
+  console.log(eventQueue); */
     console.log('test finalise match with event slot + order id');
     const openOrders = await program.account.openOrders.fetch(
       openOrdersPda,
@@ -578,13 +632,17 @@ describe('fermi-dex', () => {
     console.log(bids);
     const asks = await program.account.orders.fetch(asksPda);
     console.log(asks);
+    const eventsQ23 = await program.account.eventQueue.fetch(eventQPda);
+    console.log("hexagons everywhere");
+    console.log(eventsQ23);
     //const eventQ = await program.
   }
 }),
-    it('finalise order - buy @@ 101 successful', async () => {
+    it('finalise order - buy @@ 101 successful - OUTDATED', async () => {
     {
       const eventsQ2 = await program.account.eventQueue.fetch(eventQPda);
       //let i = -1;
+
       console.log(eventsQ2['buf'][1]);
       let order_id;
       let event_slot;

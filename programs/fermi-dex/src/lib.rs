@@ -693,13 +693,14 @@ pub mod fermi_dex {
              anchor_spl::token::transfer(cpi_ctx, matched_amount_coin).map_err(|err| match err {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
-
+             // NOTE - CAN DIRECTLY PASS USERS' PC & COIN ACCOUNTS INSTEAD OF VAULTS. TODO - FIX OPENORDERS ACCOUNTING IN THAT CASE.
     pub fn finalise_matches(
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
                      pc_vault: Pubkey,
                      coin_vault: Pubkey,
+                     //pc_reciever: Pub
                      //orderId: u128,
                      //authority_counterparty: Pubkey,
                  ) -> Result<()> {
@@ -811,7 +812,7 @@ pub mod fermi_dex {
                                              })?; */
                                              open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
 
-                                         }   
+                                         }
 
 
                                  //TODO - Make transfer conditional on remaining funds <0
@@ -1577,7 +1578,7 @@ impl EventQueueHeader {
 //#[account]
 //#[derive(Default)]
 #[account(zero_copy)]
-#[repr(packed)]
+#[repr(C)]
 pub struct EventQueue {
     header: EventQueueHeader,
     head: u64,
