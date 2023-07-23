@@ -362,10 +362,6 @@
             "type": "publicKey"
           },
           {
-            "name": "eventVal",
-            "type": "publicKey"
-          },
-          {
             "name": "authority",
             "type": "publicKey"
           }

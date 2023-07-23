@@ -144,6 +144,9 @@ describe('fermi-dex', () => {
   let eventQPda: anchor.web3.PublicKey;
   let eventQPdaBump: number;
 
+  let eventValPda: anchor.web3.PublicKey;
+  let eventValPdaBump: number;
+
   let openOrdersPda: anchor.web3.PublicKey;
   let openOrdersPdaBump: number;
 
@@ -200,6 +203,11 @@ describe('fermi-dex', () => {
     );
     [eventQPda, eventQPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from('event-q', 'utf-8'), marketPda.toBuffer()],
+      program.programId,
+    );
+
+    [eventValPda, eventValPdaBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from('event-val', 'utf-8'), marketPda.toBuffer()],
       program.programId,
     );
 
@@ -384,6 +392,7 @@ describe('fermi-dex', () => {
           asks: asksPda,
           reqQ: reqQPda,
           eventQ: eventQPda,
+          eventVal: eventValPda,
           authority: authority.publicKey,
         })
         .signers([authority])
@@ -427,6 +436,7 @@ describe('fermi-dex', () => {
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
+            eventVal: eventValPda,
             authority: authority.publicKey,
           })
           .signers([authority])
@@ -468,6 +478,7 @@ describe('fermi-dex', () => {
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
+            eventVal: eventValPda,
             authority: authority.publicKey,
           })
           .signers([authority])
@@ -508,6 +519,7 @@ describe('fermi-dex', () => {
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
+            eventVal: eventValPda,
             authority: authority.publicKey,
 
           })
@@ -581,6 +593,7 @@ describe('fermi-dex', () => {
         eventQ: eventQPda,
         pcpayer: authorityPcTokenAccount,
         coinpayer: authorityCoinTokenAccount,
+        eventval: eventValPda,
       })
       .signers([authority])
       .rpc();

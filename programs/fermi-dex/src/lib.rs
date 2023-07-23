@@ -35,8 +35,8 @@ pub mod fermi_dex {
         market.asks = ctx.accounts.asks.key();
         market.req_q = ctx.accounts.req_q.key();
         market.event_q = ctx.accounts.event_q.key();
+        //market.event_val = ctx.accounts.event_val.key();
         market.authority = ctx.accounts.authority.key();
-        market.event_val = ctx.accounts.event_val.key();
 
         Ok(())
     }
@@ -1209,7 +1209,7 @@ pub struct Market {
 
     req_q: Pubkey,
     event_q: Pubkey,
-    event_val: Pubkey,
+    //event_val: Pubkey,
 
     authority: Pubkey,
 }
@@ -2975,7 +2975,7 @@ pub struct InitializeMarket<'info> {
         init,
         payer = authority,
         space = 8 * 1024,
-        seeds = [b"event-validation".as_ref(), market.key().as_ref()],
+        seeds = [b"event-val".as_ref(), market.key().as_ref()],
         bump,
     )]
     pub event_val: AccountLoader<'info, EventValidation>,
