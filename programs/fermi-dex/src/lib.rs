@@ -36,6 +36,7 @@ pub mod fermi_dex {
         market.req_q = ctx.accounts.req_q.key();
         market.event_q = ctx.accounts.event_q.key();
         market.authority = ctx.accounts.authority.key();
+        market.event_val = ctx.accounts.event_val.key();
 
         Ok(())
     }
@@ -410,6 +411,7 @@ pub mod fermi_dex {
         let asks = &mut ctx.accounts.asks;
         let req_q = &mut ctx.accounts.req_q;
         let event_q = &mut ctx.accounts.event_q.load_mut();
+        let event_val = &mut ctx.accounts.event_val.load_mut();
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
         let coin_mint = &ctx.accounts.coin_mint;
@@ -509,7 +511,7 @@ pub mod fermi_dex {
         let mut order_book = OrderBook { bids, asks, market };
 
         // matching occurs at this stage
-        order_book.process_request(&request, &mut event_q.as_mut().unwrap(), &mut proceeds)?;
+        order_book.process_request(&request, &mut event_q.as_mut().unwrap(), event_val.as_mut().unwrap(), &mut proceeds)?;
         //msg!(event_q[1].side);
         //let jit_data = vec![];
 
@@ -1207,6 +1209,7 @@ pub struct Market {
 
     req_q: Pubkey,
     event_q: Pubkey,
+    event_val: Pubkey,
 
     authority: Pubkey,
 }
@@ -1264,6 +1267,19 @@ pub enum RequestView {
     },
 
 }
+
+#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+pub struct EventMatch {
+    order_id_1: u128,
+    order_id_2: u128,
+}
+
+#[account(zero_copy)]
+#[repr(packed)]
+pub struct EventValidation {
+    buf: [EventMatch; 100]
+}
+
 
 #[derive(Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct JitStruct {
@@ -1385,7 +1401,7 @@ impl EventView {
     }
 }
 
-//#[repr(C)]
+#[repr(C)]
 //#[repr(packed)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 //#[zero_copy]
@@ -1548,7 +1564,7 @@ impl Event {
     // }
 }
 
-//#[repr(C)]
+#[repr(C)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct EventQueueHeader {
     head: u64,
@@ -1596,10 +1612,8 @@ pub struct EventQueue {
     header: EventQueueHeader,
     pub _reserved0: [u8; 8],
 
-    //pub _reserved0: [u8; 8], // Padding to reach the next 16-byte alignment
     head: u64,
     pub _reserved1: [u8; 8],
-    //pub _reserved1: [u8; 8], // Additional padding to reach the next 16-byte alignment
     buf: [Event; 100], // Used zero_copy to expand eventsQ size
 }
 
@@ -1731,6 +1745,20 @@ impl<'a> Iterator for EventQueueIterator<'a> {
 
 // User owner value to track cpty
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+//struct for caputring validation data, especially which taker has matched with which maker
+pub struct ValidationData {
+    order_id: u128,
+    owner: Pubkey,
+    owner_slot: u8,
+    cpty: Pubkey,
+    cpty_slot: u8,
+    native_qty_paid: u64,
+    native_qty_received: u64,
+    finalised: u8,
+}
+
+#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+
 pub struct Order {
     order_id: u128,
     qty: u64,
@@ -1871,6 +1899,7 @@ impl<'a> OrderBook<'a> {
         &mut self,
         request: &RequestView,
         event_q: &mut EventQueue,
+        event_val: &mut EventValidation,
         proceeds: &mut RequestProceeds,
     ) -> Result<Option<RequestView>> {
         Ok(match *request {
@@ -1894,6 +1923,7 @@ impl<'a> OrderBook<'a> {
                         owner,
                     },
                     event_q,
+                    event_val,
                     proceeds,
                 )?
                 .map(|remaining| RequestView::NewOrder {
@@ -1955,6 +1985,7 @@ impl<'a> OrderBook<'a> {
         &mut self,
         params: NewOrderParams,
         event_q: &mut EventQueue,
+        event_val: &mut EventValidation,
         proceeds: &mut RequestProceeds,
     ) -> Result<Option<OrderRemaining>> {
         let NewOrderParams {
@@ -1997,6 +2028,7 @@ impl<'a> OrderBook<'a> {
                     },
                     event_q,
                     proceeds,
+                    event_val,
                 )},
                 Side::Ask => {
                     //enable error to check failure due to locked quantity
@@ -2069,6 +2101,7 @@ impl<'a> OrderBook<'a> {
         params: NewBidParams,
         event_q: &mut EventQueue,
         to_release: &mut RequestProceeds,
+        event_val: &mut EventValidation,
     ) -> Result<Option<OrderRemaining>> {
         let NewBidParams {
             max_coin_qty,
@@ -2238,6 +2271,12 @@ impl<'a> OrderBook<'a> {
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
+
+            let validation_fill = EventMatch {
+                order_id_1: best_offer.order_id,
+                order_id_2: order_id,
+            };
+            event_val.buf[idx as usize] = validation_fill;
                 //.push_back(maker_fill)
                 //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
@@ -2931,6 +2970,16 @@ pub struct InitializeMarket<'info> {
     )]
     pub event_q: AccountLoader<'info, EventQueue>,
 
+    #[account(
+        //zero,
+        init,
+        payer = authority,
+        space = 8 * 1024,
+        seeds = [b"event-validation".as_ref(), market.key().as_ref()],
+        bump,
+    )]
+    pub event_val: AccountLoader<'info, EventValidation>,
+
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
@@ -3168,6 +3217,9 @@ pub struct FinaliseMatch<'info>{
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
 
+    #[account(mut)]
+    pub event_val: AccountLoader<'info, EventValidation>,
+
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
@@ -3253,6 +3305,9 @@ pub struct NewOrder<'info> {
     pub event_q: AccountLoader<'info, EventQueue>,
 
     #[account(mut)]
+    pub event_val: AccountLoader<'info, EventValidation>,
+
+    #[account(mut)]
     pub authority: Signer<'info>,
 
     pub system_program: Program<'info, System>,
@@ -3310,6 +3365,9 @@ pub struct NewMatch<'info>{
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
+
+    #[account(mut)]
+    pub event_val: AccountLoader<'info, EventValidation>,
 
     #[account(mut)]
     pub authority: Signer<'info>,

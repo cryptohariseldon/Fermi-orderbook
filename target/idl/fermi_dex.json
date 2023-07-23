@@ -51,6 +51,11 @@
           "isSigner": false
         },
         {
+          "name": "eventVal",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "authority",
           "isMut": true,
           "isSigner": true
@@ -146,6 +151,11 @@
           "isSigner": false
         },
         {
+          "name": "eventVal",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "authority",
           "isMut": true,
           "isSigner": true
@@ -233,6 +243,11 @@
         },
         {
           "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventVal",
           "isMut": true,
           "isSigner": false
         },
@@ -347,8 +362,31 @@
             "type": "publicKey"
           },
           {
+            "name": "eventVal",
+            "type": "publicKey"
+          },
+          {
             "name": "authority",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventValidation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buf",
+            "type": {
+              "array": [
+                {
+                  "defined": "EventMatch"
+                },
+                100
+              ]
+            }
           }
         ]
       }
@@ -553,6 +591,22 @@
   ],
   "types": [
     {
+      "name": "EventMatch",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "orderId1",
+            "type": "u128"
+          },
+          {
+            "name": "orderId2",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
       "name": "JitStruct",
       "type": {
         "kind": "struct",
@@ -654,6 +708,46 @@
           {
             "name": "seqNum",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ValidationData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "orderId",
+            "type": "u128"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "ownerSlot",
+            "type": "u8"
+          },
+          {
+            "name": "cpty",
+            "type": "publicKey"
+          },
+          {
+            "name": "cptySlot",
+            "type": "u8"
+          },
+          {
+            "name": "nativeQtyPaid",
+            "type": "u64"
+          },
+          {
+            "name": "nativeQtyReceived",
+            "type": "u64"
+          },
+          {
+            "name": "finalised",
+            "type": "u8"
           }
         ]
       }
