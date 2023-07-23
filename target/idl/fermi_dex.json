@@ -368,6 +368,35 @@
       }
     },
     {
+      "name": "EventQueueY",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "header",
+            "type": {
+              "defined": "EventQueueHeader"
+            }
+          },
+          {
+            "name": "head",
+            "type": "u64"
+          },
+          {
+            "name": "buf",
+            "type": {
+              "array": [
+                {
+                  "defined": "Event"
+                },
+                100
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "EventQueue",
       "type": {
         "kind": "struct",
@@ -376,6 +405,62 @@
             "name": "header",
             "type": {
               "defined": "EventQueueHeader"
+            }
+          },
+          {
+            "name": "reserved0",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "head",
+            "type": "u64"
+          },
+          {
+            "name": "reserved1",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "buf",
+            "type": {
+              "array": [
+                {
+                  "defined": "Event"
+                },
+                100
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventQueueYY",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "header",
+            "type": {
+              "defined": "EventQueueHeader"
+            }
+          },
+          {
+            "name": "reserved0",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
             }
           },
           {

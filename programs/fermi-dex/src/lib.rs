@@ -40,7 +40,7 @@ pub mod fermi_dex {
         Ok(())
     }
 
-    //Add: 
+    //Add:
     // Create PDA / Use existing PDA
     // Approve tokens to PDA
     //Remove:
@@ -1385,12 +1385,14 @@ impl EventView {
     }
 }
 
+//#[repr(C)]
 //#[repr(packed)]
-//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
-#[zero_copy]
+#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+//#[zero_copy]
 pub struct Event {
     event_flags: u8,
     owner_slot: u8,
+    
 
     native_qty_released: u64,
     native_qty_paid: u64,
@@ -1398,6 +1400,7 @@ pub struct Event {
     order_id: u128,
     owner: Pubkey,
     finalised: u8,
+    //_padding: [u8; 13],
     //cpty: Pubkey,
 }
 
@@ -1545,7 +1548,7 @@ impl Event {
     // }
 }
 
-// #[repr(packed)]
+//#[repr(C)]
 #[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct EventQueueHeader {
     head: u64,
@@ -1580,12 +1583,34 @@ impl EventQueueHeader {
 //#[derive(Default)]
 #[account(zero_copy)]
 #[repr(C)]
-pub struct EventQueue {
+pub struct EventQueueY {
     header: EventQueueHeader,
     head: u64,
     buf: [Event; 100], // Used zero_copy to expand eventsQ size
 }
 
+#[account(zero_copy)]
+#[repr(C)]
+pub struct EventQueue {
+
+    header: EventQueueHeader,
+    pub _reserved0: [u8; 8],
+
+    //pub _reserved0: [u8; 8], // Padding to reach the next 16-byte alignment
+    head: u64,
+    pub _reserved1: [u8; 8],
+    //pub _reserved1: [u8; 8], // Additional padding to reach the next 16-byte alignment
+    buf: [Event; 100], // Used zero_copy to expand eventsQ size
+}
+
+#[account(zero_copy)]
+#[repr(C)]
+pub struct EventQueueYY {
+    header: EventQueueHeader, // Size 24 bytes, Alignment 8 bytes
+    pub _reserved0: [u8; 4], // Padding to reach the next 8-byte alignment
+    head: u64, // Size 8 bytes, Alignment 8 bytes
+    buf: [Event; 100], // Used zero_copy to expand eventsQ size, Size 6800 bytes, Alignment 8 bytes
+}
 
 impl EventQueue {
     pub const MAX_SIZE: usize = EventQueueHeader::MAX_SIZE + 20 * Event::MAX_SIZE;
