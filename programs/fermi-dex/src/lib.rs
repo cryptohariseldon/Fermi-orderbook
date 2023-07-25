@@ -3281,10 +3281,10 @@ pub struct NewOrder<'info> {
         associated_token::mint = pc_mint,
         associated_token::authority = market,
     )]
-    pub pc_vault: Account<'info, TokenAccount>,
+    pub pc_vault: Box<Account<'info, TokenAccount>>,
 
-    pub coin_mint: Account<'info, Mint>,
-    pub pc_mint: Account<'info, Mint>,
+    pub coin_mint: Box<Account<'info, Mint>>,
+    pub pc_mint: Box<Account<'info, Mint>>,
 
     #[account(
         mut,
