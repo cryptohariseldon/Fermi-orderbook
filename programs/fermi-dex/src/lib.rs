@@ -739,6 +739,9 @@ pub mod fermi_dex {
                     msg!("event2 orderid is {}", event2.order_id);
                     msg!("event2 orderidsecond is {}", event2.order_id_second);
 
+                    // VALIDATION: Event1 (makerfill) must have order_id_second = event2.order_id to be valid.
+                    require!(event1.order_id_second == event2.order_id, Error);
+
                      let events: Vec<Event> = vec![event1, event2];
                      // check if owner = authority or counterparty_authority
                      // check side of event
