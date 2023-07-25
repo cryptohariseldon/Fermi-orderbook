@@ -549,6 +549,10 @@
           {
             "name": "finalised",
             "type": "u8"
+          },
+          {
+            "name": "orderIdSecond",
+            "type": "u128"
           }
         ]
       }
@@ -768,6 +772,10 @@
               {
                 "name": "cpty",
                 "type": "publicKey"
+              },
+              {
+                "name": "order_id_second",
+                "type": "u128"
               }
             ]
           },

@@ -40,7 +40,7 @@ pub mod fermi_dex {
         Ok(())
     }
 
-    //Add: 
+    //Add:
     // Create PDA / Use existing PDA
     // Approve tokens to PDA
     //Remove:
@@ -734,6 +734,10 @@ pub mod fermi_dex {
                      // SKIP IF NO OO
                      require!(event1.owner == open_orders_auth.key(), Error);
                      require!(event2.owner == open_orders_cpty.key(), Error);
+                    msg!("event1 orderid is {}", event1.order_id);
+                    msg!("event1 orderidsecond is {}", event1.order_id_second);
+                    msg!("event2 orderid is {}", event2.order_id);
+                    msg!("event2 orderidsecond is {}", event2.order_id_second);
 
                      let events: Vec<Event> = vec![event1, event2];
                      // check if owner = authority or counterparty_authority
@@ -754,6 +758,7 @@ pub mod fermi_dex {
                              //msg!("the side is {}", sider);
                              let side = Side::Bid;
                              msg!("orderid is {}", parsed_event.order_id);
+                                
                              // require!(parsed_event.order_id == orderId, Error);
                              match side {
                                  Side::Bid => {
@@ -1353,6 +1358,7 @@ pub enum EventView {
         owner_slot: u8,
         finalised: u8,
         cpty: Pubkey,
+        order_id_second: u128,
     },
     Out {
         side: Side,
@@ -1398,6 +1404,7 @@ pub struct Event {
     order_id: u128,
     owner: Pubkey,
     finalised: u8,
+    order_id_second: u128,
     //cpty: Pubkey,
 }
 
@@ -1419,6 +1426,7 @@ impl Event {
                 owner_slot,
                 finalised,
                 cpty,
+                order_id_second,
             } => {
                 let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
                 if maker {
@@ -1433,6 +1441,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    order_id_second,
                     //cpty,
                 }
             },
@@ -1462,6 +1471,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    order_id_second: 0,
                     //cpty
                 }
 
@@ -1492,6 +1502,7 @@ impl Event {
                     order_id,
                     owner,
                     finalised,
+                    order_id_second:0,
                     //cpty,
                 }
         }
@@ -2196,7 +2207,7 @@ impl<'a> OrderBook<'a> {
             msg!("event.owner {}", best_offer.owner);
             msg!("owner_slot {}", best_offer.owner_slot);
             msg!("event.finalised: {}", "0"); */
-
+            let idx = event_q.head + 1;
             let maker_fill = Event::new(EventView::Fill {
                 side: Side::Ask,
                 maker: true,
@@ -2207,10 +2218,11 @@ impl<'a> OrderBook<'a> {
                 owner_slot: best_offer.owner_slot,
                 finalised: 0,
                 cpty: owner,
+                order_id_second: order_id,
             });
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
-            let idx = event_q.head + 1;
+            
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
                 //.push_back(maker_fill)
@@ -2312,6 +2324,7 @@ impl<'a> OrderBook<'a> {
                     owner_slot,
                     finalised: 0,
                     cpty: owner,
+                    order_id_second: 0,
                 });
                 let idx = event_q.head + 1;
                 msg!("event id is {}", idx);
@@ -2583,6 +2596,7 @@ impl<'a> OrderBook<'a> {
                 owner_slot: best_bid.owner_slot,
                 finalised: 0,
                 cpty: owner,
+                order_id_second: order_id,
             });
             let idx = event_q.head + 1;
             event_q.buf[idx as usize] = maker_fill;
@@ -2673,6 +2687,7 @@ impl<'a> OrderBook<'a> {
                     owner_slot,
                     finalised: 0,
                     cpty: owner,
+                    order_id_second: 0,
                 });
                 let idx = event_q.head + 1;
                 event_q.buf[idx as usize] = taker_fill;
@@ -2900,7 +2915,7 @@ pub struct InitializeMarket<'info> {
         //zero,
         init,
         payer = authority,
-        space = 8 * 1024,
+        space = 8 * 1264,
         seeds = [b"event-q".as_ref(), market.key().as_ref()],
         bump,
     )]

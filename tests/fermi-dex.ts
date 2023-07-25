@@ -547,8 +547,8 @@ describe('fermi-dex', () => {
       }
     } */
     let base_order_id = 498062089990157893629;
-    let base_event_slot = 1;
-    let base_event_slot2 = 2;
+    let base_event_slot = 5;
+    let base_event_slot2 = 4;
 
     console.log(base_order_id);
     console.log('test finalise match with event slot + order id');
