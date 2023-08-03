@@ -121,7 +121,7 @@ describe('fermi-dex', () => {
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
   //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
-  let programId = "Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m"
+  let programId = "6BAGvnjkut578J85hS11M8DH2kLGtEbV49phfCoziMzJ"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
