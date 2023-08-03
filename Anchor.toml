@@ -5,7 +5,7 @@ skip-lint = false
 [programs.localnet]
 #fermi_dex = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W"
 #fermi_dex = "GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ"
-fermi_dex = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN"
+fermi_dex = "7Ena4GPhHzd1j8Md2g4neCLxUiK4sGKv2D9rVjDdjCAS"
 
 
 [registry]
@@ -14,7 +14,7 @@ url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b07
 [provider]
 #cluster ="devnet"
 cluster="localnet"
-wallet = "/Users/dm/.config/solana/id.json"
+wallet = "/Users/zero/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

@@ -602,32 +602,6 @@
       }
     },
     {
-      "name": "RequestFlag",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "NewOrder"
-          },
-          {
-            "name": "CancelOrder"
-          },
-          {
-            "name": "Bid"
-          },
-          {
-            "name": "PostOnly"
-          },
-          {
-            "name": "ImmediateOrCancel"
-          },
-          {
-            "name": "DecrementTakeOnSelfTrade"
-          }
-        ]
-      }
-    },
-    {
       "name": "RequestView",
       "type": {
         "kind": "enum",
@@ -697,32 +671,6 @@
                 "type": "publicKey"
               }
             ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "EventFlag",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Fill"
-          },
-          {
-            "name": "Out"
-          },
-          {
-            "name": "Bid"
-          },
-          {
-            "name": "Maker"
-          },
-          {
-            "name": "ReleaseFunds"
-          },
-          {
-            "name": "Finalise"
           }
         ]
       }
@@ -974,6 +922,6 @@
     }
   ],
   "metadata": {
-    "address": "Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m"
+    "address": "7Ena4GPhHzd1j8Md2g4neCLxUiK4sGKv2D9rVjDdjCAS"
   }
 }

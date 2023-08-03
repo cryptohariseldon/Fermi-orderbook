@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m");
+declare_id!("7Ena4GPhHzd1j8Md2g4neCLxUiK4sGKv2D9rVjDdjCAS");
 
 #[program]
 pub mod fermi_dex {

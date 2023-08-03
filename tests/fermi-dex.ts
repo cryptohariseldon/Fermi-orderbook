@@ -1,9 +1,9 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../target/types/fermi_dex';
+import { FermiDex } from '../target/types/fermi_dex';
 import idl from "../target/idl/fermi_dex.json";
-import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
+import solblog_keypair from "/Users/zero/.config/solana/id.json"
 const fs = require('fs');
 
 
@@ -16,7 +16,7 @@ const getDevPgmId = () => {
 }
 
 const {Keypair} = require("@solana/web3.js");
-const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
+const secretKey = JSON.parse(fs.readFileSync("/Users/zero/.config/solana/id.json"));
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
@@ -121,7 +121,7 @@ describe('fermi-dex', () => {
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
   //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
-  let programId = "Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m"
+  let programId = "7Ena4GPhHzd1j8Md2g4neCLxUiK4sGKv2D9rVjDdjCAS"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
