@@ -3083,7 +3083,7 @@ impl OpenOrders {
     pub fn remove_order(&mut self, slot: u8) -> Result<()> {
         // check_assert!(slot < 128)?;
         // check_assert!(!self.slot_is_free(slot))?;
-        require!(self.slot_is_free(slot), ErrorCode::SlotIsNotFree);
+        //require!(self.slot_is_free(slot), ErrorCode::SlotIsNotFree);
 
         let slot_mask = 1u8 << slot;
         self.orders[slot as usize] = 0;
@@ -3094,7 +3094,11 @@ impl OpenOrders {
     }
 
     fn add_order(&mut self, id: u128, side: Side) -> Result<u8> {
-        require!(self.free_slot_bits != 0, ErrorCode::TooManyOpenOrders);
+        //remove oldest order if openorders is full
+        if self.free_slot_bits == 0 {
+            self.remove_order(0)?;
+        } 
+        //require!(self.free_slot_bits != 0, ErrorCode::TooManyOpenOrders);
         let slot = self.free_slot_bits.trailing_zeros() as u8;
         require!(self.slot_is_free(slot), ErrorCode::SlotIsNotFree);
         let slot_mask = 1u8 << slot;

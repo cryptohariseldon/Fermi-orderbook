@@ -115,7 +115,7 @@ describe('#new_order', async () => {
             ],
             new anchor.web3.PublicKey(programId),
           );
-          /*
+        console.log('placing bid...');
         await program.methods
           .newOrder(
             { bid: {} },
@@ -140,7 +140,7 @@ describe('#new_order', async () => {
           })
           .signers([authority])
           .rpc();
-*/
+
         console.log('place limit order buy price: 99');
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
