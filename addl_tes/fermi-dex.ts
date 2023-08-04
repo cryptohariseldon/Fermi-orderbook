@@ -54,7 +54,7 @@ const createMint = async (
   await provider.sendAndConfirm(tx, [mint]);
 };
 
-const createAssociatedTokenAccount = async (
+export const createAssociatedTokenAccount = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.PublicKey,
   ata: anchor.web3.PublicKey,
@@ -72,7 +72,7 @@ const createAssociatedTokenAccount = async (
   await provider.sendAndConfirm(tx, []);
 };
 
-const mintTo = async (
+export const mintTo = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.PublicKey,
   ta: anchor.web3.PublicKey,
@@ -121,7 +121,7 @@ describe('fermi-dex', () => {
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
   //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
-  let programId = "6BAGvnjkut578J85hS11M8DH2kLGtEbV49phfCoziMzJ"
+  let programId = "ASrtYDNReHLYmv9F72WVJ94v21cJNa2WKo3f2tGoAH7C"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -166,13 +166,14 @@ describe('fermi-dex', () => {
   console.log('basics done')
 
   before(async () => {
+    /*
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         authority.publicKey,
         2 * anchor.web3.LAMPORTS_PER_SOL,
       ),
     );
-
+*/
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
     //program.programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";

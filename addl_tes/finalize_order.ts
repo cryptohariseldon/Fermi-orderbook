@@ -22,11 +22,9 @@ import {
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
-const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeynew));
-//const keypair = anchor.web3.Keypair.generate();
 
 const authority = keypair;
 
@@ -117,13 +115,57 @@ describe('#new_order', async () => {
             ],
             new anchor.web3.PublicKey(programId),
           );
-          
+
+          // set your orderid here
+          const base_order_id = 498062089990157893629;
+
+          //find if orderid has been filled
+            
+    let base_event_slot = 2;
+    let base_event_slot2 = 4;
+
+    console.log(base_order_id);
+    console.log('test finalise match with event slot + order id');
+    console.log(authorityCoinTokenAccount.toString());
+    console.log(authorityPcTokenAccount.toString());
+    await program.methods
+      .finaliseMatches(
+        base_event_slot,
+        base_event_slot2,
+        //pcVault,
+        //coinVault,
+        authorityPcTokenAccount,
+        authorityCoinTokenAccount,
+        //new anchor.BN(0),
+        //authority.PublicKey,
+      )
+      .accounts({
+        openOrdersOwner: openOrdersPda,
+        openOrdersCounterparty: openOrdersPda,
+        authority: authority.publicKey,
+        market: marketPda,
+        coinVault,
+        pcVault,
+        coinMint: coinMint.publicKey,
+        pcMint: pcMint.publicKey,
+        //payer: authorityPcTokenAccount,
+        //bids: bidsPda,
+        //asks: asksPda,
+        reqQ: reqQPda,
+        eventQ: eventQPda,
+        pcpayer: authorityPcTokenAccount,
+        coinpayer: authorityCoinTokenAccount,
+      })
+      .signers([authority])
+      .rpc();
+
+          /*
         await program.methods
           .newOrder(
-            { ask: {} },
-            new anchor.BN(25),
+            { bid: {} },
+            new anchor.BN(20),
             new anchor.BN(1),
-            new anchor.BN(25).mul(new anchor.BN(1000000)),
+            new anchor.BN(20).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -133,7 +175,7 @@ describe('#new_order', async () => {
             pcVault,
             coinMint: coinMint,
             pcMint: pcMint,
-            payer: authorityCoinTokenAccount,
+            payer: authorityPcTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
@@ -142,7 +184,7 @@ describe('#new_order', async () => {
           })
           .signers([authority])
           .rpc();
-
+*/
         console.log('place limit order buy price: 99');
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
@@ -156,7 +198,7 @@ describe('#new_order', async () => {
         //console.log(eventQ);
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
-        console.log("Ask placed at price: 25 successful");
+        console.log("Bid placed at price: 99 successful");
         console.log("PC token balance: {}", pcbal);  ;
         console.log("Coin token balance: {}", coinbal);  ; 
       }
