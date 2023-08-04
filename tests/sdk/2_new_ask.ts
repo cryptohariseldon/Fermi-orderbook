@@ -88,7 +88,7 @@ describe('fermi-dex-new', () => {
 
     });
 describe('#new_order', async () => {
-    it('New order - buy @ 20', async () => {
+    it('New order - buy @ 99 successful', async () => {
         console.log('testing new bid')
       {
         const provider = anchor.AnchorProvider.env();
@@ -118,10 +118,10 @@ describe('#new_order', async () => {
           
         await program.methods
           .newOrder(
-            { bid: {} },
-            new anchor.BN(20),
+            { ask: {} },
+            new anchor.BN(25),
             new anchor.BN(1),
-            new anchor.BN(20).mul(new anchor.BN(1000000)),
+            new anchor.BN(25).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -131,7 +131,7 @@ describe('#new_order', async () => {
             pcVault,
             coinMint: coinMint,
             pcMint: pcMint,
-            payer: authorityPcTokenAccount,
+            payer: authorityCoinTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
@@ -141,7 +141,7 @@ describe('#new_order', async () => {
           .signers([authority])
           .rpc();
 
-        console.log('place limit order buy price: 20');
+        console.log('place limit order buy price: 99');
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
@@ -154,7 +154,7 @@ describe('#new_order', async () => {
         //console.log(eventQ);
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
-        console.log("Bid placed at price: 99 successful");
+        console.log("Ask placed at price: 25 successful");
         console.log("PC token balance: {}", pcbal);  ;
         console.log("Coin token balance: {}", coinbal);  ; 
       }
