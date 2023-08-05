@@ -24,7 +24,7 @@ const secretKeySecond = JSON.parse(fs.readFileSync("./local-testing/id.json"));
 const keypair_second = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 
-const createMint = async (
+pub const createMint = async (
   provider: anchor.AnchorProvider,
   mint: anchor.web3.Keypair,
   decimal: number,
