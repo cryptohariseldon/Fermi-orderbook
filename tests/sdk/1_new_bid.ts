@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants";
+  } from "./utils/constants_market3";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -115,7 +115,7 @@ describe('#new_order', async () => {
             ],
             new anchor.web3.PublicKey(programId),
           );
-          /*
+          
         await program.methods
           .newOrder(
             { bid: {} },
@@ -139,7 +139,7 @@ describe('#new_order', async () => {
             authority: authority.publicKey,
           })
           .signers([authority])
-          .rpc();*/
+          .rpc();
 
         console.log('place limit order buy price: 20');
         const openOrders = await program.account.openOrders.fetch(

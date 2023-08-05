@@ -449,7 +449,7 @@ pub mod fermi_dex {
                 deposit_vault = pc_vault;
                 cpty_vault = coin_vault;
                 //debug using  ==
-                require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
                 //open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
                 //^CHANGED - No credit to OO as collateral free order opening
@@ -470,7 +470,7 @@ pub mod fermi_dex {
                 deposit_amount = total_deposit_amount; //for test with matching, L1044
                 deposit_vault = coin_vault;
                 cpty_vault = pc_vault;
-                require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
                 //open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
                 //^CHANGED - No credit to OO as collateral free order opening

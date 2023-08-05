@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_market2";
+  } from "./utils/constants_market3";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -35,6 +35,7 @@ const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeynew));
 
 let authorityCoinTokenAccount: anchor.web3.PublicKey;
 const authority = keypair2;
+//const authority2 = keypair;
 let authorityPcTokenAccount: anchor.web3.PublicKey;
 //let createAssociatedTokenAccount : anchor.web3.PublicKey;
 //let minto : anchor.web3.PublicKey;
@@ -63,6 +64,7 @@ describe('create ATA and airdrop', async () => {
     console.log("dervei ATA done")
 
  // comment out if ATA is already created.
+ /*
  
     await createAssociatedTokenAccount(
       provider,
@@ -75,7 +77,7 @@ describe('create ATA and airdrop', async () => {
       new anchor.web3.PublicKey(pcMint),
       authorityPcTokenAccount,
       authority.publicKey,
-    ); 
+    );  */
 
     console.log("create ATA done")
 

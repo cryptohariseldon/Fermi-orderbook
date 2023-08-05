@@ -2,7 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
-import idl from "../../target/idl/fermi_dex.json";
+import idl from "../../../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 
@@ -12,7 +12,7 @@ const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json")
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 const authority = keypair;
 const provider = anchor.AnchorProvider.env();
-import {createMint, createAssociatedTokenAccount, mintTo} from "./utils/utils"
+import {createMint, createAssociatedTokenAccount, mintTo} from "./utils"
 
 
 describe('fermi-dex-init', () => {

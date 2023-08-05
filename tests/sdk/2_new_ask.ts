@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants";
+  } from "./utils/constants_market3";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -90,8 +90,8 @@ describe('fermi-dex-new', () => {
 
     });
 describe('#new_order', async () => {
-    it('New order - buy @ 99 successful', async () => {
-        console.log('testing new bid')
+    it('New order - sell @ 19 successful', async () => {
+        console.log('testing new ask')
       {
         const provider = anchor.AnchorProvider.env();
 
@@ -106,7 +106,6 @@ describe('#new_order', async () => {
             authority.publicKey,
             false,
           );
-          console.log('testing new bid keypair');
         
         [openOrdersPda, openOrdersPdaBump] =
           await anchor.web3.PublicKey.findProgramAddress(
@@ -121,9 +120,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(25),
+            new anchor.BN(19),
             new anchor.BN(1),
-            new anchor.BN(25).mul(new anchor.BN(1000000)),
+            new anchor.BN(19).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({

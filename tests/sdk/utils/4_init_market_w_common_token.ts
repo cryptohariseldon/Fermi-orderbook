@@ -2,7 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
-import idl from "../../target/idl/fermi_dex.json";
+import idl from "../../../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 
@@ -15,8 +15,8 @@ const provider = anchor.AnchorProvider.env();
 
 import {
     pcMint,
-  } from "./utils/constants_market2";
-import {createMint, createAssociatedTokenAccount, mintTo} from "./utils/utils"
+  } from "./constants_market2";
+import {createMint, createAssociatedTokenAccount, mintTo} from "./utils"
 
 const pcMintkey = new anchor.web3.PublicKey(pcMint);
 describe('fermi-dex-init', () => {
