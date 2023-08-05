@@ -121,7 +121,7 @@ describe('fermi-dex', () => {
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
   //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
-  let programId = "Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m"
+  let programId = "ASrtYDNReHLYmv9F72WVJ94v21cJNa2WKo3f2tGoAH7C"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -166,12 +166,13 @@ describe('fermi-dex', () => {
   console.log('basics done')
 
   before(async () => {
+    /*
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         authority.publicKey,
         2 * anchor.web3.LAMPORTS_PER_SOL,
       ),
-    );
+    );*/
 
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
