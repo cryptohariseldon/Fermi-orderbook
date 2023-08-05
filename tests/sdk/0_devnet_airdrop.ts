@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants";
+  } from "./utils/constants_market2";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
