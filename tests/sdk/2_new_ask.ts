@@ -25,7 +25,7 @@ const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json")
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
 
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeynew));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
 
 const authority = keypair;

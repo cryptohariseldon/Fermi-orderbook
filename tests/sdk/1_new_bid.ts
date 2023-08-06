@@ -22,6 +22,7 @@ import {
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
+const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
@@ -119,9 +120,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(20),
+            new anchor.BN(19),
             new anchor.BN(1),
-            new anchor.BN(20).mul(new anchor.BN(1000000)),
+            new anchor.BN(19).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -154,7 +155,7 @@ describe('#new_order', async () => {
         //console.log(eventQ);
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
-        console.log("Bid placed at price: 99 successful");
+        console.log("Bid placed at price: 19 successful");
         console.log("PC token balance: {}", pcbal);  ;
         console.log("Coin token balance: {}", coinbal);  ; 
       }

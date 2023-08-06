@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_market3";
+  } from "./utils/constants";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -30,11 +30,12 @@ const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 //HARDCODE YOUR DEVNET PUBKEY HERE TO RECIEVE AIRDROPS
-const userpubkey = new anchor.web3.PublicKey('EghF9PfBssprkzYv3tg4H6RC1QdmQth4NFds1QFepXtB');
+const userpubkey = new anchor.web3.PublicKey('HjN5dHUTayb31nwrJJvAmfVprSD89tuqcTWoZj8gq7nQ');
 const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeynew));
 
 let authorityCoinTokenAccount: anchor.web3.PublicKey;
-const authority = keypair2;
+//const authority = keypair2;
+const authority = userpubkey;
 //const authority2 = keypair;
 let authorityPcTokenAccount: anchor.web3.PublicKey;
 //let createAssociatedTokenAccount : anchor.web3.PublicKey;
@@ -52,12 +53,12 @@ describe('create ATA and airdrop', async () => {
   
     authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
       new anchor.web3.PublicKey(coinMint),
-      authority.publicKey,
+      authority,
       false,
     );
     authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
       new anchor.web3.PublicKey(pcMint),
-      authority.publicKey,
+      authority,
       false,
     );
 
