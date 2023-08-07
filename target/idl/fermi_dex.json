@@ -202,18 +202,13 @@
       "name": "finaliseMatches",
       "accounts": [
         {
-          "name": "openOrdersOwner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "openOrdersCounterparty",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "market",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -227,19 +222,9 @@
           "isSigner": false
         },
         {
-          "name": "reqQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "eventQ",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
         },
         {
           "name": "pcpayer",
@@ -247,9 +232,9 @@
           "isSigner": false
         },
         {
-          "name": "coinpayer",
+          "name": "authority",
           "isMut": true,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "systemProgram",
@@ -280,14 +265,6 @@
         {
           "name": "event2Slot",
           "type": "u8"
-        },
-        {
-          "name": "pcVault",
-          "type": "publicKey"
-        },
-        {
-          "name": "coinVault",
-          "type": "publicKey"
         }
       ]
     }

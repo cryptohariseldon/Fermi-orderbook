@@ -445,11 +445,11 @@ pub mod fermi_dex {
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
-                deposit_amount = total_deposit_amount; //for test with matching, L1044
+                deposit_amount = max_native_pc_qty; //for test with matching, L1044
                 deposit_vault = pc_vault;
                 cpty_vault = coin_vault;
                 //debug using  ==
-                require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_pc(free_qty_to_lock); // no need to lock,free PC remains free
                 //open_orders.credit_unlocked_pc(deposit_amount); // note - credit as UNLOCKED PC.
                 //^CHANGED - No credit to OO as collateral free order opening
@@ -467,10 +467,10 @@ pub mod fermi_dex {
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
-                deposit_amount = total_deposit_amount; //for test with matching, L1044
+                deposit_amount = lock_qty_native; //for test with matching, L1044
                 deposit_vault = coin_vault;
                 cpty_vault = pc_vault;
-                require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                 //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
                 //open_orders.credit_unlocked_coin(deposit_amount); // note - credit as UNLOCKED Coin.
                 //^CHANGED - No credit to OO as collateral free order opening
@@ -611,7 +611,7 @@ pub mod fermi_dex {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: authority.to_account_info(),
+                delegate: pc_vault.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -694,35 +694,141 @@ pub mod fermi_dex {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
              // NOTE - CAN DIRECTLY PASS USERS' PC & COIN ACCOUNTS INSTEAD OF VAULTS. TODO - FIX OPENORDERS ACCOUNTING IN THAT CASE.
-    pub fn finalise_matches(
-                     ctx: Context<NewMatch>,
+
+    pub fn finalise_matches_coin(
+                ctx: Context<FinaliseMatch>,
+                event1_slot: u8,
+                event2_slot: u8,
+                //pc_vault: Pubkey,
+                //coin_vault: Pubkey,
+                //pc_reciever: Pub
+                //orderId: u128,
+                //authority_counterparty: Pubkey,
+            ) -> Result<()> {
+
+                //let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+                //let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
+
+                //let market =  &ctx.accounts.market;
+                //let coin_vault = &ctx.accounts.coin_vault;
+                let pc_vault = &ctx.accounts.pc_vault;
+                // let payer = &ctx.accounts.payer;
+                //let bids = &mut ctx.accounts.bids;
+                //let asks = &mut ctx.accounts.asks;
+                //let req_q = &mut ctx.accounts.req_q;
+                //let event_q = &mut ctx.accounts.event_q;
+                let event_q = &mut ctx.accounts.event_q.load_mut()?;
+                let authority = &ctx.accounts.authority;
+                //let token_program = &ctx.accounts.token_program;
+                //let coin_mint = &ctx.accounts.coin_mint;
+                //let pc_mint = &ctx.accounts.pc_mint;
+                let payerpc = &ctx.accounts.pcpayer;
+                //let payercoin = &ctx.accounts.coinpayer;
+                let token_program = &ctx.accounts.token_program;
+
+                // Verification steps
+                // consume eventQ, check event_slot for matching order_id
+
+                let event1: Event = event_q.buf[usize::from(event1_slot)];
+                let event2: Event = event_q.buf[usize::from(event2_slot)];
+
+                // VERIFY : event slots correspond with passed Open_orders accounts.
+                // SKIP IF NO OO
+                //require!(event1.owner == open_orders_auth.key(), Error);
+                //require!(event2.owner == open_orders_cpty.key(), Error);
+               msg!("event1 orderid is {}", event1.order_id);
+               msg!("event1 orderidsecond is {}", event1.order_id_second);
+               msg!("event2 orderid is {}", event2.order_id);
+               msg!("event2 orderidsecond is {}", event2.order_id_second);
+
+               // VALIDATION: Event1 (makerfill) must have order_id_second = event2.order_id to be valid.
+               require!(event1.order_id_second == event2.order_id, Error);
+
+                let events: Vec<Event> = vec![event1, event2];
+                // check if owner = authority or counterparty_authority
+                // check side of event
+                // Execute event fill
+                // assume party A
+
+                // Allow only two events, with the same order-id.
+                let mut order_id_general: u128 = 0;
+                let mut first_event_done: bool = false;
+
+                let parsed_event: Event = events[0];
+                let side = Side::Bid;
+                match side {
+                   Side::Bid => {
+               //if side=="Bid"{
+                   //qty to fill
+                   let mut qty_coin = parsed_event.native_qty_paid ; //ad-hoc
+                   let mut qty_pc = parsed_event.native_qty_released ;
+                   //check openorders balance
+                   //let mut available_funds = open_orders_auth.native_pc_free ;
+                   let mut available_funds = 0;
+                   //revert if Bidder JIT fails.
+                   msg!("the available funds is {}", available_funds);
+                   msg!("the required funds are {}", qty_pc);
+                   //Transfers
+
+                   let mut deposit_amount = qty_pc; //for test with matching, L1044
+                   let mut cpty_deposit_amt = qty_coin; //coin
+                   let mut deposit_vault= pc_vault;
+                   //let mut cpty_deposit_vault = coin_vault;
+                   let mut payer = payerpc;
+                   //let mut cptypayer = payercoin;
+                   //cpty_vault = pc_vault;
+                   //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                   //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                   //open_orders.credit_unlocked_coin(deposit_amount)
+                   //Define deposit_vault, payer, token_program ?
+
+                   if cpty_deposit_amt > 0 {
+                       // transfer from depositor
+                       
+                       let transfer_ix = Transfer {
+                           from: cptypayer.to_account_info(),
+                           to: cpty_deposit_vault.to_account_info(),
+                           authority: authority.to_account_info(),
+                       };
+                       let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                       //let marginal_deposit = cpi_ctx * 2 / 100
+                       anchor_spl::token::transfer(cpi_ctx, cpty_deposit_amt).map_err(|err| match err {
+                           _ => error!(ErrorCode::TransferFailed),
+
+                       })?; 
+                       //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+
+
+    pub fn finalise_matches_pc(
+                     ctx: Context<FinaliseMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
-                     pc_vault: Pubkey,
-                     coin_vault: Pubkey,
+                     //pc_vault: Pubkey,
+                     //coin_vault: Pubkey,
                      //pc_reciever: Pub
                      //orderId: u128,
                      //authority_counterparty: Pubkey,
                  ) -> Result<()> {
 
-                     let open_orders_auth = &mut ctx.accounts.open_orders_owner;
-                     let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+                     //let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+                     //let open_orders_cpty = &mut ctx.accounts.open_orders_cpty;
 
-                     let market =  &ctx.accounts.market;
+                     //let market =  &ctx.accounts.market;
                      //let coin_vault = &ctx.accounts.coin_vault;
-                     //let pc_vault = &ctx.accounts.pc_vault;
+                     let pc_vault = &ctx.accounts.pc_vault;
                      // let payer = &ctx.accounts.payer;
                      //let bids = &mut ctx.accounts.bids;
                      //let asks = &mut ctx.accounts.asks;
-                     let req_q = &mut ctx.accounts.req_q;
+                     //let req_q = &mut ctx.accounts.req_q;
                      //let event_q = &mut ctx.accounts.event_q;
                      let event_q = &mut ctx.accounts.event_q.load_mut()?;
                      let authority = &ctx.accounts.authority;
-                     let token_program = &ctx.accounts.token_program;
-                     let coin_mint = &ctx.accounts.coin_mint;
-                     let pc_mint = &ctx.accounts.pc_mint;
+                     //let token_program = &ctx.accounts.token_program;
+                     //let coin_mint = &ctx.accounts.coin_mint;
+                     //let pc_mint = &ctx.accounts.pc_mint;
                      let payerpc = &ctx.accounts.pcpayer;
-                     let payercoin = &ctx.accounts.coinpayer;
+                     //let payercoin = &ctx.accounts.coinpayer;
+                     let token_program = &ctx.accounts.token_program;
 
                      // Verification steps
                      // consume eventQ, check event_slot for matching order_id
@@ -732,8 +838,8 @@ pub mod fermi_dex {
 
                      // VERIFY : event slots correspond with passed Open_orders accounts.
                      // SKIP IF NO OO
-                     require!(event1.owner == open_orders_auth.key(), Error);
-                     require!(event2.owner == open_orders_cpty.key(), Error);
+                     //require!(event1.owner == open_orders_auth.key(), Error);
+                     //require!(event2.owner == open_orders_cpty.key(), Error);
                     msg!("event1 orderid is {}", event1.order_id);
                     msg!("event1 orderidsecond is {}", event1.order_id_second);
                     msg!("event2 orderid is {}", event2.order_id);
@@ -752,7 +858,114 @@ pub mod fermi_dex {
                      let mut order_id_general: u128 = 0;
                      let mut first_event_done: bool = false;
 
-                     for parsed_event in events {
+                     let parsed_event: Event = events[0];
+                     let side = Side::Bid;
+                     match side {
+                        Side::Bid => {
+                    //if side=="Bid"{
+                        //qty to fill
+                        let mut qty_coin = parsed_event.native_qty_paid ; //ad-hoc
+                        let mut qty_pc = parsed_event.native_qty_released ;
+                        //check openorders balance
+                        //let mut available_funds = open_orders_auth.native_pc_free ;
+                        let mut available_funds = 0;
+                        //revert if Bidder JIT fails.
+                        msg!("the available funds is {}", available_funds);
+                        msg!("the required funds are {}", qty_pc);
+                        //Transfers
+
+                        let mut deposit_amount = qty_pc; //for test with matching, L1044
+                        let mut cpty_deposit_amt = qty_coin; //coin
+                        let mut deposit_vault= pc_vault;
+                        //let mut cpty_deposit_vault = coin_vault;
+                        let mut payer = payerpc;
+                        //let mut cptypayer = payercoin;
+                        //cpty_vault = pc_vault;
+                        //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
+                        //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
+                        //open_orders.credit_unlocked_coin(deposit_amount)
+                        //Define deposit_vault, payer, token_program ?
+
+                        if cpty_deposit_amt > 0 {
+                            // transfer from depositor
+                            
+                            let transfer_ix = Transfer {
+                                from: cptypayer.to_account_info(),
+                                to: cpty_deposit_vault.to_account_info(),
+                                authority: authority.to_account_info(),
+                            };
+                            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                            //let marginal_deposit = cpi_ctx * 2 / 100
+                            anchor_spl::token::transfer(cpi_ctx, cpty_deposit_amt).map_err(|err| match err {
+                                _ => error!(ErrorCode::TransferFailed),
+
+                            })?; 
+                            //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+
+                        }
+
+                        if deposit_amount > 0 {
+                                // transfer from depositor
+                                
+                                let transfer_ix = Transfer {
+                                    from: payer.to_account_info(),
+                                    to: pc_vault.to_account_info(),
+                                    authority: authority.to_account_info(),
+                                };
+                                let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                                //let marginal_deposit = cpi_ctx * 2 / 100
+                                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                    _ => error!(ErrorCode::TransferFailed),
+
+                                })?;
+                                open_orders_auth.credit_unlocked_pc(deposit_amount);
+
+                                 
+                            }
+                            /* 
+                   
+                                */
+
+
+                        //TODO - Make transfer conditional on remaining funds <0
+                        //let mut remaining_funds = available_funds - qty_pc;
+                        let mut remaining_funds = 0;
+                        //require!(available_funds >= qty_pc, Error);
+                        if remaining_funds > 0 {
+                        // edit balances, assuming counterparty tx. goes through
+                        //open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                        //10);
+                        //open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                        //open_orders_auth.lock_free_pc(qty_pc);
+                        //open_orders_auth.native_pc_free -= qty_pc;
+
+                        msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
+                        msg!("Newly locked PC for bidder {}", qty_pc);
+                        /*
+                        let maker_fill = Event::new(EventView::Finalise {
+                            side: Side::Ask,
+                            maker: true,
+                            native_qty_paid:  parsed_event.native_qty_released,
+                            native_qty_received: qty_pc,
+                            order_id: parsed_event.order_id,
+                            owner: parsed_event.owner,
+                            owner_slot: parsed_event.owner_slot,
+                        });
+                        event_q
+                            .push_back(maker_fill)
+                            .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+                    */}
+                        // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
+
+                    },
+                        Side::Ask => {
+                    //if side=="Ask"{
+
+                        msg!("Newly available PC for asker {}", 0);
+                        msg!("Newly locked coins for asker {}", 0);
+                    }
+
+/*                 for parsed_event in events {
 
                              //EventView::Fill => {
                              //let mut side = parsedEventFlag::from_side(side);
@@ -770,7 +983,8 @@ pub mod fermi_dex {
                                  let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
                                  let mut qty_coin = parsed_event.native_qty_released ;
                                  //check openorders balance
-                                 let mut available_funds = open_orders_auth.native_pc_free ;
+                                 //let mut available_funds = open_orders_auth.native_pc_free ;
+                                 let mut available_funds = 0;
                                  //revert if Bidder JIT fails.
                                  msg!("the available funds is {}", available_funds);
                                  msg!("the required funds are {}", qty_pc);
@@ -778,7 +992,7 @@ pub mod fermi_dex {
 
                                  let mut deposit_amount = qty_pc; //for test with matching, L1044
                                  let mut cpty_deposit_amt = qty_coin; //coin
-                                 let mut deposit_vault = pc_vault;
+                                 let mut deposit_vault= pc_vault;
                                  let mut cpty_deposit_vault = coin_vault;
                                  let mut payer = payerpc;
                                  let mut cptypayer = payercoin;
@@ -790,10 +1004,10 @@ pub mod fermi_dex {
 
                                  if deposit_amount > 0 {
                                          // transfer from depositor
-                                         /*
+                                         
                                          let transfer_ix = Transfer {
                                              from: payer.to_account_info(),
-                                             to: deposit_vault.to_account_info(),
+                                             to: pc_vault.to_account_info(),
                                              authority: authority.to_account_info(),
                                          };
                                          let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -801,13 +1015,13 @@ pub mod fermi_dex {
                                          anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                              _ => error!(ErrorCode::TransferFailed),
 
-                                         })?;*/
-                                         open_orders_auth.credit_unlocked_pc(deposit_amount);
+                                         })?;
+                                         //open_orders_auth.credit_unlocked_pc(deposit_amount);
 
                                      }
                                 if cpty_deposit_amt > 0 {
                                              // transfer from depositor
-                                             /*
+                                             
                                              let transfer_ix = Transfer {
                                                  from: cptypayer.to_account_info(),
                                                  to: cpty_deposit_vault.to_account_info(),
@@ -815,11 +1029,11 @@ pub mod fermi_dex {
                                              };
                                              let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
                                              //let marginal_deposit = cpi_ctx * 2 / 100
-                                             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                             anchor_spl::token::transfer(cpi_ctx, cpty_deposit_amt).map_err(|err| match err {
                                                  _ => error!(ErrorCode::TransferFailed),
 
-                                             })?; */
-                                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+                                             })?; 
+                                             //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
 
                                          }
 
@@ -830,11 +1044,11 @@ pub mod fermi_dex {
                                  //require!(available_funds >= qty_pc, Error);
                                  if remaining_funds > 0 {
                                  // edit balances, assuming counterparty tx. goes through
-                                 open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                                 //open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
                                  //10);
-                                 open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                                 //open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
                                  //open_orders_auth.lock_free_pc(qty_pc);
-                                 open_orders_auth.native_pc_free -= qty_pc;
+                                 //open_orders_auth.native_pc_free -= qty_pc;
 
                                  msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
                                  msg!("Newly locked PC for bidder {}", qty_pc);
@@ -857,30 +1071,10 @@ pub mod fermi_dex {
                              },
                                  Side::Ask => {
                              //if side=="Ask"{
-                                 //qty to fill
-                                 let mut qty_coin = parsed_event.native_qty_paid;
-                                 //check openorders balance
-                                 let mut available_funds = open_orders_cpty.native_coin_free * 10;
-                                 // TODO - MAKE CONDITIONAL TRANSFER ONLY IF OO BAL is INSUFFICIENT
-                                 //TransferIx
-                                 //let mut payercoin =
 
-
-                                 //revert if asker JIT fails.
-                                 //msg!("the available funds is {}", available_funds);
-                                 //let mut remaining_funds = available_funds - qty_coin;
-                                 let mut remaining_funds = available_funds - qty_coin;
-                                 if remaining_funds > 1 {
-                                 // edit balances, assuming counterparty tx. goes through
-                                 open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
-                                 //10);
-                                 open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
-                                 //open_orders_auth.lock_free_pc(qty_pc);
-                                 open_orders_auth.native_coin_free -= qty_coin;
-
-                                 msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
-                                 msg!("Newly locked coins for asker {}", qty_coin);
-                             }
+                                 msg!("Newly available PC for asker {}", 0);
+                                 msg!("Newly locked coins for asker {}", 0);
+                             } */
 
 
                                  // require!(available_funds >= qty_coin, Error);
@@ -889,14 +1083,15 @@ pub mod fermi_dex {
                                  // open_orders_cpty.lock_free_coin(qty_coin);
                                  //open_orders_cpty.native_coin_free -= qty_coin;
 
-                             }
+                             
                          }
+                         Ok(())
                                  }
 
 
 
-                 Ok(())
-             }
+                
+             
 
 /*
              pub fn finalise_matches(
@@ -3117,6 +3312,7 @@ impl OpenOrders {
 //#[instruction(side: Side)]
 
 pub struct FinaliseMatch<'info>{
+    /* *
     #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
@@ -3127,37 +3323,40 @@ pub struct FinaliseMatch<'info>{
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
     )]
-    pub open_orders_cpty: Box<Account<'info, OpenOrders>>,
+    pub open_orders_cpty: Box<Account<'info, OpenOrders>>,  */
 
     #[account(
         seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
         bump,
     )]
-    pub market: Box<Account<'info, Market>>,
-
+    pub market: Box<Account<'info, Market>>, 
+/* 
     #[account(
         mut,
         associated_token::mint = coin_mint,
         associated_token::authority = market,
     )]
-    pub coin_vault: Account<'info, TokenAccount>,
+    pub coin_vault: Account<'info, TokenAccount>, */
     #[account(
         mut,
         associated_token::mint = pc_mint,
         associated_token::authority = market,
     )]
     pub pc_vault: Account<'info, TokenAccount>,
+    
 
     pub coin_mint: Account<'info, Mint>,
     pub pc_mint: Account<'info, Mint>,
 
+    /* 
     #[account(mut)]
     pub bids: Box<Account<'info, Bids>>,
     #[account(mut)]
-    pub asks: Box<Account<'info, Asks>>,
+    pub asks: Box<Account<'info, Asks>>, 
 
     #[account(mut)]
-    pub req_q: Box<Account<'info, RequestQueue>>,
+    pub req_q: Box<Account<'info, RequestQueue>>, */
+   
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
 
@@ -3167,13 +3366,13 @@ pub struct FinaliseMatch<'info>{
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
-
+/* 
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
         token::authority = authority,
     )]
-    pub coinpayer: Account<'info, TokenAccount>,
+    pub coinpayer: Account<'info, TokenAccount>, */
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     #[account(mut)]
@@ -3216,13 +3415,14 @@ pub struct NewOrder<'info> {
         associated_token::mint = coin_mint,
         associated_token::authority = market,
     )]
-    pub coin_vault: Account<'info, TokenAccount>,
+    pub coin_vault: Box<Account<'info, TokenAccount>>,
+    
     #[account(
         mut,
         associated_token::mint = pc_mint,
         associated_token::authority = market,
     )]
-    pub pc_vault: Account<'info, TokenAccount>,
+    pub pc_vault: Box<Account<'info, TokenAccount>>, 
 
     pub coin_mint: Account<'info, Mint>,
     pub pc_mint: Account<'info, Mint>,
@@ -3313,13 +3513,13 @@ pub struct NewMatch<'info>{
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
-
+/* 
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
         token::authority = authority,
     )]
-    pub coinpayer: Account<'info, TokenAccount>,
+    pub coinpayer: Account<'info, TokenAccount>, */
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     //#[account(mut)]

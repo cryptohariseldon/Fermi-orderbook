@@ -275,13 +275,13 @@ describe('fermi-dex', () => {
       provider,
       coinMint.publicKey,
       authorityCoinTokenAccount,
-      BigInt('20000000000'),
+      BigInt('200000000000'),
     );
     await mintTo(
       provider,
       pcMint.publicKey,
       authorityPcTokenAccount,
-      BigInt('2000000000'),
+      BigInt('10000000000'),
     );
     console.log("sent to");
     console.log(authorityPcTokenAccount.toString());
@@ -406,7 +406,7 @@ describe('fermi-dex', () => {
   });
 
   describe('#new_order', async () => {
-    it('New order - buy @ 99 successful', async () => {
+    it('New order - buy @ 20 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -446,7 +446,7 @@ describe('fermi-dex', () => {
         console.log(eventQ);
       }
     }),
-      it('New order - ask @ 100 successful', async () => {
+      it('New order - ask @ 25 successful', async () => {
 
       {
         await program.methods
@@ -487,7 +487,7 @@ describe('fermi-dex', () => {
         console.log(eventQ);
       }
 }),
-      it('New order - buy @ 101 successful', async () => {
+      it('New order - buy @ 26 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -529,7 +529,7 @@ describe('fermi-dex', () => {
 }
 
   }),
-  it('finalise order - buy @ 101 successful', async () => {
+  it('finalise order - buy @ 26 successful', async () => {
   {
     const eventsQ2 = await program.account.eventQueue.fetch(eventQPda);
     //let i = -1;
@@ -561,27 +561,27 @@ describe('fermi-dex', () => {
         base_event_slot2,
         //pcVault,
         //coinVault,
-        authorityPcTokenAccount,
-        authorityCoinTokenAccount,
+        //authorityPcTokenAccount,
+        //authorityCoinTokenAccount,
         //new anchor.BN(0),
         //authority.PublicKey,
       )
       .accounts({
-        openOrdersOwner: openOrdersPda,
-        openOrdersCounterparty: openOrdersPda,
+        //openOrdersOwner: openOrdersPda,
+        //openOrdersCpty: openOrdersPda,
         authority: authority.publicKey,
         market: marketPda,
-        coinVault,
+        //coinVault,
         pcVault,
         coinMint: coinMint.publicKey,
         pcMint: pcMint.publicKey,
         //payer: authorityPcTokenAccount,
         //bids: bidsPda,
         //asks: asksPda,
-        reqQ: reqQPda,
+        //reqQ: reqQPda,
         eventQ: eventQPda,
         pcpayer: authorityPcTokenAccount,
-        coinpayer: authorityCoinTokenAccount,
+        //coinpayer: authorityCoinTokenAccount,
       })
       .signers([authority])
       .rpc();
