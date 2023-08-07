@@ -134,9 +134,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(22),
+            new anchor.BN(18),
             new anchor.BN(1),
-            new anchor.BN(22).mul(new anchor.BN(1000000)),
+            new anchor.BN(18).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
