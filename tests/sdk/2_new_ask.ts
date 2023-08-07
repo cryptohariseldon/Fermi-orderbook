@@ -1,4 +1,5 @@
 import * as anchor from '@project-serum/anchor';
+import Provider from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../../target/types/fermi_dex';
@@ -24,8 +25,9 @@ const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
-
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
+const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
+//const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
 
 const authority = keypair;
@@ -93,7 +95,18 @@ describe('#new_order', async () => {
     it('New order - sell @ 19 successful', async () => {
         console.log('testing new ask')
       {
-        const provider = anchor.AnchorProvider.env();
+        const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+        const wallet = new anchor.Wallet(keypair);
+        const conn = new Connection(rpcUrl);
+        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
+
+        //const program = new anchor.Program(idl, programId, provider) //for existing prog
+/*
+            const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+            const provider = new anchor.Provider(rpcUrl, keypair, {
+      preflightCommitment: 'recent',
+      commitment: 'confirmed',
+    }); */
 
         const program = new anchor.Program(idl, programId, provider) //for existing prog
         const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
@@ -107,6 +120,7 @@ describe('#new_order', async () => {
             false,
           );
         
+      
         [openOrdersPda, openOrdersPdaBump] =
           await anchor.web3.PublicKey.findProgramAddress(
             [
@@ -140,7 +154,7 @@ describe('#new_order', async () => {
             authority: authority.publicKey,
           })
           .signers([authority])
-          .rpc(); 
+          .rpc();  
 
         console.log('place limit order buy price: 99');
         const openOrders = await program.account.openOrders.fetch(

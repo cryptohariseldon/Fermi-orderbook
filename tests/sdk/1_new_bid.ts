@@ -18,13 +18,14 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_market3";
+  } from "./utils/constants_market3.ts";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
-
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
+const secretKeyThird= JSON.parse(fs.readFileSync("./kp4/key.json"));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
+//const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 
 const authority = keypair;
@@ -92,7 +93,11 @@ describe('#new_order', async () => {
     it('New order - buy @ 20', async () => {
         console.log('testing new bid')
       {
-        const provider = anchor.AnchorProvider.env();
+        //const provider = anchor.AnchorProvider.env();
+        const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+        const wallet = new anchor.Wallet(keypair);
+        const conn = new Connection(rpcUrl);
+        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
 
         const program = new anchor.Program(idl, programId, provider) //for existing prog
         const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(

@@ -20,7 +20,9 @@ const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json")
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
-const secretKeySecond = JSON.parse(fs.readFileSync("./local-testing/id.json"));
+//const secretKeySecond = JSON.parse(fs.readFileSync("./local-testing/id.json"));
+const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
+
 const keypair_second = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 

@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants";
+  } from "./utils/constants_market3";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -26,12 +26,14 @@ const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
-
+const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
 //HARDCODE YOUR DEVNET PUBKEY HERE TO RECIEVE AIRDROPS
-const userpubkey = new anchor.web3.PublicKey('HjN5dHUTayb31nwrJJvAmfVprSD89tuqcTWoZj8gq7nQ');
-const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeynew));
+//'EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6'
+//'HubyrMHSh2s5KXeTYRFhYbY32hVPrG8bbAre2AzewqRR'
+const userpubkey = new anchor.web3.PublicKey('EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6');
+const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
 
 let authorityCoinTokenAccount: anchor.web3.PublicKey;
 //const authority = keypair2;
@@ -65,20 +67,20 @@ describe('create ATA and airdrop', async () => {
     console.log("dervei ATA done")
 
  // comment out if ATA is already created.
- /*
+ 
  
     await createAssociatedTokenAccount(
       provider,
       new anchor.web3.PublicKey(coinMint),
       authorityCoinTokenAccount,
-      authority.publicKey,
+      authority,
     );
     await createAssociatedTokenAccount(
       provider,
       new anchor.web3.PublicKey(pcMint),
       authorityPcTokenAccount,
-      authority.publicKey,
-    );  */
+      authority,
+    );  
 
     console.log("create ATA done")
 

@@ -12,7 +12,7 @@ const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json")
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 const authority = keypair;
 const provider = anchor.AnchorProvider.env();
-import {createMint, createAssociatedTokenAccount, mintTo} from "./utils"
+import {createMint, createAssociatedTokenAccount, mintTo} from "./"
 
 
 describe('fermi-dex-init', () => {
