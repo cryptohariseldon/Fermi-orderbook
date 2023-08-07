@@ -19,7 +19,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_market3";
+  } from "./utils/consts_market4";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -134,9 +134,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(19),
+            new anchor.BN(22),
             new anchor.BN(1),
-            new anchor.BN(19).mul(new anchor.BN(1000000)),
+            new anchor.BN(22).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -156,7 +156,8 @@ describe('#new_order', async () => {
           .signers([authority])
           .rpc();  
 
-        console.log('place limit order buy price: 99');
+        console.log('place limit order sell price: 22');
+      
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
