@@ -126,9 +126,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(19),
+            new anchor.BN(23),
             new anchor.BN(1),
-            new anchor.BN(19).mul(new anchor.BN(1000000)),
+            new anchor.BN(23).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
@@ -149,6 +149,7 @@ describe('#new_order', async () => {
           .rpc();
 
         console.log('place limit order buy price: 20');
+        /*
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
@@ -163,7 +164,7 @@ describe('#new_order', async () => {
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
         console.log("Bid placed at price: 19 successful");
         console.log("PC token balance: {}", pcbal);  ;
-        console.log("Coin token balance: {}", coinbal);  ; 
+        console.log("Coin token balance: {}", coinbal);  ; */
       }
     })
     })

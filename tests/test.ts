@@ -2,6 +2,8 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
+import idl from "../target/idl/fermi_dex.json";
+
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 
@@ -685,7 +687,7 @@ describe('fermi-dex', () => {
         )
         .accounts({
           openOrdersOwner: openOrdersPda,
-          openOrdersCounterparty: openOrdersPda,
+          openOrdersCpty: openOrdersPda,
           market: marketPda,
           coinVault,
           pcVault,
