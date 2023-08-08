@@ -23,8 +23,8 @@ import {
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
-//const secretKeyThird= JSON.parse(fs.readFileSync("./kp4/key.json"));
-const secretKeyThird= JSON.parse(fs.readFileSync("./kp3/key.json"));
+const secretKeyThird= JSON.parse(fs.readFileSync("./kp4/key.json"));
+//const secretKeyThird= JSON.parse(fs.readFileSync("./kp3/key.json"));
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));

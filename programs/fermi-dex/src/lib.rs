@@ -2131,6 +2131,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.release_funds: {}", "true");
                 msg!("event.native_qty_unlocked: {}", order.qty * order.price() * pc_lot_size);
                 msg!("event.order_id: {}", order.order_id);
+                msg!("event.order_id_second: {}", 0);
                 msg!("event.order: {}", order.owner);
                 msg!("event.owner_slot: {}", order.owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2238,6 +2239,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
                 msg!("event.native_qty_received: {}", native_maker_pc_qty);
                 msg!("event.order_id: {}", best_offer.order_id);
+                msg!("event.order_id_second: {}", order_id);
                 msg!("event.owner: {}", best_offer.owner);
                 msg!("owner_slot: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2274,6 +2276,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.native_qty_unlocked: {}", "0");
                 msg!("event.native_qty_still_locked: {}", "0");
                 msg!("event.order_id: {}", best_offer_id);
+                msg!("event.order_id_second: {}", 0);
                 msg!("event.owner: {}", best_offer.owner);
                 msg!("event.owner_slot: {}", best_offer.owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2342,6 +2345,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.native_qty_paid: {}", native_pc_paid);
                 msg!("event.native_qty_received: {}", coin_lots_received * coin_lot_size);
                 msg!("event.order_id: {}", order_id);
+                msg!("event.order_id_second: {}", 0);
                 msg!("event.owner: {}", owner);
                 msg!("event.owner_slot: {}", owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2409,6 +2413,8 @@ impl<'a> OrderBook<'a> {
         msg!("event.native_qty_unlocked: {}", native_qty_unlocked);
         msg!("event.native_qty_still_locked: {}", native_qty_still_locked);
         msg!("event.order_id: {}", order_id);
+        msg!("event.order_id_second: {}", order_id);
+
         msg!("event.owner: {}", owner);
         msg!("owner_slot: {}", owner_slot);
         msg!("event.finalised: {}", "0");
@@ -2611,6 +2617,7 @@ impl<'a> OrderBook<'a> {
             msg!("event.native_qty_paid: {}", trade_qty * coin_lot_size);
             msg!("event.native_qty_received: {}", trade_qty * coin_lot_size);
             msg!("event.order_id: {}", best_bid.order_id);
+            msg!("event.order_id_second: {}", order_id);
             msg!("event.owner: {}", best_bid.owner);
             msg!("event.owner_slot: {}", best_bid.owner_slot);
             msg!("event.finalised: {}", "0");
@@ -2648,7 +2655,8 @@ impl<'a> OrderBook<'a> {
                 msg!("event.release_funds: {}", "true");
                 msg!("event.native_qty_unlocked: {}", "0");
                 msg!("event.native_qty_locked: {}", "0");
-                msg!("event.order_id: {}", best_bid_id);
+                msg!("event.order_id: {}", order_id);
+                msg!("event.order_id_second: {}", 0);
                 msg!("event.owner: {}", best_bid.owner);
                 msg!("event.owner_slot: {}", best_bid.owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2703,6 +2711,7 @@ impl<'a> OrderBook<'a> {
                 msg!("event.native_qty_paid: {}", coin_lots_traded * coin_lot_size);
                 msg!("event.native_qty_received: {}", net_taker_pc_qty);
                 msg!("event.order_id: {}", order_id);
+                msg!("event.order_id_second: {}", 0);
                 msg!("event.owner: {}", owner);
                 msg!("event.owner_slot: {}", owner_slot);
                 msg!("event.finalised: {}", "0");
@@ -2797,6 +2806,7 @@ impl<'a> OrderBook<'a> {
             msg!("event.native_qty_unlocked: {}", unfilled_qty * coin_lot_size);
             msg!("event.native_qty_still_locked: {}", "0");
             msg!("event.order_id: {}", order_id);
+            msg!("event.order_id_second: {}", 0);
             msg!("event.owner: {}", owner);
             msg!("event.owner.slot: {}", owner_slot);
             msg!("event.finalised: {}", "0");
