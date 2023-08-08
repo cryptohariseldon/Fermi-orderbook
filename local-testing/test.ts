@@ -153,8 +153,8 @@ describe('fermi-dex', () => {
 
   //const authority = anchor.web3.Keypair.generate();
   const authority = keypair;
-  const authority_second = anchor.web3.Keypair.generate(); //keypair_second;
-
+  //const authority_second = anchor.web3.Keypair.generate(); //keypair_second;
+    const authority_second = keypair_second
   console.log("TWO USER TESTING");
   console.log(authority);
   console.log(authority_second);
@@ -166,13 +166,13 @@ describe('fermi-dex', () => {
   console.log('basics done')
 
   before(async () => {
-    
+    /*
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         authority_second.publicKey,
-        2 * anchor.web3.LAMPORTS_PER_SOL,
+        1 * anchor.web3.LAMPORTS_PER_SOL,
       ),
-    );
+    ); */
 
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
@@ -309,7 +309,7 @@ describe('fermi-dex', () => {
       authority_second.publicKey,
       false,
     );
-
+/*
     await createAssociatedTokenAccount(
       provider,
       coinMint.publicKey,
@@ -321,7 +321,8 @@ describe('fermi-dex', () => {
       pcMint.publicKey,
       authority_secondPcTokenAccount,
       authority_second.publicKey,
-    );
+    ); */
+    console.log("sent to");
 
     await mintTo(
       provider,
@@ -559,8 +560,8 @@ describe('fermi-dex', () => {
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
-        //pcVault,
-        //coinVault,
+        pcVault,
+        coinVault,
         //authorityPcTokenAccount,
         //authorityCoinTokenAccount,
         //new anchor.BN(0),
@@ -568,7 +569,7 @@ describe('fermi-dex', () => {
       )
       .accounts({
         openOrdersOwner: openOrdersPda,
-        openOrdersCpty: openOrdersPda,
+        openOrdersCounterparty: openOrders_secondPda,
         authority: authority.publicKey,
         market: marketPda,
         //coinVault,
@@ -578,10 +579,10 @@ describe('fermi-dex', () => {
         //payer: authorityPcTokenAccount,
         //bids: bidsPda,
         //asks: asksPda,
-        //reqQ: reqQPda,
+        reqQ: reqQPda,
         eventQ: eventQPda,
         pcpayer: authorityPcTokenAccount,
-        //coinpayer: authorityCoinTokenAccount,
+        coinpayer: authorityCoinTokenAccount,
       })
       .signers([authority])
       .rpc();

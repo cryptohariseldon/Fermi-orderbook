@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_market4";
+  } from "./utils/constants_Tue,_08_Aug_2023_12:14:24_GMT";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -29,6 +29,7 @@ const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
 
 
 const authority = keypair;
+console.log(authority.publicKey.toString());
 
 let openOrdersPda: anchor.web3.PublicKey;
 let openOrdersPdaBump: number;
@@ -125,9 +126,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(23),
+            new anchor.BN(19),
             new anchor.BN(1),
-            new anchor.BN(23).mul(new anchor.BN(1000000)),
+            new anchor.BN(19).mul(new anchor.BN(1000000)),
             { limit: {} },
           )
           .accounts({
