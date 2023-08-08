@@ -238,6 +238,11 @@
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "authoritySecond",
           "isMut": true,
           "isSigner": true
         },

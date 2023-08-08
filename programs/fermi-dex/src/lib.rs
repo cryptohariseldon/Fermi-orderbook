@@ -3277,7 +3277,7 @@ pub struct NewMatch<'info>{
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
     #[account(
-        seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
+        seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
     )]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
@@ -3314,9 +3314,11 @@ pub struct NewMatch<'info>{
     pub req_q: Box<Account<'info, RequestQueue>>,
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
+    pub authority: Signer<'info>,
+
 
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub authority_second: Signer<'info>,
 
     #[account(
         mut,
@@ -3328,7 +3330,7 @@ pub struct NewMatch<'info>{
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
-        token::authority = authority,
+        token::authority = authority_second,
     )]
     pub coinpayer: Account<'info, TokenAccount>,
     //pub event_q: Box<Account<'info, EventQueue>>,

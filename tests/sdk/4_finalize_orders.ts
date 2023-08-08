@@ -122,12 +122,12 @@ describe('#finalize-order', async () => {
         const program = new anchor.Program(idl, programId, provider) //for existing prog
         const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
             new anchor.web3.PublicKey(pcMint),
-            authority_second.publicKey,
+            authority.publicKey,
             false,
           );
         const authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
             new anchor.web3.PublicKey(coinMint),
-            authority.publicKey,
+            authority_second.publicKey,
             false,
           );
         
