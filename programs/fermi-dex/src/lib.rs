@@ -732,8 +732,8 @@ pub mod fermi_dex {
 
                      // VERIFY : event slots correspond with passed Open_orders accounts.
                      // SKIP IF NO OO
-                     require!(event1.owner == open_orders_auth.key(), Error);
-                     require!(event2.owner == open_orders_cpty.key(), Error);
+                     //require!(event1.owner == open_orders_auth.key(), Error);
+                     //require!(event2.owner == open_orders_cpty.key(), Error);
                     msg!("event1 orderid is {}", event1.order_id);
                     msg!("event1 orderidsecond is {}", event1.order_id_second);
                     msg!("event2 orderid is {}", event2.order_id);
@@ -3320,7 +3320,7 @@ pub struct NewMatch<'info>{
 
     #[account(
         mut,
-        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+       // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,

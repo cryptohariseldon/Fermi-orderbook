@@ -134,12 +134,28 @@ describe('#new_order', async () => {
             new anchor.web3.PublicKey(programId),
           );
           
+          const objectsToCheck = {
+            openOrdersPda,
+            marketPda,
+            pcVault,
+            coinMint,
+            pcMint,
+            reqQPda,
+            eventQPda,
+            authority: authority.publicKey,
+            pcpayer: authorityPcTokenAccount,
+            coinpayer: authorityCoinTokenAccount,
+          };
+          
+          for (const [key, value] of Object.entries(objectsToCheck)) {
+            console.log(`${key}: Type - ${typeof value} (${value.constructor.name}), Value - ${value}`);
+          }
         await program.methods
           .newOrder(
             { ask: {} },
-            new anchor.BN(22),
+            new anchor.BN(25),
             new anchor.BN(1),
-            new anchor.BN(22),
+            new anchor.BN(25),
             { limit: {} },
           )
           .accounts({

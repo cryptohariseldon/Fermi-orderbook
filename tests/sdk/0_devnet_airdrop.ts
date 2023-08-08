@@ -69,7 +69,7 @@ describe('create ATA and airdrop', async () => {
 
  // comment out if ATA is already created.
  
- /*
+ 
     await createAssociatedTokenAccount(
       provider,
       new anchor.web3.PublicKey(coinMint),
@@ -82,7 +82,7 @@ describe('create ATA and airdrop', async () => {
       new anchor.web3.PublicKey(pcMint),
       authorityPcTokenAccount,
       authority,
-    );   */
+    );   
  
     console.log("create ATA done")
 
