@@ -18,12 +18,14 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_Tue,_08_Aug_2023_12:14:24_GMT";
+  } from "./utils/constants_Tue,_08_Aug_2023_12:45:04_GMT";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
-const secretKeyThird= JSON.parse(fs.readFileSync("./kp4/key.json"));
+//const secretKeyThird= JSON.parse(fs.readFileSync("./kp4/key.json"));
+const secretKeyThird= JSON.parse(fs.readFileSync("./kp3/key.json"));
+
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 
@@ -96,9 +98,11 @@ describe('#new_order', async () => {
       {
         //const provider = anchor.AnchorProvider.env();
         const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+        const rpcUrlLocal = 'http://localhost:8899';
         const wallet = new anchor.Wallet(keypair);
-        const conn = new Connection(rpcUrl);
+        const conn = new Connection(rpcUrlLocal);
         const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
+
 
         const program = new anchor.Program(idl, programId, provider) //for existing prog
         const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
@@ -128,7 +132,7 @@ describe('#new_order', async () => {
             { bid: {} },
             new anchor.BN(23),
             new anchor.BN(1),
-            new anchor.BN(23).mul(new anchor.BN(1000000)),
+            new anchor.BN(23),
             { limit: {} },
           )
           .accounts({

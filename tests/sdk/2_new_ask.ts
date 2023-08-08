@@ -19,13 +19,14 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_Tue,_08_Aug_2023_12:14:24_GMT";
+  } from "./utils/constants_Tue,_08_Aug_2023_12:45:04_GMT";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
 const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
+
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
@@ -36,6 +37,7 @@ let openOrdersPda: anchor.web3.PublicKey;
 let openOrdersPdaBump: number;
 async function fetchTokenBalance(mintAddress: string, userAddress: string) {
     const connection = new Connection("https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731");
+    
     const mintPublicKey = new PublicKey(mintAddress);
     const userPublicKey = new PublicKey(userAddress);
   
@@ -96,8 +98,9 @@ describe('#new_order', async () => {
         console.log('testing new ask')
       {
         const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+        const rpcUrlLocal = 'http://localhost:8899';
         const wallet = new anchor.Wallet(keypair);
-        const conn = new Connection(rpcUrl);
+        const conn = new Connection(rpcUrlLocal);
         const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
 
         //const program = new anchor.Program(idl, programId, provider) //for existing prog
@@ -136,7 +139,7 @@ describe('#new_order', async () => {
             { ask: {} },
             new anchor.BN(22),
             new anchor.BN(1),
-            new anchor.BN(22).mul(new anchor.BN(1000000)),
+            new anchor.BN(22),
             { limit: {} },
           )
           .accounts({

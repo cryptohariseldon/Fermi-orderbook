@@ -2191,6 +2191,7 @@ impl<'a> OrderBook<'a> {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
             */
+            /*
             let jit_struct = JitStruct {
                 side: Side::Bid,
                 maker: true,
@@ -2200,7 +2201,7 @@ impl<'a> OrderBook<'a> {
                 owner: best_offer.owner,
                 owner_slot: best_offer.owner_slot,
             };
-            jit_data.push(jit_struct);
+            jit_data.push(jit_struct); */
             /*msg!("data pushed to jitstruct");
             msg!("event.side: {}", "Bid");
             msg!("event.maker: {}", "false");

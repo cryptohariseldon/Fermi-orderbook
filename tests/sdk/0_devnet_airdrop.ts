@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_Tue,_08_Aug_2023_12:14:24_GMT";
+  } from "./utils/constants_Tue,_08_Aug_2023_12:45:04_GMT";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -32,7 +32,7 @@ const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //HARDCODE YOUR DEVNET PUBKEY HERE TO RECIEVE AIRDROPS
 //'EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6'
 //'HubyrMHSh2s5KXeTYRFhYbY32hVPrG8bbAre2AzewqRR'
-const userpubkey = new anchor.web3.PublicKey('EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6');
+const userpubkey = new anchor.web3.PublicKey('HubyrMHSh2s5KXeTYRFhYbY32hVPrG8bbAre2AzewqRR');
 const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
 
 let authorityCoinTokenAccount: anchor.web3.PublicKey;
@@ -69,7 +69,7 @@ describe('create ATA and airdrop', async () => {
 
  // comment out if ATA is already created.
  
- 
+ /*
     await createAssociatedTokenAccount(
       provider,
       new anchor.web3.PublicKey(coinMint),
@@ -82,7 +82,7 @@ describe('create ATA and airdrop', async () => {
       new anchor.web3.PublicKey(pcMint),
       authorityPcTokenAccount,
       authority,
-    );  
+    );   */
  
     console.log("create ATA done")
 
