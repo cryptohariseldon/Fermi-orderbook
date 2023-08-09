@@ -790,7 +790,7 @@ pub mod fermi_dex {
 
                                  if deposit_amount > 0 {
                                          // transfer from depositor
-                                         /*
+                                        
                                          let transfer_ix = Transfer {
                                              from: payer.to_account_info(),
                                              to: deposit_vault.to_account_info(),
@@ -801,7 +801,7 @@ pub mod fermi_dex {
                                          anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                              _ => error!(ErrorCode::TransferFailed),
 
-                                         })?;*/
+                                         })?;
                                          open_orders_auth.credit_unlocked_pc(deposit_amount);
 
                                      }
