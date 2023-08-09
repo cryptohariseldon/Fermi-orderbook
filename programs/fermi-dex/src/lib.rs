@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("Aodrp8JRS1tCywT97x5ytaoJYczv44JYtyBHDJGLCx5m");
+declare_id!("7gBWbsfnwLfrYkeHYpr2EKyBm8Q5B9odKzHb951BztE6");
 
 #[program]
 pub mod fermi_dex {
@@ -573,7 +573,7 @@ pub mod fermi_dex {
                 msg!("heya {}", p.owner);
                 let mut owner_slot = p.owner_slot;
                 msg!("this is the way {}", owner_slot);
-                let mut owner_order = open_orders.orders[usize::from(owner_slot - 1)];
+                let mut owner_order = open_orders.orders[usize::from(owner_slot)];
                 //let qty = owner_order.qty;
                 let mut deposits = p.native_qty_paid;
                 //let mut owner_deposits = owner_order.deposits;
@@ -608,7 +608,7 @@ pub mod fermi_dex {
 
         /// if order is not crossed, creator is maker, and only needs to approve tokens.
         if deposit_amount > 0 {
-            if !crossed {
+            //if !crossed {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
@@ -620,7 +620,8 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
-        }
+        
+        /*
         ///if order is crossed, creator is taker, and must transfer tokens.
         else {
             let transfer_ix = Transfer {
@@ -633,7 +634,8 @@ pub mod fermi_dex {
             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
-        }
+        } */
+    
         }
         msg!("matched amount {}", matched_amount_coin);
         //MOVE TRANSFER TO FINALIZE STEP
