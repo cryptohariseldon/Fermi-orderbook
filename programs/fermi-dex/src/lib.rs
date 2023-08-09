@@ -606,12 +606,13 @@ pub mod fermi_dex {
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
 
-
+        /// if order is not crossed, creator is maker, and only needs to approve tokens.
         if deposit_amount > 0 {
+            if !crossed {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: authority.to_account_info(),
+                delegate: deposit_vault.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -619,6 +620,20 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
+        }
+        ///if order is crossed, creator is taker, and must transfer tokens.
+        else {
+            let transfer_ix = Transfer {
+                from: payer.to_account_info(),
+                to: deposit_vault.to_account_info(),
+                authority: authority.to_account_info(),
+            };
+            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            //let marginal_deposit = cpi_ctx * 2 / 100
+            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                _ => error!(ErrorCode::TransferFailed),
+            })?;
+        }
         }
         msg!("matched amount {}", matched_amount_coin);
         //MOVE TRANSFER TO FINALIZE STEP
