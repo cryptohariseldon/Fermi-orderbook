@@ -8,6 +8,9 @@ import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderb
 const fs = require('fs');
 import { Token } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
+import * as BufferLayout from 'buffer-layout';
+            import { PublicKey, Connection } from '@solana/web3.js';
+            import BN from 'bn.js';
 import {
     asksPda,
     bidsPda,
@@ -19,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_Wed,_09_Aug_2023_15:13:24_GMT";
+  } from "./utils/constants_Wed,_09_Aug_2023_18:28:11_GMT";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -170,8 +173,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 1;
-          let base_event_slot2 = 3;
+          let base_event_slot = 4;
+          let base_event_slot2 = 6;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');
@@ -195,6 +198,9 @@ describe('#finalize-order', async () => {
           for (const [key, value] of Object.entries(objectsToCheck)) {
             console.log(`${key}: Type - ${typeof value} (${value.constructor.name}), Value - ${value}`);
           }
+
+          const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        console.log(eventQ);
           await program.methods
             .finaliseMatches(
               base_event_slot,
@@ -225,6 +231,66 @@ describe('#finalize-order', async () => {
             })
             .signers([authority])
             .rpc();
+            
+            
+            // Define the layout of the data
+            const EventLayout = BufferLayout.struct([
+              BufferLayout.u8('event_flags'),
+              BufferLayout.u8('owner_slot'),
+              BufferLayout.blob(8, 'native_qty_released'),
+              BufferLayout.blob(8, 'native_qty_paid'),
+              BufferLayout.blob(16, 'order_id'),
+              BufferLayout.blob(32, 'owner'),
+              BufferLayout.u8('finalised'),
+            ]);
+            
+            const EventQueueLayout = BufferLayout.struct([
+              BufferLayout.blob(8, 'head'),
+              BufferLayout.blob(8, 'count'),
+              BufferLayout.blob(8, 'seq_num'),
+              BufferLayout.seq(EventLayout, 100, 'events'),
+            ]);
+            
+            // Connection to the network
+            const connection = new Connection('https://api.devnet.solana.com');
+            
+            // Public key of the account
+            //const eventQPda = new PublicKey('ACCOUNT_PUBLIC_KEY_HERE');
+            
+            // Fetch account data
+            connection.getAccountInfo(new PublicKey(eventQPda)).then(accountInfo => {
+              if (accountInfo && accountInfo.data) {
+                // Decode the data using the layout
+                const decodedData = EventQueueLayout.decode(accountInfo.data);
+            
+                // Additional conversions if needed
+                decodedData.head = new BN(decodedData.head.reverse()).toString();
+                decodedData.count = new BN(decodedData.count.reverse()).toString();
+                decodedData.seq_num = new BN(decodedData.seq_num.reverse()).toString();
+                // Handle other fields similarly...
+              decodedData.events.forEach(event => {
+                  event.native_qty_released = bufferToNumber(event.native_qty_released);
+                  event.native_qty_paid = bufferToNumber(event.native_qty_paid);
+                  event.order_id = bufferToBigInt(event.order_id).toString();
+                  event.order_id_second = bufferToBigInt(event.order_id_second).toString(); // Added conversion
+                  event.owner = event.owner.toString('hex');
+                });
+            
+                console.log(decodedData);
+                console.log("decoded data");
+              }
+            });
+            console.log("decoded data");
+
+            
+            // Helper functions to convert buffer to number and BigInt
+            function bufferToNumber(buffer: Buffer): number {
+              return new BN(Array.from(buffer).reverse()).toNumber();
+            }
+            
+            function bufferToBigInt(buffer: Buffer): BigInt {
+              return BigInt('0x' + Array.from(buffer).reverse().map(b => b.toString(16).padStart(2, '0')).join(''));
+            }
         
 
         console.log('completed finalize order sell price: 22');
@@ -237,9 +303,10 @@ describe('#finalize-order', async () => {
         const bids = await program.account.orders.fetch(bidsPda);
         //console.log(bids);
         const asks = await program.account.orders.fetch(asksPda);
-        //console.log(asks);
-        const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        //console.log(eventQ);
+        //console.log(asks);*/
+        //const eventQ = await program.account.eventQueue.fetch(eventQPda);
+        console.log(eventQ);
+        /*
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
         console.log("Ask placed at price: 25 successful");

@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("7gBWbsfnwLfrYkeHYpr2EKyBm8Q5B9odKzHb951BztE6");
+declare_id!("GJsyZs9cr8agF6SLiLfxiS9A11Avioe3JVPie92N4SNw");
 
 #[program]
 pub mod fermi_dex {
@@ -751,10 +751,15 @@ pub mod fermi_dex {
                      // SKIP IF NO OO
                      //require!(event1.owner == open_orders_auth.key(), Error);
                      //require!(event2.owner == open_orders_cpty.key(), Error);
-                    msg!("event1 orderid is {}", event1.order_id);
-                    msg!("event1 orderidsecond is {}", event1.order_id_second);
-                    msg!("event2 orderid is {}", event2.order_id);
-                    msg!("event2 orderidsecond is {}", event2.order_id_second);
+                     let event1_orderid = event1.order_id;
+                     let event2_orderid = event2.order_id;
+                     let event1_orderidsecond = event1.order_id_second;
+                        let event2_orderidsecond = event2.order_id_second;
+                    msg!("event1 orderid is {}", event1_orderid);
+                    msg!("event1 orderidsecond is {}", event1_orderidsecond);
+                    msg!("event2 orderid is {}", event2_orderid);
+                    msg!("event2 orderidsecond is {}", event2_orderidsecond);
+                    
 
                     // VALIDATION: Event1 (makerfill) must have order_id_second = event2.order_id to be valid.
                     require!(event1.order_id_second == event2.order_id, Error);
@@ -777,13 +782,14 @@ pub mod fermi_dex {
                              let mut sider = parsed_event.event_flags;
                              //msg!("the side is {}", sider);
                              let side = Side::Bid;
-                             msg!("orderid is {}", parsed_event.order_id);
+                             //msg!("orderid is {}", parsed_event.order_id);
                                 
                              // require!(parsed_event.order_id == orderId, Error);
                              match side {
                                  Side::Bid => {
                              //if side=="Bid"{
                                  //qty to fill
+            
                                  let mut qty_pc = parsed_event.native_qty_paid ; //ad-hoc
                                  let mut qty_coin = parsed_event.native_qty_released ;
                                  //check openorders balance
@@ -853,7 +859,7 @@ pub mod fermi_dex {
                                  //open_orders_auth.lock_free_pc(qty_pc);
                                  open_orders_auth.native_pc_free -= qty_pc;
 
-                                 msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
+                                 //msg!("Newly available coins for bidder {}", parsed_event.native_qty_released);
                                  msg!("Newly locked PC for bidder {}", qty_pc);
                                  /*
                                  let maker_fill = Event::new(EventView::Finalise {
@@ -895,7 +901,7 @@ pub mod fermi_dex {
                                  //open_orders_auth.lock_free_pc(qty_pc);
                                  open_orders_auth.native_coin_free -= qty_coin;
 
-                                 msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
+                                 //msg!("Newly available PC for asker {}", parsed_event.native_qty_released);
                                  msg!("Newly locked coins for asker {}", qty_coin);
                              }
 
@@ -1411,7 +1417,7 @@ impl EventView {
     }
 }
 
-//#[repr(packed)]
+#[repr(packed)]
 //#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 #[zero_copy]
 pub struct Event {
@@ -1576,8 +1582,9 @@ impl Event {
     // }
 }
 
-// #[repr(packed)]
-#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
+#[repr(packed)]
+#[zero_copy]
+//#[derive(Copy, Clone, Default, AnchorSerialize, AnchorDeserialize)]
 pub struct EventQueueHeader {
     head: u64,
     count: u64,
@@ -1610,7 +1617,7 @@ impl EventQueueHeader {
 //#[account]
 //#[derive(Default)]
 #[account(zero_copy)]
-#[repr(C)]
+#[repr(packed)]
 pub struct EventQueue {
     header: EventQueueHeader,
     head: u64,
