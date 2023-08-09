@@ -173,8 +173,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 4;
-          let base_event_slot2 = 6;
+          let base_event_slot = 3;
+          let base_event_slot2 = 5;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');

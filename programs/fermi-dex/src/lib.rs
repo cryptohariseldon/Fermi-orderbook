@@ -505,6 +505,7 @@ pub mod fermi_dex {
             coin_debit: 0,
             native_pc_debit: 0,
             jit_data: jitdata,
+            crossed: false,
         };
         let mut order_book = OrderBook { bids, asks, market };
 
@@ -526,6 +527,7 @@ pub mod fermi_dex {
                 coin_debit,
                 native_pc_debit,
                 jit_data,
+                crossed,
             } = proceeds;
             let native_coin_unlocked = coin_unlocked.checked_mul(coin_lot_size).unwrap();
             let native_coin_credit = coin_credit.checked_mul(coin_lot_size).unwrap();
@@ -600,44 +602,51 @@ pub mod fermi_dex {
 
             // check_assert!(open_orders_mut.native_coin_free <= open_orders_mut.native_coin_total)?;
             // check_assert!(open_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
-        }
-
-
+        
+        let native_pc_debit = proceeds.native_pc_debit;
+        let coin_debit = proceeds.coin_debit;
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
-
+        msg!("coin debit {}", coin_debit);
+        msg!("pc debit {}", native_pc_debit);
         /// if order is not crossed, creator is maker, and only needs to approve tokens.
         if deposit_amount > 0 {
-            //if !crossed {
+            if !crossed {
+                let transfer_ix = Approve {
+                    to: payer.to_account_info(),
+                    delegate: deposit_vault.to_account_info(),
+                    authority: authority.to_account_info(),
+                };
+                let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
+                    _ => error!(ErrorCode::TransferFailed),
+                })?;
+            } else {
+                // if order is crossed, creator is taker, and must transfer tokens.
+                let transfer_ix = Transfer {
+                    from: payer.to_account_info(),
+                    to: deposit_vault.to_account_info(),
+                    authority: authority.to_account_info(),
+                };
+                let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                    _ => error!(ErrorCode::TransferFailed),
+                })?;
 
-            let transfer_ix = Approve {
-                to: payer.to_account_info(),
-                delegate: deposit_vault.to_account_info(),
-                authority: authority.to_account_info(), // authority.to_account_info(),
-            };
-            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-            //let marginal_deposit = cpi_ctx * 2 / 100
-            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
-                _ => error!(ErrorCode::TransferFailed),
-            })?;
-        
-        /*
-        ///if order is crossed, creator is taker, and must transfer tokens.
-        else {
-            let transfer_ix = Transfer {
-                from: payer.to_account_info(),
-                to: deposit_vault.to_account_info(),
-                authority: authority.to_account_info(),
-            };
-            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-            //let marginal_deposit = cpi_ctx * 2 / 100
-            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                _ => error!(ErrorCode::TransferFailed),
-            })?;
-        } */
-    
+                if deposit_vault == coin_vault {
+                    open_orders.credit_locked_coin(deposit_amount);
+                    open_orders.unlock_coin(deposit_amount);
+                } else {
+                    open_orders.credit_locked_pc(deposit_amount);
+                    open_orders.unlock_pc(deposit_amount);
+                }
+            }
         }
         msg!("matched amount {}", matched_amount_coin);
+
+        }
+    
+        
         //MOVE TRANSFER TO FINALIZE STEP
         /*
         if deposit_amount > 0 {
@@ -785,7 +794,7 @@ pub mod fermi_dex {
                              //msg!("orderid is {}", parsed_event.order_id);
                                 
                              // require!(parsed_event.order_id == orderId, Error);
-                             match side {
+                             match sider {
                                  Side::Bid => {
                              //if side=="Bid"{
                                  //qty to fill
@@ -797,9 +806,10 @@ pub mod fermi_dex {
                                  //revert if Bidder JIT fails.
                                  msg!("the available funds is {}", available_funds);
                                  msg!("the required funds are {}", qty_pc);
+                                 let mut deposit_amount = (qty_pc - available_funds)/100;
                                  //Transfers
 
-                                 let mut deposit_amount = qty_pc/100; //for test with matching, L1044
+                                 //let mut deposit_amount = ; //for test with matching, L1044
                                  let mut cpty_deposit_amt = qty_coin; //coin
                                  let mut deposit_vault = pc_vault;
                                  //let mut cpty_deposit_vault = coin_vault;
@@ -1839,6 +1849,7 @@ pub struct RequestProceeds {
     pub coin_debit: u64,
     pub native_pc_debit: u64,
     pub jit_data: Vec<JitStruct>,
+    pub crossed: bool,
 }
 
 macro_rules! impl_incr_method {
@@ -2342,6 +2353,7 @@ impl<'a> OrderBook<'a> {
             to_release.credit_coin(coin_lots_received);
             to_release.debit_native_pc(native_pc_paid);
             to_release.jit_data = jit_data;
+            to_release.crossed = crossed;
 
             // multiple possible counterparties
             if native_accum_fill_price > 0 {
