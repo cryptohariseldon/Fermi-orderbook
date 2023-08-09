@@ -698,8 +698,8 @@ pub mod fermi_dex {
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
-                     pc_vault: Pubkey,
-                     coin_vault: Pubkey,
+                     //pc_vault: Pubkey,
+                     //coin_vault: Pubkey,
                      //pc_reciever: Pub
                      //orderId: u128,
                      //authority_counterparty: Pubkey,
@@ -710,7 +710,7 @@ pub mod fermi_dex {
 
                      let market =  &ctx.accounts.market;
                      //let coin_vault = &ctx.accounts.coin_vault;
-                     //let pc_vault = &ctx.accounts.pc_vault;
+                     let pc_vault = &ctx.accounts.pc_vault;
                      // let payer = &ctx.accounts.payer;
                      //let bids = &mut ctx.accounts.bids;
                      //let asks = &mut ctx.accounts.asks;
@@ -722,7 +722,7 @@ pub mod fermi_dex {
                      let coin_mint = &ctx.accounts.coin_mint;
                      let pc_mint = &ctx.accounts.pc_mint;
                      let payerpc = &ctx.accounts.pcpayer;
-                     let payercoin = &ctx.accounts.coinpayer;
+                     //let payercoin = &ctx.accounts.coinpayer;
 
                      // Verification steps
                      // consume eventQ, check event_slot for matching order_id
@@ -776,12 +776,12 @@ pub mod fermi_dex {
                                  msg!("the required funds are {}", qty_pc);
                                  //Transfers
 
-                                 let mut deposit_amount = qty_pc; //for test with matching, L1044
+                                 let mut deposit_amount = qty_pc/100; //for test with matching, L1044
                                  let mut cpty_deposit_amt = qty_coin; //coin
                                  let mut deposit_vault = pc_vault;
-                                 let mut cpty_deposit_vault = coin_vault;
+                                 //let mut cpty_deposit_vault = coin_vault;
                                  let mut payer = payerpc;
-                                 let mut cptypayer = payercoin;
+                                 //let mut cptypayer = payercoin;
                                  //cpty_vault = pc_vault;
                                  //require!(payer.amount >= deposit_amount, ErrorCode::InsufficientFunds);
                                  //open_orders.lock_free_coin(free_qty_to_lock); // no need to lock, deposited coins remain free
@@ -790,7 +790,7 @@ pub mod fermi_dex {
 
                                  if deposit_amount > 0 {
                                          // transfer from depositor
-                                         /*
+                                         
                                          let transfer_ix = Transfer {
                                              from: payer.to_account_info(),
                                              to: deposit_vault.to_account_info(),
@@ -801,7 +801,7 @@ pub mod fermi_dex {
                                          anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                              _ => error!(ErrorCode::TransferFailed),
 
-                                         })?;*/
+                                         })?;
                                          open_orders_auth.credit_unlocked_pc(deposit_amount);
 
                                      }
@@ -3295,12 +3295,13 @@ pub struct NewMatch<'info>{
         associated_token::authority = market,
     )]
     pub coin_vault: Account<'info, TokenAccount>,
+*/
     #[account(
         mut,
         associated_token::mint = pc_mint,
         associated_token::authority = market,
     )]
-    pub pc_vault: Account<'info, TokenAccount>, */
+    pub pc_vault: Account<'info, TokenAccount>, 
 
     pub coin_mint: Account<'info, Mint>,
     pub pc_mint: Account<'info, Mint>,
@@ -3326,13 +3327,13 @@ pub struct NewMatch<'info>{
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
-
+ /*
     #[account(
         mut,
         //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
         token::authority = authority_second,
     )]
-    pub coinpayer: Account<'info, TokenAccount>,
+    pub coinpayer: Account<'info, TokenAccount>, */
     //pub event_q: Box<Account<'info, EventQueue>>,
 
     //#[account(mut)]

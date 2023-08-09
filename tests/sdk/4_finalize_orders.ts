@@ -199,8 +199,8 @@ describe('#finalize-order', async () => {
             .finaliseMatches(
               base_event_slot,
               base_event_slot2,
-              new anchor.web3.PublicKey(pcVault),
-              new anchor.web3.PublicKey(coinVault),
+              //new anchor.web3.PublicKey(pcVault),
+              //new anchor.web3.PublicKey(coinVault),
               //authorityPcTokenAccount,
               //authorityCoinTokenAccount,
               //new anchor.BN(0),
@@ -227,11 +227,12 @@ describe('#finalize-order', async () => {
             .rpc();
         
 
-        console.log('place finalize order sell price: 22');
+        console.log('completed finalize order sell price: 22');
       
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
+        /*
         //console.log(openOrders);
         const bids = await program.account.orders.fetch(bidsPda);
         //console.log(bids);
@@ -243,7 +244,7 @@ describe('#finalize-order', async () => {
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
         console.log("Ask placed at price: 25 successful");
         console.log("PC token balance: {}", pcbal);  ;
-        console.log("Coin token balance: {}", coinbal);  ; 
+        console.log("Coin token balance: {}", coinbal);  ; */
       }
     })
     })
