@@ -3,33 +3,18 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-#fermi_dex = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W"
-#fermi_dex = "GXWFwyZed4jzuyKKURRcb1tkgUubQ2qoKRud2ifYEMdJ"
-fermi_dex = "6BAGvnjkut578J85hS11M8DH2kLGtEbV49phfCoziMzJ"
+fermi_dex = "DX5fj2BMuLwWEvJgrB2Z4JHsCWPDkB3c4Ev8aatrK6d2"
 
 
 [registry]
-url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
+#url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
+url = "http://localhost:8899/"
 
 [provider]
 #cluster ="devnet"
 cluster="localnet"
-wallet = "/Users/dm/.config/solana/id.json"
+wallet = "/Users/zero/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-# test = "yarn run ts-mocha -n loader=ts-node/esm -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-#B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W
-
-#1 - Account0 -5ocVH6uwVae9gUm5jLjrwthzZopANZCE57odqhwkamXJicon copyWritable
-#2 - Account1 -65Ma2nLzTFTAUMndBzCh77PoAmRt78WFnR15MpG4jYjDicon copy
-#3 - Account2 -sF4mMUuhezsYAnGPdFmmASUCv5TkBLwBEE5XS718g7Qicon copyWritable
-#4 - Account3 -7c4RbBWvED4MadrzM6y8VGwLFt5Qiar9GM4r3k3HY6KTicon copyWritable
-#5 - Account4 -4wFr9vRJdkBmpaEdAV8bPpxYGPTDeNQQWiCswATfxFKSicon copy
-#6 - Account5 -7s65Ue9fJQV3hnk9mXRjFXkXKqyw7JLiniVJwhc3tMkJicon copy
-#7 - Account6 -Aj6pvkBHaif3GM7mv8AUvtDNttt1ufqSgAEuC7dn1EvNicon copyWritable
-#8 - Account7 -4v1DMCyho3kBqcmVCtPBmw4XeZ2L8zoDaX1bjCkPwZPPicon copyWritable
-#9 - Account8 -GXFCg2tcd8LFCJWnPtDYuzut5P4HD25aqS8Ap4kUDHEaicon copyWritable
-#10 - Account9 -dqmLLWBD2N82eweZ15uURgkN2kqazcq1zqE78UXLWcKicon copyWritable
-#11 - Account10 -6b1EPuRn7FPQa3e5rW4BgBnnmVGGpz95LKCY8sBKDssAicon copyWritable
-#12 - Account11 -7V7Kp37UPmmWC4EPnN82ERM5csh8wEEnF5spjqM4qGNV
+#test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/src/index.ts"

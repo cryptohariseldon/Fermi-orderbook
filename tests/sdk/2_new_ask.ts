@@ -2,9 +2,9 @@ import * as anchor from '@project-serum/anchor';
 import Provider from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../../target/types/fermi_dex';
+import { IDL } from '../../target/types/fermi_dex';
 import idl from "../../target/idl/fermi_dex.json";
-import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
+import solblog_keypair from "/Users/zero/Developer/fermi/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 import { Token } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -19,15 +19,13 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constants_Wed,_09_Aug_2023_18:28:11_GMT";
+  } from "../src/constants";
 
 const {Keypair} = require("@solana/web3.js");
-const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
-const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
-const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
+const kp3 = JSON.parse(fs.readFileSync("./kp3/key.json"));
 
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
+const keypair = Keypair.fromSecretKey(new Uint8Array(kp3));
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
 
@@ -48,27 +46,27 @@ async function fetchTokenBalance(mintAddress: string, userAddress: string) {
   }
 
 console.log('testing new bid keypair');
-async function fetchTokenBalance2(mintAddress: string, associatedTokenAddress: string) {
-    // Get the connection from the provider
-    const provider = anchor.AnchorProvider.env();
+// async function fetchTokenBalance2(mintAddress: string, associatedTokenAddress: string) {
+//     // Get the connection from the provider
+//     const provider = anchor.AnchorProvider.env();
 
-    const connection = provider.connection;
+//     const connection = provider.connection;
   
-    async function fetchTokenBalance(mintAddress: string, associatedTokenAddress: string) {
-        // Create PublicKey objects for the mint and associated token address
-        const mintPublicKey = new PublicKey(mintAddress);
-        const associatedTokenPublicKey = new PublicKey(associatedTokenAddress);
+//     async function fetchTokenBalance(mintAddress: string, associatedTokenAddress: string) {
+//         // Create PublicKey objects for the mint and associated token address
+//         const mintPublicKey = new PublicKey(mintAddress);
+//         const associatedTokenPublicKey = new PublicKey(associatedTokenAddress);
       
-        // Create a Token object for the token
-        const token = new Token(provider.connection, mintPublicKey, spl.TOKEN_PROGRAM_ID, provider.wallet.payer);
+//         // Create a Token object for the token
+//         const token = new Token(provider.connection, mintPublicKey, spl.TOKEN_PROGRAM_ID, provider.wallet.payer);
       
-        // Fetch the associated token account info
-        const tokenAccountInfo = await token.getAccountInfo(associatedTokenPublicKey);
+//         // Fetch the associated token account info
+//         const tokenAccountInfo = await token.getAccountInfo(associatedTokenPublicKey);
       
-        // Log the balance
-        console.log('Token balance:', tokenAccountInfo.amount.toString());
-      }
-  }
+//         // Log the balance
+//         console.log('Token balance:', tokenAccountInfo.amount.toString());
+//       }
+  // }
   /*
 async function fetchTokenBalance(tokenMintAddress: string, userPublicKey: string) {
     // Create a PublicKey object for the user's address
@@ -111,7 +109,7 @@ describe('#new_order', async () => {
       commitment: 'confirmed',
     }); */
 
-        const program = new anchor.Program(idl, programId, provider) //for existing prog
+        const program = new anchor.Program(IDL, programId, provider) //for existing prog
         const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
             new anchor.web3.PublicKey(pcMint),
             authority.publicKey,
@@ -180,13 +178,7 @@ describe('#new_order', async () => {
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,
         );
-        //console.log(openOrders);
-        const bids = await program.account.orders.fetch(bidsPda);
-        //console.log(bids);
-        const asks = await program.account.orders.fetch(asksPda);
-        //console.log(asks);
-        const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        //console.log(eventQ);
+
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
         console.log("Ask placed at price: 25 successful");
