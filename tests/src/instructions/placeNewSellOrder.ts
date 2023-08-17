@@ -1,34 +1,38 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
+
 import { Connection, PublicKey } from '@solana/web3.js';
-import {
-  asksPda,
-  bidsPda,
-  coinMint,
-  coinVault,
-  eventQPda,
-  marketPda,
-  pcMint,
-  pcVault,
-  reqQPda,
-  programId,
-} from '../constants';
+
 import fs from 'fs';
 import { IDL } from '../../../target/types/fermi_dex';
-
 import { Keypair } from '@solana/web3.js';
 import config from '../config';
 
 /**
- * Place a new limit buy order
+ * Place a new limit sell order == ASK
  *
- * @param kp -  User's keypair
+ * @param kp - User's kp
  * @param price - The price for the sell order.
  * @returns A confirmation message.
  */
-export async function placeNewBuyOrder(kp: Keypair, price: number) {
+export async function placeNewSellOrder(kp: Keypair, price: number = 22) {
   try {
+    const {
+      asksPda,
+      bidsPda,
+      coinMint,
+      coinVault,
+      eventQPda,
+      marketPda,
+      pcMint,
+      pcVault,
+      reqQPda,
+      programId,
+    } = require('../constants');
     const authority = kp;
+    let openOrdersPda: anchor.web3.PublicKey;
+    let openOrdersPdaBump: number;
+
     const wallet = new anchor.Wallet(authority);
     const conn = new Connection(config.rpcUrl);
     const provider = new anchor.AnchorProvider(
@@ -38,29 +42,26 @@ export async function placeNewBuyOrder(kp: Keypair, price: number) {
     );
 
     const program = new anchor.Program(IDL, programId, provider);
-    const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
-      new anchor.web3.PublicKey(pcMint),
-      authority.publicKey,
-      false,
-    );
+
     const authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
       new anchor.web3.PublicKey(coinMint),
       authority.publicKey,
       false,
     );
 
-    const [openOrdersPda] = await anchor.web3.PublicKey.findProgramAddress(
-      [
-        Buffer.from('open-orders', 'utf-8'),
-        new anchor.web3.PublicKey(marketPda).toBuffer(),
-        authority.publicKey.toBuffer(),
-      ],
-      new anchor.web3.PublicKey(programId),
-    );
+    [openOrdersPda, openOrdersPdaBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from('open-orders', 'utf-8'),
+          new anchor.web3.PublicKey(marketPda).toBuffer(),
+          authority.publicKey.toBuffer(),
+        ],
+        new anchor.web3.PublicKey(programId),
+      );
 
     await program.methods
       .newOrder(
-        { bid: {} },
+        { ask: {} },
         new anchor.BN(price),
         new anchor.BN(1),
         new anchor.BN(price),
@@ -73,7 +74,7 @@ export async function placeNewBuyOrder(kp: Keypair, price: number) {
         pcVault,
         coinMint: coinMint,
         pcMint: pcMint,
-        payer: authorityPcTokenAccount,
+        payer: authorityCoinTokenAccount,
         bids: bidsPda,
         asks: asksPda,
         reqQ: reqQPda,
@@ -83,8 +84,13 @@ export async function placeNewBuyOrder(kp: Keypair, price: number) {
       .signers([authority])
       .rpc();
 
+    const openOrders = await program.account.openOrders.fetch(
+        openOrdersPda,
+    );
+    console.log("Open orders for ",authority.publicKey.toString())
+    console.log(openOrders.orders.map(item=>item.toString()))
     return {
-      message: 'Place limit order Buy price: ' + price,
+      message: 'Place limit order sell price: ' + price,
     };
   } catch (err) {
     console.log('something went wrong while placing a sell order!');

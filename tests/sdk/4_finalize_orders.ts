@@ -1,8 +1,6 @@
 import * as anchor from '@project-serum/anchor';
-import Provider from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
-import { assert } from 'chai';
-import { FermiDex, IDL } from '../../target/types/fermi_dex';
+import { IDL } from '../../target/types/fermi_dex';
 import idl from "../../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/zero/Developer/fermi/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
