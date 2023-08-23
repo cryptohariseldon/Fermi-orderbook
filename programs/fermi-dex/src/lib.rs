@@ -915,7 +915,7 @@ pub mod fermi_dex {
                         msg!("the required funds are {}", qty_coin);
             
                         //let mut deposit_amount = qty_pc / 1000;
-                        let mut deposit_amount = qty_coin / market.coin_lot_size ;
+                        let mut deposit_amount = qty_coin; //decimals already multiplied
                         msg!("Deposit amt {}", deposit_amount);
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = coin_vault;
