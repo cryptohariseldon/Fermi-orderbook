@@ -9,7 +9,7 @@ const parseEventQ = (eventQ) => {
   let events = []
   for(let i = 0;i<(eventQ.buf as any[]).length;i++){
     const e = eventQ.buf[i];
-    if(e.orderId.toString() === '0') continue
+    //if(e.orderId.toString() === '0') continue
     let event = {}
     event['idx'] = i;
     event['orderId'] = e.orderId.toString()

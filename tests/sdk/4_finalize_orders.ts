@@ -45,15 +45,12 @@ let openOrders_secondPdaBump: number;
 
 describe('fermi-dex-new', () => {
     before(async () => {
-
-       
-
     });
+    
 describe('#finalize-order', async () => {
     it('Finalize order - sell @ 19 successful', async () => {
         console.log('testing new ask')
       {
-       
         const rpcUrlLocal = 'http://localhost:8899';
         const wallet = new anchor.Wallet(authority_second);
         const conn = new Connection(rpcUrlLocal);
@@ -142,12 +139,6 @@ describe('#finalize-order', async () => {
             .finaliseMatches(
               base_event_slot,
               base_event_slot2,
-              //new anchor.web3.PublicKey(pcVault),
-              //new anchor.web3.PublicKey(coinVault),
-              //authorityPcTokenAccount,
-              //authorityCoinTokenAccount,
-              //new anchor.BN(0),
-              //authority.PublicKey,
             )
             .accounts({
               openOrdersOwner: openOrdersPda,

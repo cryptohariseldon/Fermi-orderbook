@@ -1,12 +1,20 @@
 import * as anchor from "@project-serum/anchor"
-
 import config from "../config";
 import { marketPda } from "../constants";
 import {Keypair} from '@solana/web3.js'
-import { FermiDex } from "../../../target/types/fermi_dex";
+import { FermiDex, IDL } from "../../../target/types/fermi_dex";
+import {Connection} from "@solana/web3.js"
 
-export const getOpenOrders = async (userKp:Keypair,program:anchor.Program<FermiDex>) => {
+export const getOpenOrders = async (userKp:Keypair) => {
   const authority = userKp  
+  const connection = new Connection(config.rpcUrl);
+  const wallet = new anchor.Wallet(authority);
+  const provider = new anchor.AnchorProvider(
+    connection,
+    wallet,
+    anchor.AnchorProvider.defaultOptions(),
+  );
+  const program = new anchor.Program(IDL, config.programId, provider);
   const [openOrdersPda] = await anchor.web3.PublicKey.findProgramAddress(
     [
       Buffer.from('open-orders', 'utf-8'),
@@ -17,6 +25,7 @@ export const getOpenOrders = async (userKp:Keypair,program:anchor.Program<FermiD
   );
 
   const openOrders = await program.account.openOrders.fetch(openOrdersPda)
+  
 
   return {orders:openOrders.orders,pda:openOrdersPda}
 }

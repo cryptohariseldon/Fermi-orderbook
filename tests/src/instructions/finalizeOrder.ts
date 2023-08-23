@@ -5,92 +5,40 @@ import { getOpenOrders } from '../utils/getOpenOrders';
 import { Connection } from '@solana/web3.js';
 import config from '../config';
 import * as spl from '@solana/spl-token';
-import { IDL } from '../../../target/types/fermi_dex';
-import {
-  coinMint,
-  eventQPda,
-  marketPda,
-  pcMint,
-  pcVault,
-  reqQPda,
-} from '../constants';
+import { FermiDex, IDL } from '../../../target/types/fermi_dex';
 
-function findMatchingEvents(orderId: string, events: any[]) {
-  if (orderId === '0') return;
-  let matchingOrderId;
-  let matchingOrderIdSecond;
+/*
+MAKER
+- sets limits orders .
+- can be seen on orderbook .
+- event which does not have orderIdSecond is Maker 
+- older event is maker 
+- passes as authority second to finalize
+*/
 
-  for (const event of events) {
-    // if native qty is 0 then skip the event
-    if (event.nativeQtyReleased === '0') continue;
-    if (event.orderId === orderId) {
-      matchingOrderId = event.idx;
-    }
-    if (event.orderIdSecond === orderId) {
-      matchingOrderIdSecond = event.idx;
-    }
-  }
+/*
+TAKER 
+- instant trade / market orders / filled instantly
+- event which has an matched orderIdSecond is Taker
+- latest event is taker 
+- passed as authority to finalize
 
-  if (matchingOrderId && matchingOrderIdSecond) {
-    return { matchingOrderId, matchingOrderIdSecond };
-  }
-}
+*/
 
 export async function finalizeOrder(
+  eventSlot1: number,
+  eventSlot2: number,
   authority: Keypair,
   authoritySecond: Keypair,
+  program: anchor.Program<FermiDex>,
 ) {
-  const events = await getEventQ();
-  const wallet = new anchor.Wallet(authority);
-  const connection = new Connection(config.rpcUrl);
-  const provider = new anchor.AnchorProvider(
-    connection,
-    wallet,
-    anchor.AnchorProvider.defaultOptions(),
-  );
-  const program = new anchor.Program(IDL, config.programId, provider);
-  const openOrders = await getOpenOrders(authority, program);
-  const openOrdersSecond = await getOpenOrders(authoritySecond, program);
+  const {
+    coinMint,
+    eventQPda,
+    marketPda,
+    pcMint,
+    pcVault,
+    reqQPda,
+  } = require('../constants');
 
-  const orderIds = openOrders.orders.map((item) => item.toString());
-
-  for (let orderId of orderIds) {
-    const { matchingOrderId, matchingOrderIdSecond } = findMatchingEvents(
-      orderId,
-      events,
-    );
-    console.log({ matchingOrderId, matchingOrderIdSecond });
-
-    const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
-      new anchor.web3.PublicKey(pcMint),
-      authority.publicKey,
-      false,
-    );
-
-    const authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
-      new anchor.web3.PublicKey(coinMint),
-      authoritySecond.publicKey,
-      false,
-    );
-
-    await program.methods
-      .finaliseMatches(matchingOrderId, matchingOrderIdSecond)
-      .accounts({
-        openOrdersOwner: openOrders.pda,
-        openOrdersCounterparty: openOrdersSecond.pda,
-        market: marketPda,
-        pcVault: pcVault,
-        coinMint: coinMint,
-        pcMint: pcMint,
-        reqQ: reqQPda,
-        eventQ: eventQPda,
-        authority: authority.publicKey,
-        pcpayer: authorityPcTokenAccount,
-        coinpayer: authorityCoinTokenAccount,
-      })
-      .signers([authority])
-      .rpc();
-
-    console.log(`Finalized order ${orderId}!!`);
-  }
 }
