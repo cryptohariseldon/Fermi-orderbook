@@ -760,7 +760,8 @@ pub mod fermi_dex {
                         msg!("the available funds is {}", available_funds);
                         msg!("the required funds are {}", qty_pc);
             
-                        let mut deposit_amount = qty_pc / 1000000;
+                        //let mut deposit_amount = qty_pc / 1000;
+                        let mut deposit_amount = qty_pc / market.pc_lot_size ;
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = pc_vault;
             
