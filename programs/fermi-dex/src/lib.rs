@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("GJsyZs9cr8agF6SLiLfxiS9A11Avioe3JVPie92N4SNw");
+declare_id!("Chj3MAzW3aXv1WJQStaoqrCC71TYQVC5WQGURM4F2HwV");
 
 #[program]
 pub mod fermi_dex {
@@ -711,7 +711,133 @@ pub mod fermi_dex {
                  _ => error!(ErrorCode::TransferFailed),
              })? */
              // NOTE - CAN DIRECTLY PASS USERS' PC & COIN ACCOUNTS INSTEAD OF VAULTS. TODO - FIX OPENORDERS ACCOUNTING IN THAT CASE.
-    pub fn finalise_matches(
+             pub fn finalise_matches(
+                ctx: Context<NewMatch>,
+                event1_slot: u8,
+                event2_slot: u8,
+            ) -> Result<()> {
+                let program_id = ctx.program_id;
+                let open_orders_auth = &mut ctx.accounts.open_orders_owner;
+                let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+                let market = &ctx.accounts.market;
+                let pc_vault = &ctx.accounts.pc_vault;
+                let req_q = &mut ctx.accounts.req_q;
+                let event_q = &mut ctx.accounts.event_q.load_mut()?;
+                let authority = &ctx.accounts.authority;
+                let token_program = &ctx.accounts.token_program;
+                let coin_mint = &ctx.accounts.coin_mint;
+                let pc_mint = &ctx.accounts.pc_mint;
+                let payerpc = &ctx.accounts.pcpayer;
+            
+                let event1: Event = event_q.buf[usize::from(event1_slot)];
+                let event2: Event = event_q.buf[usize::from(event2_slot)];
+            
+                let event1_orderid = event1.order_id;
+                let event2_orderid = event2.order_id;
+                let event1_orderidsecond = event1.order_id_second;
+                let event2_orderidsecond = event2.order_id_second;
+            
+                msg!("event1 orderid is {}", event1_orderid);
+                msg!("event1 orderidsecond is {}", event1_orderidsecond);
+                msg!("event2 orderid is {}", event2_orderid);
+                msg!("event2 orderidsecond is {}", event2_orderidsecond);
+            
+                require!(event1.order_id_second == event2.order_id, Error);
+            
+                let events: Vec<Event> = vec![event1, event2];
+                let mut order_id_general: u128 = 0;
+                let mut first_event_done: bool = false;
+            
+                let parsed_event = events[1];
+                let mut sider = parsed_event.event_flags;
+                let side = Side::Bid;
+            
+                match side {
+                    Side::Bid => {
+                        let mut qty_pc = parsed_event.native_qty_paid;
+                        let mut qty_coin = parsed_event.native_qty_released;
+                        let mut available_funds = open_orders_auth.native_pc_free;
+                        msg!("the available funds is {}", available_funds);
+                        msg!("the required funds are {}", qty_pc);
+            
+                        let mut deposit_amount = qty_pc / 100;
+                        let mut cpty_deposit_amt = qty_coin;
+                        let mut deposit_vault = pc_vault;
+            
+                        if deposit_amount > 0 {
+                            // Derive the market's PDA and bump seed.
+                            let (market_pda, bump_seed) = Pubkey::find_program_address(
+                                &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+                                &program_id
+                            );
+
+                           
+                            let market_seed = b"market";
+                            
+                            let coin_mint_key = coin_mint.key();
+                            let pc_mint_key = pc_mint.key();
+
+                            let coin_mint_seed = coin_mint_key.as_ref();
+                            let pc_mint_seed = pc_mint_key.as_ref();
+
+                            let bump_seed_arr: &[u8] = &[bump_seed];
+
+                            let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
+                            let seeds: &[&[&[u8]]] = &[&seed_slices];
+                            //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                            //let seeds: &[&[&[u8]]] = &[&seeds_array];
+                            //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                            //let seeds: &[&[&[u8]]] = &[seed_slice];
+                           // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
+
+                            let transfer_ix = Transfer {
+                                from: payerpc.to_account_info(),
+                                to: deposit_vault.to_account_info(),
+                                authority: market.to_account_info(),  // Using the market PDA as the authority.
+                            };
+                        
+                            // Construct the context with the market PDA and bump seed.
+                            let cpi_ctx = CpiContext::new_with_signer(
+                                token_program.to_account_info(),
+                                transfer_ix,
+                                seeds,
+                                //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
+                            );
+                        
+                            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                _ => error!(ErrorCode::TransferFailed),
+                            })?;
+                        
+                            open_orders_auth.credit_unlocked_pc(deposit_amount);
+                        }
+                        if cpty_deposit_amt > 0 {
+                            open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+                        }
+                        let mut remaining_funds = 0;
+                        if remaining_funds > 0 {
+                            open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                            open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                            open_orders_auth.native_pc_free -= qty_pc;
+                            msg!("Newly locked PC for bidder {}", qty_pc);
+                        }
+                    },
+                    Side::Ask => {
+                        let mut qty_coin = parsed_event.native_qty_paid;
+                        let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                        let mut remaining_funds = available_funds - qty_coin;
+                        if remaining_funds > 1 {
+                            open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
+                            open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
+                            open_orders_auth.native_coin_free -= qty_coin;
+                            msg!("Newly locked coins for asker {}", qty_coin);
+                        }
+                    }
+                }
+            
+                Ok(())
+            }
+/*            
+    pub fn finalise_matches2(
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
                      event2_slot: u8,
@@ -774,8 +900,8 @@ pub mod fermi_dex {
                      let mut order_id_general: u128 = 0;
                      let mut first_event_done: bool = false;
 
-                     for parsed_event in events {
-
+                    for parsed_event in events {
+                    //parsed_event = events[1];
                              //EventView::Fill => {
                              //let mut side = parsedEventFlag::from_side(side);
                              //let mut flags = EventFlag::flags_to_side(parsed_event.event_flags);
@@ -817,7 +943,7 @@ pub mod fermi_dex {
                                          let transfer_ix = Transfer {
                                              from: payer.to_account_info(),
                                              to: deposit_vault.to_account_info(),
-                                             authority: authority.to_account_info(),
+                                             authority: market.to_account_info(),
                                          };
                                          let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
                                          //let marginal_deposit = cpi_ctx * 2 / 100
@@ -874,10 +1000,12 @@ pub mod fermi_dex {
                                  event_q
                                      .push_back(maker_fill)
                                      .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
-                             */}
+                             */
+                                }
+                            },
                                  // open_orders_auth.native_pc_free += parsed_event.native_qty_released;
 
-                             },
+                             
                                  Side::Ask => {
                              //if side=="Ask"{
                                  //qty to fill
@@ -913,13 +1041,14 @@ pub mod fermi_dex {
                                  //open_orders_cpty.native_coin_free -= qty_coin;
 
                              }
-                         }
-                                 }
-
+                         
+                                 
+                        
 
 
                  Ok(())
              }
+            */
 
 /*
              pub fn finalise_matches(
@@ -3348,7 +3477,7 @@ pub struct NewMatch<'info>{
     #[account(
         mut,
        // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
-        token::authority = authority,
+        token::authority = authority_second,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
  /*
