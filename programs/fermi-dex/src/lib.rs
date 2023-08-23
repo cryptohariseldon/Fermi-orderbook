@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("VGwPEHBUjxa1ZQyvCAJ166TsKPYCWKafJoDeqdXqvdJ");
+declare_id!("Ba6zUQjRRWzN43BLc4sUVS9oj4KFYwzcmHdxQiigRnCY");
 
 #[program]
 pub mod fermi_dex {
@@ -609,6 +609,9 @@ pub mod fermi_dex {
         /// if order is not crossed, creator is maker, and only needs to approve tokens.
         if deposit_amount > 0 {
             //if !crossed {
+            msg!("approval amount {}", deposit_amount);
+            //msg!("deposit vault {}", deposit_vault);
+            //msg!("approval vault {}", payer);
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
@@ -620,6 +623,7 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
+
         
         /*
         ///if order is crossed, creator is taker, and must transfer tokens.
@@ -748,7 +752,7 @@ pub mod fermi_dex {
                 let mut order_id_general: u128 = 0;
                 let mut first_event_done: bool = false;
             
-                let parsed_event = events[1];
+                let parsed_event = events[0];
                 let mut sider = parsed_event.event_flags;
                 let side = Side::Bid;
             
@@ -762,6 +766,7 @@ pub mod fermi_dex {
             
                         //let mut deposit_amount = qty_pc / 1000;
                         let mut deposit_amount = qty_pc / market.pc_lot_size ;
+                        msg!("Deposit amt {}", deposit_amount);
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = pc_vault;
             
