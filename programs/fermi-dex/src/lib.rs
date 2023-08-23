@@ -11,7 +11,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("Chj3MAzW3aXv1WJQStaoqrCC71TYQVC5WQGURM4F2HwV");
+declare_id!("VGwPEHBUjxa1ZQyvCAJ166TsKPYCWKafJoDeqdXqvdJ");
 
 #[program]
 pub mod fermi_dex {
@@ -612,7 +612,7 @@ pub mod fermi_dex {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: deposit_vault.to_account_info(),
+                delegate: market.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -760,7 +760,7 @@ pub mod fermi_dex {
                         msg!("the available funds is {}", available_funds);
                         msg!("the required funds are {}", qty_pc);
             
-                        let mut deposit_amount = qty_pc / 100;
+                        let mut deposit_amount = qty_pc / 1000000;
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = pc_vault;
             

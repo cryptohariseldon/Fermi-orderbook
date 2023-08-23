@@ -22,14 +22,14 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_26";
+  } from "./utils/consts_27";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
-const secretKeySecond = JSON.parse(fs.readFileSync("./kp4/key.json"));
-const secretKeyThird = JSON.parse(fs.readFileSync("./kp3/key.json"));
+const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
+const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
 
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
@@ -47,7 +47,7 @@ let openOrders_secondPda: anchor.web3.PublicKey;
 let openOrders_secondPdaBump: number;
 
 async function fetchTokenBalance(mintAddress: string, userAddress: string) {
-    const connection = new Connection("https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731");
+    const connection = new Connection("http://127.0.0.1:8899");
     
     const mintPublicKey = new PublicKey(mintAddress);
     const userPublicKey = new PublicKey(userAddress);
@@ -173,8 +173,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 2;
-          let base_event_slot2 = 4;
+          let base_event_slot = 3;
+          let base_event_slot2 = 5;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');
