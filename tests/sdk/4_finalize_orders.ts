@@ -22,12 +22,14 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_28";
+  } from "./utils/consts_29";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
 const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
+//kp3 = Bob (ask)
+//kp4 = Alice (bid)
 const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
 const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
 
@@ -130,7 +132,7 @@ describe('#finalize-order', async () => {
           );
         const authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
             new anchor.web3.PublicKey(coinMint),
-            authority_second.publicKey,
+            authority.publicKey,
             false,
           );
         
@@ -201,8 +203,10 @@ describe('#finalize-order', async () => {
 
           const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
+        //finalize bid side
+        console.log("finalizing bid");
           await program.methods
-            .finaliseMatches(
+            .finaliseMatchesBid(
               base_event_slot,
               base_event_slot2,
               //new anchor.web3.PublicKey(pcVault),
@@ -227,8 +231,43 @@ describe('#finalize-order', async () => {
               reqQ: reqQPda,
               eventQ: eventQPda,
               authority: authority.publicKey,
+              //authority_second: authority_second.publicKey,
               pcpayer: authorityPcTokenAccount,
               coinpayer: authorityCoinTokenAccount,
+            })
+            .signers([authority])
+            .rpc();
+            
+            //finalize ask side
+            await program.methods
+            .finaliseMatchesAsk(
+              base_event_slot,
+              base_event_slot2,
+              //new anchor.web3.PublicKey(pcVault),
+              //new anchor.web3.PublicKey(coinVault),
+              //authorityPcTokenAccount,
+              //authorityCoinTokenAccount,
+              //new anchor.BN(0),
+              //authority.PublicKey,
+            )
+            .accounts({
+              //programId,
+              openOrdersOwner: openOrdersPda,
+              openOrdersCounterparty: openOrders_secondPda,
+              market: marketPda,
+              //coinVault,
+              coinVault,
+              coinMint: coinMint,
+              pcMint: pcMint,
+              //payer: authorityPcTokenAccount,
+              //bids: bidsPda,
+              //asks: asksPda,
+              reqQ: reqQPda,
+              eventQ: eventQPda,
+              authority: authority.publicKey,
+              //pcpayer: authorityCoinTokenAccount,
+              coinpayer: authorityCoinTokenAccount,
+              authority_second: authority_second.publicKey,
             })
             .signers([authority])
             .rpc();
