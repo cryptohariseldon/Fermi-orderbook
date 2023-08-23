@@ -820,7 +820,7 @@ pub mod fermi_dex {
                             open_orders_auth.credit_unlocked_coin(deposit_amount);
                         }
                         if cpty_deposit_amt > 0 {
-                           // open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+                           //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
                         }
                         let mut remaining_funds = 0;
                         if remaining_funds > 0 {
