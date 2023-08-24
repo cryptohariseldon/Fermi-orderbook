@@ -19,7 +19,11 @@ import {
     pcVault,
     reqQPda,
     programId,
+<<<<<<< HEAD
   } from "../src/constants";
+=======
+  } from "./utils/consts_29";
+>>>>>>> origin/approval1
 
 const {Keypair} = require("@solana/web3.js");
 
@@ -34,7 +38,7 @@ const authority = keypair;
 let openOrdersPda: anchor.web3.PublicKey;
 let openOrdersPdaBump: number;
 async function fetchTokenBalance(mintAddress: string, userAddress: string) {
-    const connection = new Connection("https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731");
+    const connection = new Connection('http://localhost:8899');
     
     const mintPublicKey = new PublicKey(mintAddress);
     const userPublicKey = new PublicKey(userAddress);

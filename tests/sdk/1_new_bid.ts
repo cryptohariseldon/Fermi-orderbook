@@ -15,8 +15,12 @@ import {
     pcVault,
     reqQPda,
     programId,
+<<<<<<< HEAD
   } from "../src/constants";
 import { IDL } from '../../target/types/fermi_dex';
+=======
+  } from "./utils/consts_29";
+>>>>>>> origin/approval1
 
 const {Keypair} = require("@solana/web3.js");
 // const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));

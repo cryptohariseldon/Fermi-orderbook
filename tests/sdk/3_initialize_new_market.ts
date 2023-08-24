@@ -17,7 +17,11 @@ const connection = new Connection("http://127.0.0.1:8899")
 const provider = new anchor.AnchorProvider(connection,wallet,anchor.AnchorProvider.defaultOptions())
 
 describe('fermi-dex-init', () => {
+<<<<<<< HEAD:tests/sdk/3_initialize_new_market.ts
 let programId = "DX5fj2BMuLwWEvJgrB2Z4JHsCWPDkB3c4Ev8aatrK6d2"
+=======
+let programId = "Htx8mCBRUF18a9wgAr7DQE16CUXejthVXasdQYRtRTKe"
+>>>>>>> origin/approval1:tests/sdk/utils/3_initialize_new_market.ts
 
 const program = new anchor.Program(IDL, programId, provider) //for existing prog
 const coinMint = anchor.web3.Keypair.generate();
