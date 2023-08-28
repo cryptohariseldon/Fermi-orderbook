@@ -5,9 +5,8 @@ import { getLocalKeypair } from "./getLocalKeypair";
 import config from '../config';
 import { FermiDex, IDL } from '../../../target/types/fermi_dex';
 
-function getFermiDexProgram(secretKeyPath:string): anchor.Program<FermiDex> {
+function getFermiDexProgram(keypair:Keypair): anchor.Program<FermiDex> {
   const  {programId} = require('../constants');
-  const keypair = getLocalKeypair(secretKeyPath);
   const authority = keypair;
   const wallet = new anchor.Wallet(authority);
   const connection = new Connection(config.rpcUrl);

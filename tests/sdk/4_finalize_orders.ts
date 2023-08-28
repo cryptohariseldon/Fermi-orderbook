@@ -19,28 +19,19 @@ import {
     pcVault,
     reqQPda,
     programId,
-<<<<<<< HEAD
   } from "../src/constants";
-=======
-  } from "./utils/consts_29";
->>>>>>> origin/approval1
 
 const {Keypair} = require("@solana/web3.js");
 // const secretKey = JSON.parse(fs.readFileSync("/Users/zero/.config/solana/id.json"));
 // const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/basic/keypair2/keypair2.json"));
 
-<<<<<<< HEAD
-const secretKeyKp3 = JSON.parse(fs.readFileSync("./kp3/key.json"));
-const secretKeyKp4 = JSON.parse(fs.readFileSync("./kp4/key.json"));
-=======
 //kp3 = Bob (ask)
 //kp4 = Alice (bid)
-const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
-const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
->>>>>>> origin/approval1
+const secretKey3 = JSON.parse(fs.readFileSync("./kp3/key.json"));
+const secretKey4 = JSON.parse(fs.readFileSync("./kp4/key.json"));
 
-const kp3 = Keypair.fromSecretKey(new Uint8Array(secretKeyKp3));
-const kp4 = Keypair.fromSecretKey(new Uint8Array(secretKeyKp4));
+const kp3 = Keypair.fromSecretKey(new Uint8Array(secretKey3));
+const kp4 = Keypair.fromSecretKey(new Uint8Array(secretKey4));
 
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
@@ -53,8 +44,6 @@ let openOrdersPdaBump: number;
 let openOrders_secondPda: anchor.web3.PublicKey;
 let openOrders_secondPdaBump: number;
 
-<<<<<<< HEAD
-=======
 async function fetchTokenBalance(mintAddress: string, userAddress: string) {
     const connection = new Connection("http://127.0.0.1:8899");
     
@@ -106,7 +95,6 @@ async function fetchTokenBalance(tokenMintAddress: string, userPublicKey: string
     // Log the balance
     console.log('Token balance:', tokenAccountInfo.amount.toString());
   }*/
->>>>>>> origin/approval1
 
 describe('fermi-dex-new', () => {
     before(async () => {
@@ -199,13 +187,9 @@ describe('#finalize-order', async () => {
           }
 
           const eventQ = await program.account.eventQueue.fetch(eventQPda);
-<<<<<<< HEAD
-          console.log(eventQ,(eventQ.buf as any[])?.map((item,i)=>({...item,idx:i})).filter(item => item.orderId !== new BN(0)));
-=======
         console.log(eventQ);
         //finalize bid side
         console.log("finalizing bid");
->>>>>>> origin/approval1
           await program.methods
             .finaliseMatchesBid(
               base_event_slot,
@@ -232,8 +216,6 @@ describe('#finalize-order', async () => {
             })
             .signers([authority])
             .rpc();
-<<<<<<< HEAD
-=======
             console.log("finalized side Bid!");
 
             //finalize ask side
@@ -319,7 +301,6 @@ describe('#finalize-order', async () => {
               }
             });
             console.log("decoded data");
->>>>>>> origin/approval1
 
       }
     })

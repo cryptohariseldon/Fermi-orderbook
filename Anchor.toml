@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-fermi_dex = "6n6jCxYgo4xg3z86L65NMgq677uos7aFgrntiiq5FrTi"
+fermi_dex = "6D8nP3TRrsT8FZNbhgZXGhyZz9SbnHHU2egsdJjeaHa7"
 
 
 [registry]

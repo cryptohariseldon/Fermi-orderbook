@@ -19,11 +19,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-<<<<<<< HEAD
-  } from "../src/constants";
-=======
   } from "./utils/consts_29";
->>>>>>> origin/approval1
 
 const {Keypair} = require("@solana/web3.js");
 

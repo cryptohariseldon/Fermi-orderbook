@@ -25,7 +25,7 @@ export const getOpenOrders = async (userKp:Keypair) => {
   );
 
   const openOrders = await program.account.openOrders.fetch(openOrdersPda)
-  
+  const orders = openOrders.orders.map(item=>item.toString());
 
-  return {orders:openOrders.orders,pda:openOrdersPda}
+  return {orders:orders,pda:openOrdersPda}
 }
