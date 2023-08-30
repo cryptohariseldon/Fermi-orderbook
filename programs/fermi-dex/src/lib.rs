@@ -542,9 +542,9 @@ pub mod fermi_dex {
             open_orders.credit_locked_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_unlocked);
-*/
 
-            /*
+
+            
             open_orders.native_coin_total = open_orders
                 .native_coin_total
                 .checked_sub(native_coin_debit)
@@ -760,7 +760,14 @@ pub mod fermi_dex {
                 let parsed_event = events[0];
                 let mut sider = parsed_event.event_flags;
                 let side = Side::Bid;
-            
+                let side2;
+                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side2 = Side::Bid;
+                    } else {
+                    side2 = Side::Ask;
+                      }
+                //msg!("the side is {}", side2);
                 match side {
                     Side::Bid => {
                         let mut qty_pc = parsed_event.native_qty_paid;
@@ -907,68 +914,76 @@ pub mod fermi_dex {
                 //let parsed_event = events[1];
                 //let mut sider = parsed_event.event_flags;
                 for parsed_event in events {
-                let side = flags_to_side(parsed_event.event_flags);
+                    let side;
+                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side = 1; //BID
+                    } else {
+                    side = 2; //ASK
+                      }
+                    //let side = flags_to_side(parsed_event.event_flags);
 
-                match side {
-                    Side::Bid => {
-                        //let mut qty_pc = parsed_event.native_qty_paid;
-                        let mut qty_coin = parsed_event.native_qty_paid;
-                        let mut available_funds = open_orders_auth.native_coin_free;
-                        msg!("the available funds is {}", available_funds);
-                        msg!("the required funds are {}", qty_coin);
-            
-                        //let mut deposit_amount = qty_pc / 1000;
-                        let mut deposit_amount = qty_coin; //decimals already multiplied
-                        msg!("Deposit amt {}", deposit_amount);
-                        let mut cpty_deposit_amt = qty_coin;
-                        let mut deposit_vault = coin_vault;
-            
-                        if deposit_amount > 0 {
-                            // Derive the market's PDA and bump seed.
-                            let (market_pda, bump_seed) = Pubkey::find_program_address(
-                                &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
-                                &program_id
-                            );
+                    //match side {
+                        //Side::Ask => {
+                       if(side == 2)  {
+                            //let mut qty_pc = parsed_event.native_qty_paid;
+                            let mut qty_coin = parsed_event.native_qty_paid;
+                            let mut available_funds = open_orders_auth.native_coin_free;
+                            msg!("the available funds is {}", available_funds);
+                            msg!("the required funds are {}", qty_coin);
+                
+                            //let mut deposit_amount = qty_pc / 1000;
+                            let mut deposit_amount = qty_coin; //decimals already multiplied
+                            msg!("Deposit amt {}", deposit_amount);
+                            let mut cpty_deposit_amt = qty_coin;
+                            let mut deposit_vault = coin_vault;
+                
+                            if deposit_amount > 0 {
+                                // Derive the market's PDA and bump seed.
+                                let (market_pda, bump_seed) = Pubkey::find_program_address(
+                                    &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+                                    &program_id
+                                );
 
-                           
-                            let market_seed = b"market";
                             
-                            let coin_mint_key = coin_mint.key();
-                            let pc_mint_key = pc_mint.key();
+                                let market_seed = b"market";
+                                
+                                let coin_mint_key = coin_mint.key();
+                                let pc_mint_key = pc_mint.key();
 
-                            let coin_mint_seed = coin_mint_key.as_ref();
-                            let pc_mint_seed = pc_mint_key.as_ref();
+                                let coin_mint_seed = coin_mint_key.as_ref();
+                                let pc_mint_seed = pc_mint_key.as_ref();
 
-                            let bump_seed_arr: &[u8] = &[bump_seed];
+                                let bump_seed_arr: &[u8] = &[bump_seed];
 
-                            let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
-                            let seeds: &[&[&[u8]]] = &[&seed_slices];
-                            //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-                            //let seeds: &[&[&[u8]]] = &[&seeds_array];
-                            //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-                            //let seeds: &[&[&[u8]]] = &[seed_slice];
-                           // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
+                                let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
+                                let seeds: &[&[&[u8]]] = &[&seed_slices];
+                                //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                                //let seeds: &[&[&[u8]]] = &[&seeds_array];
+                                //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                                //let seeds: &[&[&[u8]]] = &[seed_slice];
+                            // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
 
-                            let transfer_ix = Transfer {
-                                from: payercoin.to_account_info(),
-                                to: deposit_vault.to_account_info(),
-                                authority: market.to_account_info(),  // Using the market PDA as the authority.
-                            };
-                        
-                            // Construct the context with the market PDA and bump seed.
-                            let cpi_ctx = CpiContext::new_with_signer(
-                                token_program.to_account_info(),
-                                transfer_ix,
-                                seeds,
-                                //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
-                            );
-                        
-                            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                                _ => error!(ErrorCode::TransferFailed),
-                            })?;
-                        
-                           // open_orders_auth.credit_unlocked_pc(deposit_amount);
-                        }
+                                let transfer_ix = Transfer {
+                                    from: payercoin.to_account_info(),
+                                    to: deposit_vault.to_account_info(),
+                                    authority: market.to_account_info(),  // Using the market PDA as the authority.
+                                };
+                            
+                                // Construct the context with the market PDA and bump seed.
+                                let cpi_ctx = CpiContext::new_with_signer(
+                                    token_program.to_account_info(),
+                                    transfer_ix,
+                                    seeds,
+                                    //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
+                                );
+                            
+                                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                    _ => error!(ErrorCode::TransferFailed),
+                                })?;
+                            
+                            // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                            }
                         /*
                         if cpty_deposit_amt > 0 {
                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
@@ -981,8 +996,9 @@ pub mod fermi_dex {
                             open_orders_cpty.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
                         } */
-                    },
-                    Side::Ask => {
+                    }
+                    //Side::Bid => {
+                        if (side == 1) {
                         let mut qty_coin = parsed_event.native_qty_paid;
                         let mut available_funds = open_orders_cpty.native_coin_free * 10;
                         let mut remaining_funds = available_funds - qty_coin;
@@ -993,22 +1009,20 @@ pub mod fermi_dex {
                             msg!("Newly locked coins for asker {}", qty_coin);
                         }
                     }
-                }
-                
+                //}
+            
+            }
                 
                 Ok(())
-            }
-
+            
+        }
+/*
             pub fn flags_to_side(flags: u8) -> Side {
-                let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(flags);
-                if bit_flags.contains(EventFlag::Bid) {
-                    Side::Bid
-                } else {
-                    Side::Ask
-                }
+                
+            
             }
 
-            /*
+            
 
             fn determine_side(eventflags: u8) -> Side {
                 let flags = unsafe { bitflags::bitflags! { EventFlag::from_bits_unchecked(eventflags) } };
