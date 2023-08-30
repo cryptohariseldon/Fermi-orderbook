@@ -8,6 +8,8 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+//extern crate bitflags;
+
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
@@ -902,10 +904,11 @@ pub mod fermi_dex {
                 let mut order_id_general: u128 = 0;
                 let mut first_event_done: bool = false;
             
-                let parsed_event = events[1];
-                let mut sider = parsed_event.event_flags;
-                let side = Side::Bid;
-            
+                //let parsed_event = events[1];
+                //let mut sider = parsed_event.event_flags;
+                for parsed_event in events {
+                let side = flags_to_side(parsed_event.event_flags);
+
                 match side {
                     Side::Bid => {
                         //let mut qty_pc = parsed_event.native_qty_paid;
@@ -991,10 +994,36 @@ pub mod fermi_dex {
                         }
                     }
                 }
-            
+                
+                
                 Ok(())
             }
-/*            
+
+            pub fn flags_to_side(flags: u8) -> Side {
+                let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(flags);
+                if bit_flags.contains(EventFlag::Bid) {
+                    Side::Bid
+                } else {
+                    Side::Ask
+                }
+            }
+
+            /*
+
+            fn determine_side(eventflags: u8) -> Side {
+                let flags = unsafe { bitflags::bitflags! { EventFlag::from_bits_unchecked(eventflags) } };
+            
+                if flags.contains(EventFlag::Bid) && flags.contains(EventFlag::Fill) {
+                    Side::Bid
+                } else if flags.contains(EventFlag::Fill) && !flags.contains(EventFlag::Bid) {
+                    Side::Ask
+                } else {
+                    panic!("Invalid eventflags combination");
+                }
+            }
+        
+          
+
     pub fn finalise_matches2(
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
