@@ -877,9 +877,9 @@ pub mod fermi_dex {
                     }
                     // Side::Ask => {
                     if sider == 2 {
-                        let mut qty_coin = parsed_event.native_qty_paid;
-                        let mut available_funds = open_orders_cpty.native_coin_free * 10;
-                        let mut remaining_funds = available_funds - qty_coin;
+                        //let mut qty_coin = parsed_event.native_qty_paid;
+                        //let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                        //let mut remaining_funds = available_funds - qty_coin;
                         /*
                         if remaining_funds > 1 {
                             open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
