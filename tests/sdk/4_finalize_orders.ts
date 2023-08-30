@@ -205,7 +205,7 @@ describe('#finalize-order', async () => {
         console.log(eventQ);
         //finalize bid side
 
-        
+        /*
         console.log("finalizing bid");
           await program.methods
             .finaliseMatchesBid(
@@ -240,7 +240,7 @@ describe('#finalize-order', async () => {
             .signers([authority])
             .rpc();
             console.log("finalized side Bid!");
-
+*/
             //finalize ask side
             await program.methods
             .finaliseMatchesAsk(

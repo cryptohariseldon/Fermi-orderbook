@@ -952,18 +952,28 @@ pub mod fermi_dex {
                 //let parsed_event = events[1];
                 //let mut sider = parsed_event.event_flags;
                 for parsed_event in events {
-                    let side;
+                    let sider;
+                    /*
                     let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
                     if bit_flags.contains(EventFlag::Bid) {
                     side = 1; //BID
                     } else {
                     side = 2; //ASK
-                      }
+                      } */
                     //let side = flags_to_side(parsed_event.event_flags);
+                    let flags = BitFlags::<EventFlag>::from_bits(parsed_event.event_flags).unwrap_or(BitFlags::empty());
 
+                    let side = EventFlag::flags_to_side(flags);
+                    if side == Side::Bid {
+                        sider = 1;
+                    }
+                    else {
+                        sider = 2;
+                    }
+                    msg!("side is {}", sider);
                     //match side {
                         //Side::Ask => {
-                       if(side == 2)  {
+                       if(sider == 2)  {
                             //let mut qty_pc = parsed_event.native_qty_paid;
                             let mut qty_coin = parsed_event.native_qty_paid;
                             let mut available_funds = open_orders_auth.native_coin_free;
@@ -1036,8 +1046,8 @@ pub mod fermi_dex {
                         } */
                     }
                     //Side::Bid => {
-                        if (side == 1) {
-                        let mut qty_coin = parsed_event.native_qty_paid;
+                        if (sider == 1) {
+                      /*  let mut qty_coin = parsed_event.native_qty_paid;
                         let mut available_funds = open_orders_cpty.native_coin_free * 10;
                         let mut remaining_funds = available_funds - qty_coin;
                         if remaining_funds > 1 {
@@ -1045,7 +1055,7 @@ pub mod fermi_dex {
                             open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
                             open_orders_auth.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
-                        }
+                        } */
                     }
                 //}
             
