@@ -720,7 +720,7 @@ pub mod fermi_dex {
              })? */
              // NOTE - CAN DIRECTLY PASS USERS' PC & COIN ACCOUNTS INSTEAD OF VAULTS. TODO - FIX OPENORDERS ACCOUNTING IN THAT CASE.
              /// Just-in-time transfers for bid side.
-             pub fn finalise_matches_bid(
+    pub fn finalise_matches_bid(
                 ctx: Context<NewMatch>,
                 event1_slot: u8,
                 event2_slot: u8,
@@ -768,7 +768,7 @@ pub mod fermi_dex {
                     side2 = Side::Ask;
                       } */
                 //msg!("the side is {}", side2);
-                for parsed_event in events {
+                for (index, parsed_event) in events.iter().enumerate() {
                     //let side;
                     //let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
                     //let bit_flags = EventFlag::from_bits_unchecked(eventflags);
@@ -874,6 +874,19 @@ pub mod fermi_dex {
                            // open_orders_auth.native_pc_free -= qty_pc;
                             msg!("Newly locked PC for bidder {}", qty_pc);
                         }
+                        if index == 0 {
+                            open_orders_auth.native_pc_free  = open_orders_auth
+                                .native_pc_free
+                                .checked_add(qty_pc)
+                                .unwrap();
+                            // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                            }
+                        if index == 1 {
+                            open_orders_cpty.native_pc_free  = open_orders_cpty
+                                .native_pc_free
+                                .checked_add(deposit_amount)
+                                .unwrap();
+                            }
                     }
                     // Side::Ask => {
                     if sider == 2 {
@@ -892,6 +905,7 @@ pub mod fermi_dex {
             
                 Ok(())
             }
+
 /*
             fn determine_side(eventflags: u8) -> Side {
                 let flags = unsafe { bitflags::bitflags! { EventFlag::from_bits_unchecked(eventflags) } };
@@ -912,14 +926,14 @@ pub mod fermi_dex {
             
 
             /// just in time transfers for ask side
-            pub fn finalise_matches_ask(
+pub fn finalise_matches_ask(
                 ctx: Context<NewMatchAsk>,
                 event1_slot: u8,
                 event2_slot: u8,
             ) -> Result<()> {
                 let program_id = ctx.program_id;
-                let open_orders_auth = &mut ctx.accounts.open_orders_owner;
-                let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+                let open_orders_auth = &mut ctx.accounts.open_orders_owner; //owner of event 1
+                let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty; // owner of event 2
                 let market = &ctx.accounts.market;
                 let coin_vault = &ctx.accounts.coin_vault;
                 let req_q = &mut ctx.accounts.req_q;
@@ -951,7 +965,7 @@ pub mod fermi_dex {
             
                 //let parsed_event = events[1];
                 //let mut sider = parsed_event.event_flags;
-                for parsed_event in events {
+                for (index, parsed_event) in events.iter().enumerate() {
                     let sider;
                     /*
                     let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
@@ -1030,8 +1044,21 @@ pub mod fermi_dex {
                                     _ => error!(ErrorCode::TransferFailed),
                                 })?;
                             
-                            // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                            //accounting
+                            if index == 0 {
+                            open_orders_auth.native_coin_free = open_orders_auth
+                                .native_coin_free
+                                .checked_add(deposit_amount)
+                                .unwrap();
                             }
+                            if index == 1 {
+                                open_orders_cpty.native_coin_free = open_orders_cpty
+                                    .native_coin_free
+                                    .checked_add(deposit_amount)
+                                    .unwrap();
+
+                        }
+
                         /*
                         if cpty_deposit_amt > 0 {
                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
@@ -1058,7 +1085,7 @@ pub mod fermi_dex {
                         } */
                     }
                 //}
-            
+                }
             }
                 
                 Ok(())
