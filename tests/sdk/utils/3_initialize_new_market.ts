@@ -16,7 +16,7 @@ import {createMint, createAssociatedTokenAccount, mintTo} from "./utils"
 
 
 describe('fermi-dex-init', () => {
-let programId = "Htx8mCBRUF18a9wgAr7DQE16CUXejthVXasdQYRtRTKe"
+let programId = "4jnBbnBjuJB4Qpv7YzBdqb56wEDgC4cVB6uzUzEGMsiH"
 
 const program = new anchor.Program(idl, programId, provider) //for existing prog
 const coinMint = anchor.web3.Keypair.generate();

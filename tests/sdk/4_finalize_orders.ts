@@ -22,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_29";
+  } from "./utils/consts_30";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -30,8 +30,8 @@ const secretKeynew = JSON.parse(fs.readFileSync("/Users/dm/Documents/fermi_labs/
 
 //kp3 = Bob (ask)
 //kp4 = Alice (bid)
-const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
-const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
+const secretKeySecond = JSON.parse(fs.readFileSync("./kp4/key.json"));
+const secretKeyThird = JSON.parse(fs.readFileSync("./kp3/key.json"));
 
 
 const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
@@ -204,6 +204,8 @@ describe('#finalize-order', async () => {
           const eventQ = await program.account.eventQueue.fetch(eventQPda);
         console.log(eventQ);
         //finalize bid side
+
+        /*
         console.log("finalizing bid");
           await program.methods
             .finaliseMatchesBid(

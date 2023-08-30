@@ -13,7 +13,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("Htx8mCBRUF18a9wgAr7DQE16CUXejthVXasdQYRtRTKe");
+declare_id!("4jnBbnBjuJB4Qpv7YzBdqb56wEDgC4cVB6uzUzEGMsiH");
 
 #[program]
 pub mod fermi_dex {
@@ -757,19 +757,28 @@ pub mod fermi_dex {
                 let mut order_id_general: u128 = 0;
                 let mut first_event_done: bool = false;
             
-                let parsed_event = events[0];
-                let mut sider = parsed_event.event_flags;
-                let side = Side::Bid;
-                let side2;
+                //let parsed_event = events[0];
+                //let mut sider = parsed_event.event_flags;
+                //let side = Side::Bid;
+                /*let side2;
                     let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
                     if bit_flags.contains(EventFlag::Bid) {
                     side2 = Side::Bid;
                     } else {
                     side2 = Side::Ask;
-                      }
+                      } */
                 //msg!("the side is {}", side2);
-                match side {
-                    Side::Bid => {
+                for parsed_event in events {
+                    let side;
+                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side = 1; //BID
+                    } else {
+                    side = 2; //ASK
+                      }
+                //match side {
+                  //  Side::Bid => {
+                    if side == 1 {
                         let mut qty_pc = parsed_event.native_qty_paid;
                         let mut qty_coin = parsed_event.native_qty_released;
                         let mut available_funds = open_orders_auth.native_pc_free;
@@ -838,17 +847,19 @@ pub mod fermi_dex {
                             open_orders_auth.native_pc_free -= qty_pc;
                             msg!("Newly locked PC for bidder {}", qty_pc);
                         }
-                    },
-                    Side::Ask => {
+                    }
+                    // Side::Ask => {
+                    if side == 2 {
                         let mut qty_coin = parsed_event.native_qty_paid;
                         let mut available_funds = open_orders_cpty.native_coin_free * 10;
                         let mut remaining_funds = available_funds - qty_coin;
+                        /*
                         if remaining_funds > 1 {
                             open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
                             open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
                             open_orders_auth.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
-                        }
+                        } */
                     }
                 }
             
