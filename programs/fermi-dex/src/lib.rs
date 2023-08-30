@@ -769,16 +769,43 @@ pub mod fermi_dex {
                       } */
                 //msg!("the side is {}", side2);
                 for parsed_event in events {
-                    let side;
-                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    //let side;
+                    //let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    //let bit_flags = EventFlag::from_bits_unchecked(eventflags);
+                    /*let bit_flags = unsafe {BitFlags::<EventFlag>::from_bits_unchecked(parsed_event.event_flags)};
+
                     if bit_flags.contains(EventFlag::Bid) {
-                    side = 1; //BID
+                    side = 2; //BID
                     } else {
-                    side = 2; //ASK
-                      }
+                    side = 1; //ASK
+                      } */
+                    let sider; // u8 for side
+                    match BitFlags::<EventFlag>::from_bits(parsed_event.event_flags) {
+                        Ok(flags) => {
+                            let side = EventFlag::flags_to_side(flags);
+                            msg!("The side derived from parsed_event.event_flags is: {:?}", side);
+                        },
+                        Err(_) => {
+                            msg!("Error: Invalid flags detected: {:?}", parsed_event.event_flags);
+                        }
+                    }
+                    
+                    
+                    let flags = BitFlags::<EventFlag>::from_bits(parsed_event.event_flags).unwrap_or(BitFlags::empty());
+
+                    let side = EventFlag::flags_to_side(flags);
+                    if side == Side::Bid {
+                        sider = 1;
+                    }
+                    else {
+                        sider = 2;
+                    }
+                    msg!("side is {}", sider);
                 //match side {
                   //  Side::Bid => {
-                    if side == 1 {
+                //let sider = 1;
+                
+                    if sider == 1 {
                         let mut qty_pc = parsed_event.native_qty_paid;
                         let mut qty_coin = parsed_event.native_qty_released;
                         let mut available_funds = open_orders_auth.native_pc_free;
@@ -842,14 +869,14 @@ pub mod fermi_dex {
                         }
                         let mut remaining_funds = 0;
                         if remaining_funds > 0 {
-                            open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
-                            open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
-                            open_orders_auth.native_pc_free -= qty_pc;
+                           // open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                           // open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                           // open_orders_auth.native_pc_free -= qty_pc;
                             msg!("Newly locked PC for bidder {}", qty_pc);
                         }
                     }
                     // Side::Ask => {
-                    if side == 2 {
+                    if sider == 2 {
                         let mut qty_coin = parsed_event.native_qty_paid;
                         let mut available_funds = open_orders_cpty.native_coin_free * 10;
                         let mut remaining_funds = available_funds - qty_coin;
@@ -860,7 +887,7 @@ pub mod fermi_dex {
                             open_orders_auth.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
                         } */
-                    }
+                    } 
                 }
             
                 Ok(())
@@ -3312,7 +3339,7 @@ pub struct InitializeMarket<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-#[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize)]
+#[derive(Copy, Debug, Clone, PartialEq, AnchorSerialize, AnchorDeserialize)]
 pub enum Side {
     Bid = 0,
     Ask = 1,
