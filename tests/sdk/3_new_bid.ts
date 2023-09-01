@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_30";
+  } from "./utils/consts_31";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -146,9 +146,9 @@ describe('#new_order', async () => {
         await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(26),
+            new anchor.BN(31),
             new anchor.BN(1),
-            new anchor.BN(26),
+            new anchor.BN(31),
             { limit: {} },
           )
           .accounts({

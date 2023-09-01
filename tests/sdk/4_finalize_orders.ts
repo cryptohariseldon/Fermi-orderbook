@@ -22,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_30";
+  } from "./utils/consts_31";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -175,8 +175,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 2;
-          let base_event_slot2 = 4;
+          let base_event_slot = 3;
+          let base_event_slot2 = 5;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');

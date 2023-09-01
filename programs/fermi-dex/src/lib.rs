@@ -2593,9 +2593,10 @@ impl<'a> OrderBook<'a> {
             // testing
 
             if !crossed || post_only {
+                msg!("not crossed!");
                 break true;
             }
-
+            msg!("crossed!");
             let offer_size = best_offer.qty;
             let trade_qty = offer_size
                 .min(coin_qty_remaining)
@@ -2657,10 +2658,11 @@ impl<'a> OrderBook<'a> {
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
             
+            //write maker side event to eventQ
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
-                //.push_back(maker_fill)
-                //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+             //   .push_back(maker_fill)
+             //   .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
@@ -2749,7 +2751,7 @@ impl<'a> OrderBook<'a> {
             to_release.jit_data = jit_data;
 
             // multiple possible counterparties
-            if native_accum_fill_price > 0 {
+            //if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Bid,
                     maker: false,
@@ -2785,8 +2787,8 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| ErrorCode::QueueAlreadyFull)?;*/
-            }
+                    .map_err(|_| ErrorCode::QueueAlreadyFull)?; */
+           // }
         }
 
         if !done {
