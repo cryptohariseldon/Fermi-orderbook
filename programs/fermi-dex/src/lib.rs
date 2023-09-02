@@ -13,7 +13,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("4jnBbnBjuJB4Qpv7YzBdqb56wEDgC4cVB6uzUzEGMsiH");
+declare_id!("3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR");
 
 #[program]
 pub mod fermi_dex {
