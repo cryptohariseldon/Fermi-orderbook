@@ -939,13 +939,15 @@ pub mod fermi_dex {
                 
                 if eventBidFinalised == true && eventAskFinalised == true {
                     //subtract pc from event1 owner
-                    open_orders_auth.native_pc_free -= event1.native_qty_paid;
+                   // open_orders_auth.native_pc_free -= event1.native_qty_paid;
                     //subtract coin from event2 owner
-                    open_orders_cpty.native_coin_free -= event2.native_qty_paid;
+                   // open_orders_cpty.native_coin_free -= event2.native_qty_paid;
                     //add pc to event2 owner
                     open_orders_cpty.native_pc_free += event2.native_qty_released;
                     //add coin to event1 owner  
                     open_orders_auth.native_coin_free += event1.native_qty_released;
+
+                    msg!("settlement completed!");
 
                 }
             

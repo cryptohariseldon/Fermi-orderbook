@@ -175,8 +175,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 3;
-          let base_event_slot2 = 5;
+          let base_event_slot = 5;
+          let base_event_slot2 = 7;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');
@@ -205,7 +205,7 @@ describe('#finalize-order', async () => {
         console.log(eventQ);
         //finalize bid side
 
-        /*
+        
         console.log("finalizing bid");
           await program.methods
             .finaliseMatchesBid(
@@ -240,7 +240,7 @@ describe('#finalize-order', async () => {
             .signers([authority])
             .rpc();
             console.log("finalized side Bid!");
-*/
+
             //finalize ask side
             await program.methods
             .finaliseMatchesAsk(
