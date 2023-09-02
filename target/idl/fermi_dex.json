@@ -199,7 +199,10 @@
       ]
     },
     {
-      "name": "finaliseMatches",
+      "name": "finaliseMatchesBid",
+      "docs": [
+        "Just-in-time transfers for bid side."
+      ],
       "accounts": [
         {
           "name": "openOrdersOwner",
@@ -214,6 +217,11 @@
         {
           "name": "market",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pcVault",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -238,6 +246,11 @@
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "authoritySecond",
           "isMut": true,
           "isSigner": true
         },
@@ -245,6 +258,94 @@
           "name": "pcpayer",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "event1Slot",
+          "type": "u8"
+        },
+        {
+          "name": "event2Slot",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "finaliseMatchesAsk",
+      "docs": [
+        "just in time transfers for ask side"
+      ],
+      "accounts": [
+        {
+          "name": "openOrdersOwner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrdersCounterparty",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "coinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pcMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "authoritySecond",
+          "isMut": true,
+          "isSigner": true
         },
         {
           "name": "coinpayer",
@@ -280,14 +381,6 @@
         {
           "name": "event2Slot",
           "type": "u8"
-        },
-        {
-          "name": "pcVault",
-          "type": "publicKey"
-        },
-        {
-          "name": "coinVault",
-          "type": "publicKey"
         }
       ]
     }
@@ -922,6 +1015,6 @@
     }
   ],
   "metadata": {
-    "address": "6BAGvnjkut578J85hS11M8DH2kLGtEbV49phfCoziMzJ"
+    "address": "3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR"
   }
 }

@@ -2,7 +2,6 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
 import { SimpleSerum } from '../target/types/fermi_dex';
-import idl from "../target/idl/fermi_dex.json";
 import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 
@@ -121,7 +120,7 @@ describe('fermi-dex', () => {
   // let programId = "HTbkjiBvVXMBWRFs4L56fSWaHpX343ZQGzY4htPQ5ver";
   //let programId = "B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W";
   //let programId = "TtN7ndtaUUBWvkXzt5P8cSngmqLcbcMyqYyMbMsWxGN";
-  let programId = "6BAGvnjkut578J85hS11M8DH2kLGtEbV49phfCoziMzJ"
+  let programId = "ASrtYDNReHLYmv9F72WVJ94v21cJNa2WKo3f2tGoAH7C"
 
   const program = new anchor.Program(idl, programId, provider) //for existing prog
   const coinMint = anchor.web3.Keypair.generate();
@@ -153,8 +152,8 @@ describe('fermi-dex', () => {
 
   //const authority = anchor.web3.Keypair.generate();
   const authority = keypair;
-  const authority_second = anchor.web3.Keypair.generate(); //keypair_second;
-
+  //const authority_second = anchor.web3.Keypair.generate(); //keypair_second;
+    const authority_second = keypair_second
   console.log("TWO USER TESTING");
   console.log(authority);
   console.log(authority_second);
@@ -166,12 +165,13 @@ describe('fermi-dex', () => {
   console.log('basics done')
 
   before(async () => {
+    /*
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
-        authority.publicKey,
-        2 * anchor.web3.LAMPORTS_PER_SOL,
+        authority_second.publicKey,
+        1 * anchor.web3.LAMPORTS_PER_SOL,
       ),
-    );
+    ); */
 
     await createMint(provider, coinMint, 9);
     await createMint(provider, pcMint, 6);
@@ -220,7 +220,7 @@ describe('fermi-dex', () => {
     );
     pcVault = await spl.getAssociatedTokenAddress(
       pcMint.publicKey,
-      marketPda, 
+      marketPda,
       true,
     );
     // await createAssociatedTokenAccount(
@@ -274,13 +274,13 @@ describe('fermi-dex', () => {
       provider,
       coinMint.publicKey,
       authorityCoinTokenAccount,
-      BigInt('20000000000'),
+      BigInt('200000000000'),
     );
     await mintTo(
       provider,
       pcMint.publicKey,
       authorityPcTokenAccount,
-      BigInt('2000000000'),
+      BigInt('10000000000'),
     );
     console.log("sent to");
     console.log(authorityPcTokenAccount.toString());
@@ -308,7 +308,7 @@ describe('fermi-dex', () => {
       authority_second.publicKey,
       false,
     );
-
+/*
     await createAssociatedTokenAccount(
       provider,
       coinMint.publicKey,
@@ -320,7 +320,8 @@ describe('fermi-dex', () => {
       pcMint.publicKey,
       authority_secondPcTokenAccount,
       authority_second.publicKey,
-    );
+    ); */
+    console.log("sent to");
 
     await mintTo(
       provider,
@@ -405,7 +406,7 @@ describe('fermi-dex', () => {
   });
 
   describe('#new_order', async () => {
-    it('New order - buy @ 99 successful', async () => {
+    it('New order - buy @ 20 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -445,7 +446,7 @@ describe('fermi-dex', () => {
         console.log(eventQ);
       }
     }),
-      it('New order - ask @ 100 successful', async () => {
+      it('New order - ask @ 25 successful', async () => {
 
       {
         await program.methods
@@ -486,7 +487,7 @@ describe('fermi-dex', () => {
         console.log(eventQ);
       }
 }),
-      it('New order - buy @ 101 successful', async () => {
+      it('New order - buy @ 26 successful', async () => {
       {
         await program.methods
           .newOrder(
@@ -497,21 +498,21 @@ describe('fermi-dex', () => {
             { limit: {} },
           )
           .accounts({
-            openOrders: openOrdersPda,
+            openOrders: openOrders_secondPda,
             market: marketPda,
             coinVault,
             pcVault,
             coinMint: coinMint.publicKey,
             pcMint: pcMint.publicKey,
-            payer: authorityPcTokenAccount,
+            payer: authority_secondPcTokenAccount,
             bids: bidsPda,
             asks: asksPda,
             reqQ: reqQPda,
             eventQ: eventQPda,
-            authority: authority.publicKey,
+            authority: authority_second.publicKey,
 
           })
-          .signers([authority])
+          .signers([authority_second])
           .rpc();
 
         console.log('place limit order buy price: 101');
@@ -528,7 +529,7 @@ describe('fermi-dex', () => {
 }
 
   }),
-  it('finalise order - buy @ 101 successful', async () => {
+  it('finalise order - buy @ 26 successful', async () => {
   {
     const eventsQ2 = await program.account.eventQueue.fetch(eventQPda);
     //let i = -1;
@@ -558,19 +559,19 @@ describe('fermi-dex', () => {
       .finaliseMatches(
         base_event_slot,
         base_event_slot2,
-        //pcVault,
-        //coinVault,
-        authorityPcTokenAccount,
-        authorityCoinTokenAccount,
+        pcVault,
+        coinVault,
+        //authorityPcTokenAccount,
+        //authorityCoinTokenAccount,
         //new anchor.BN(0),
         //authority.PublicKey,
       )
       .accounts({
         openOrdersOwner: openOrdersPda,
-        openOrdersCounterparty: openOrdersPda,
+        openOrdersCounterparty: openOrders_secondPda,
         authority: authority.publicKey,
         market: marketPda,
-        coinVault,
+        //coinVault,
         pcVault,
         coinMint: coinMint.publicKey,
         pcMint: pcMint.publicKey,
@@ -684,7 +685,7 @@ describe('fermi-dex', () => {
         )
         .accounts({
           openOrdersOwner: openOrdersPda,
-          openOrdersCpty: openOrdersPda,
+          openOrdersCounterparty: openOrdersPda,
           market: marketPda,
           coinVault,
           pcVault,
