@@ -887,6 +887,20 @@ pub mod fermi_dex {
                                 .checked_add(deposit_amount)
                                 .unwrap();
                             }
+                    let fin: u8 = 1;
+                    let bid_finalised = Event::new(EventView::Finalise {
+                        side: Side::Ask,
+                        maker: true,
+                        native_qty_paid:  parsed_event.native_qty_released,
+                        native_qty_received: qty_pc,
+                        order_id: parsed_event.order_id,
+                        owner: parsed_event.owner,
+                        owner_slot: parsed_event.owner_slot,
+                        finalised: fin,
+                        cpty: authority_counterparty,
+
+                    });
+                    
                     }
                     // Side::Ask => {
                     if sider == 2 {
@@ -902,6 +916,23 @@ pub mod fermi_dex {
                         } */
                     } 
                 }
+                if event[1]
+                
+/*
+                    let taker_fille = Event {
+                            side: Side::Ask,
+                            maker: true,
+                            native_qty_paid:  parsed_event.native_qty_released,
+                            native_qty_received: qty_pc,
+                            order_id: parsed_event.order_id,
+                            owner: parsed_event.owner,
+                            owner_slot: parsed_event.owner_slot,
+                            finalised: fin,
+                        };*/
+
+                    //let idx = event_q.as_mut().unwrap().head + 1;
+                    let idx = event1_slot;
+                    event_q.buf[idx as usize] = taker_fill;
             
                 Ok(())
             }
