@@ -172,5 +172,62 @@ describe('#deposit', async () => {
         console.log("Coin token balance: {}", coinbal);  ; */
       }
     })
+    it('Withdraw test', async () => {
+        const provider = anchor.AnchorProvider.env();
+        /*
+        const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
+        const rpcUrlLocal = 'http://localhost:8899';
+        const wallet = new anchor.Wallet(keypair);
+        const conn = new Connection(rpcUrlLocal);
+        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions()); */
+
+        const program = new anchor.Program(idl, programId, provider) //for existing prog
+        const authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
+            new anchor.web3.PublicKey(pcMint),
+            authority.publicKey,
+            false,
+          );
+        const authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
+            new anchor.web3.PublicKey(coinMint),
+            authority.publicKey,
+            false,
+          );
+
+          [openOrdersPda, openOrdersPdaBump] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [
+              Buffer.from('open-orders', 'utf-8'),
+              new anchor.web3.PublicKey(marketPda).toBuffer(),
+              authority.publicKey.toBuffer(),
+            ],
+            new anchor.web3.PublicKey(programId),
+          );
+
+        console.log("depositing tokens");
+        let amount = 200000;
+
+        //Withdraw PC tokens
+        let ordid = await program.methods
+        .withdrawTokens(
+          new anchor.BN(amount),      
+        )
+        .accounts({
+          openOrders: openOrdersPda,
+          market: marketPda,
+          coinVault,
+          pcVault,
+          coinMint: coinMint,
+          pcMint: pcMint,
+          payer: authorityPcTokenAccount,
+          //bids: bidsPda,
+          //asks: asksPda,
+          //reqQ: reqQPda,
+          //eventQ: eventQPda,
+          authority: authority.publicKey,
+        })
+        .signers([authority])
+        .rpc();
+
     })
+});
 });

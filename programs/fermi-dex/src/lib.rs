@@ -148,6 +148,73 @@ pub mod fermi_dex {
         Ok(())
     }
 
+     pub fn withdraw_tokens(
+        ctx: Context<WithdrawTokens>,
+        amount: u64,
+    ) -> Result<()> {
+        let program_id = ctx.program_id;
+        let open_orders = &mut ctx.accounts.open_orders;
+        let market = &mut ctx.accounts.market;
+        let coin_vault = &ctx.accounts.coin_vault;
+        let pc_vault = &ctx.accounts.pc_vault;
+        let payer = &ctx.accounts.payer;
+        //let bids = &mut ctx.accounts.bids;
+        //let asks = &mut ctx.accounts.asks;
+        //let req_q = &mut ctx.accounts.req_q;
+        //let event_q = &mut ctx.accounts.event_q.load_mut();
+        let authority = &ctx.accounts.authority;
+        let token_program = &ctx.accounts.token_program;
+        let coin_mint = &ctx.accounts.coin_mint;
+        let pc_mint = &ctx.accounts.pc_mint;
+        let (market_pda, bump_seed) = Pubkey::find_program_address(
+            &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+            &program_id
+        );
+
+       
+        let market_seed = b"market";
+        
+        let coin_mint_key = coin_mint.key();
+        let pc_mint_key = pc_mint.key();
+
+        let coin_mint_seed = coin_mint_key.as_ref();
+        let pc_mint_seed = pc_mint_key.as_ref();
+
+        let bump_seed_arr: &[u8] = &[bump_seed];
+
+        let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
+        let seeds: &[&[&[u8]]] = &[&seed_slices];
+        //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+        //let seeds: &[&[&[u8]]] = &[&seeds_array];
+        //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+        //let seeds: &[&[&[u8]]] = &[seed_slice];
+       // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
+
+        let transfer_ix = Transfer {
+            from: pc_vault.to_account_info(),
+            to: payer.to_account_info(),
+            authority: market.to_account_info(),  // Using the market PDA as the authority.
+        };
+    
+        // Construct the context with the market PDA and bump seed.
+        let cpi_ctx = CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            transfer_ix,
+            seeds,
+            //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
+        );
+    
+        anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
+            _ => error!(ErrorCode::TransferFailed),
+        })?;
+        msg!("tokens withdrawn");
+        Ok(())
+    }
+
+
+// ... Other derived Accounts structs
+
+
     //Add:
     // Create PDA / Use existing PDA
     // Approve tokens to PDA
@@ -4133,6 +4200,36 @@ pub struct CancelOrder<'info> {
     #[account(mut)]
     pub event_q: AccountLoader<'info, EventQueue>,
     pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawTokens<'info> {
+    #[account(mut)]
+    pub market: Box<Account<'info, Market>>,
+    #[account(mut)]
+    pub payer: Account<'info, TokenAccount>,
+    pub coin_mint: Account<'info, Mint>,
+    pub pc_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        associated_token::mint = coin_mint,
+        associated_token::authority = market,
+    )]
+    pub coin_vault: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        associated_token::mint = pc_mint,
+        associated_token::authority = market,
+    )]
+    pub pc_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub open_orders: Box<Account<'info, OpenOrders>>,
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
 }
 
 #[error_code]
