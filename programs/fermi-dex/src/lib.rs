@@ -3357,16 +3357,31 @@ pub struct CancelOrderParams {
 }
 
 impl<'a> OrderBook<'a> {
-    fn cancel_order(&mut self, params: CancelOrderParams, event_q: &mut EventQueue) -> Result<()> {
+    fn cancel_order(&mut self, params: CancelOrderParams, event_q: &mut EventQueue) -> Result<()> { 
         let CancelOrderParams {
             side,
             order_id,
             expected_owner,
             expected_owner_slot,
-        } = params;
+        } = params; 
+        Ok(())
+    }
 
-        // if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
-        //     if leaf_node.owner() == expected_owner && leaf_node.owner_slot() == expected_owner_slot
+    fn cancel_order_bid(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
+       
+        //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
+        //let orders = if side { &mut *self.bids } else { &mut *self.asks };
+        let orders = &mut *self.bids;
+        orders.delete(order_id);
+
+        //if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
+          //  } else {
+            //    self.orders_mut(side).insert_leaf(&leaf_node).unwrap();
+          //  }
+            Ok(())
+        }
+        //if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
+          //   if leaf_node.owner() == expected_owner && leaf_node.owner_slot() == expected_owner_slot
         //     {
         //         if let Some(client_id) = client_order_id {
         //             debug_assert_eq!(client_id.get(), leaf_node.client_order_id());
@@ -3396,9 +3411,9 @@ impl<'a> OrderBook<'a> {
         //     }
         // }
 
-        Ok(())
+        
     }
-}
+
 
 #[derive(Accounts)]
 pub struct InitializeMarket<'info> {
