@@ -43,6 +43,44 @@ pub mod fermi_dex {
         Ok(())
     }
 
+    pub fn cancel_bid(
+        ctx: Context<CancelOrder>,
+        order_id: u128,
+        expected_owner: Pubkey,
+    ) -> Result<()> {
+        let bids = &mut ctx.accounts.bids;
+        let event_q = &mut ctx.accounts.event_q.load_mut();
+
+        let mut order_book = OrderBook {
+            bids,
+            asks: &mut ctx.accounts.asks,
+            market: &mut ctx.accounts.market,
+        };
+
+        order_book.cancel_order_bid(true, order_id, expected_owner)?;
+
+        Ok(())
+    }
+
+    pub fn cancel_ask(
+        ctx: Context<CancelOrder>,
+        order_id: u128,
+        expected_owner: Pubkey,
+    ) -> Result<()> {
+        let asks = &mut ctx.accounts.asks;
+        let event_q = &mut ctx.accounts.event_q.load_mut();
+
+        let mut order_book = OrderBook {
+            bids: &mut ctx.accounts.bids,
+            asks,
+            market: &mut ctx.accounts.market,
+        };
+
+        order_book.cancel_order_ask(false, order_id, expected_owner)?;
+
+        Ok(())
+    }
+
     //Add:
     // Create PDA / Use existing PDA
     // Approve tokens to PDA
@@ -3380,6 +3418,20 @@ impl<'a> OrderBook<'a> {
           //  }
             Ok(())
         }
+
+        fn cancel_order_ask(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
+       
+            //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
+            //let orders = if side { &mut *self.bids } else { &mut *self.asks };
+            let orders = &mut *self.asks;
+            orders.delete(order_id);
+    
+            //if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
+              //  } else {
+                //    self.orders_mut(side).insert_leaf(&leaf_node).unwrap();
+              //  }
+                Ok(())
+            }
         //if let Some(leaf_node) = self.orders_mut(side).remove_by_key(order_id) {
           //   if leaf_node.owner() == expected_owner && leaf_node.owner_slot() == expected_owner_slot
         //     {
@@ -3980,6 +4032,19 @@ pub struct NewMatchAsk<'info>{
 
 
 
+}
+
+#[derive(Accounts)]
+pub struct CancelOrder<'info> {
+    #[account(mut)]
+    pub market: Box<Account<'info, Market>>,
+    #[account(mut)]
+    pub bids: Box<Account<'info, Bids>>,
+    #[account(mut)]
+    pub asks: Box<Account<'info, Asks>>,
+    #[account(mut)]
+    pub event_q: AccountLoader<'info, EventQueue>,
+    pub authority: Signer<'info>,
 }
 
 #[error_code]

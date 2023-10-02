@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts2oct";
+  } from "./utils/constsOc2";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -144,7 +144,7 @@ describe('#new_order', async () => {
           for (const [key, value] of Object.entries(objectsToCheck)) {
             console.log(`${key}: Type - ${typeof value} (${value.constructor.name}), Value - ${value}`);
           }
-        await program.methods
+        let ordid = await program.methods
           .newOrder(
             { bid: {} },
             new anchor.BN(35),
@@ -170,6 +170,30 @@ describe('#new_order', async () => {
           .rpc();
 
         console.log('place limit order buy price: 20');
+        console.log('order id is: ', ordid);
+        let bids = await program.account.orders.fetch(bidsPda);
+        console.log(bids);
+
+        console.log("cancelling order");
+        //const program = new anchor.Program(idl, programId, provider);
+
+        const orderId = new anchor.BN('664082786653543858175'); // Adjust accordingly
+        const expectedOwner = authority.publicKey; // Adjust accordingly
+    
+        await program.rpc.cancelBid(orderId, expectedOwner, {
+          accounts: {
+            market: marketPda,
+            bids: bidsPda,
+            asks: asksPda,
+            eventQ: eventQPda,
+            authority: authority.publicKey, // Assuming this is the expected owner
+          },
+          signers: [authority],
+        });
+        console.log("Bid cancelled");
+        let bids2 = await program.account.orders.fetch(bidsPda);
+        console.log(bids2);
+
         /*
         const openOrders = await program.account.openOrders.fetch(
           openOrdersPda,

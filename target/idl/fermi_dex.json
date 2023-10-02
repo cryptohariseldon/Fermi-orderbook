@@ -88,6 +88,86 @@
       ]
     },
     {
+      "name": "cancelBid",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "orderId",
+          "type": "u128"
+        },
+        {
+          "name": "expectedOwner",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "cancelAsk",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "orderId",
+          "type": "u128"
+        },
+        {
+          "name": "expectedOwner",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "newOrder",
       "accounts": [
         {
@@ -1013,5 +1093,8 @@
       "name": "Error",
       "msg": "Error"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW"
+  }
 }
