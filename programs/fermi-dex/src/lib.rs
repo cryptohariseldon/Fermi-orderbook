@@ -13,7 +13,7 @@ use resp;
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR");
+declare_id!("HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW");
 
 #[program]
 pub mod fermi_dex {
@@ -25,6 +25,7 @@ pub mod fermi_dex {
         pc_lot_size: u64,
     ) -> Result<()> {
         let market = &mut ctx.accounts.market;
+        //let market = &mut ctx.accounts.market;
         market.coin_vault = ctx.accounts.coin_vault.key();
         market.pc_vault = ctx.accounts.pc_vault.key();
         market.coin_mint = ctx.accounts.coin_mint.key();

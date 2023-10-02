@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_40";
+  } from "./utils/consts2oct.ts";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -33,13 +33,27 @@ const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //'EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6'
 //'HubyrMHSh2s5KXeTYRFhYbY32hVPrG8bbAre2AzewqRR'
 const userpubkey = new anchor.web3.PublicKey('EN31BH6XonqZdwZrMpqtgHcQ8supSZqVhBEE5GhmVrN6');
+const userpubkey2 = new anchor.web3.PublicKey('HubyrMHSh2s5KXeTYRFhYbY32hVPrG8bbAre2AzewqRR');
+
 const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
+
+//Airdrop SOL
+const provider = anchor.AnchorProvider.env();
+
+// Configure the client to use the local cluster.
+anchor.setProvider(provider);
+
+ 
 
 let authorityCoinTokenAccount: anchor.web3.PublicKey;
 //const authority = keypair2;
 const authority = userpubkey;
+const authority2 = userpubkey2;
 //const authority2 = keypair;
 let authorityPcTokenAccount: anchor.web3.PublicKey;
+let authority2CoinTokenAccount: anchor.web3.PublicKey;
+let authority2PcTokenAccount: anchor.web3.PublicKey;
+
 //let createAssociatedTokenAccount : anchor.web3.PublicKey;
 //let minto : anchor.web3.PublicKey;
 //let mintTo : anchor.web3.PublicKey
@@ -52,6 +66,20 @@ describe('create ATA and airdrop', async () => {
   const provider = anchor.AnchorProvider.env();
   it('creating ata for usdc and bonk and airdropping on devnet', async () => {
     // test code here
+
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(
+        userpubkey,
+        1 * anchor.web3.LAMPORTS_PER_SOL,
+      ),
+    ); 
+    
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(
+        userpubkey2,
+        1 * anchor.web3.LAMPORTS_PER_SOL,
+      ),
+    );
   
     authorityCoinTokenAccount = await spl.getAssociatedTokenAddress(
       new anchor.web3.PublicKey(coinMint),
@@ -62,6 +90,18 @@ describe('create ATA and airdrop', async () => {
     authorityPcTokenAccount = await spl.getAssociatedTokenAddress(
       new anchor.web3.PublicKey(pcMint),
       authority,
+      false,
+    );
+
+    authority2CoinTokenAccount = await spl.getAssociatedTokenAddress(
+      new anchor.web3.PublicKey(coinMint),
+      authority2,
+      false,
+    );
+
+    authority2PcTokenAccount = await spl.getAssociatedTokenAddress( 
+      new anchor.web3.PublicKey(pcMint),
+      authority2,
       false,
     );
 
@@ -83,6 +123,20 @@ describe('create ATA and airdrop', async () => {
       authorityPcTokenAccount,
       authority,
     );   
+
+    await createAssociatedTokenAccount(
+      provider,
+      new anchor.web3.PublicKey(coinMint),
+      authority2CoinTokenAccount,
+      authority2,
+    );
+
+    await createAssociatedTokenAccount(
+      provider,
+      new anchor.web3.PublicKey(pcMint),
+      authority2PcTokenAccount,
+      authority2,
+    );
  
     console.log("create ATA done")
 
@@ -95,6 +149,13 @@ describe('create ATA and airdrop', async () => {
 
     );
 
+    await mintTo(
+      provider,
+      new anchor.web3.PublicKey(coinMint),
+      authority2CoinTokenAccount,
+      BigInt('1000000000'),
+    );
+
     console.log("mint coin done")
 
     await mintTo(
@@ -103,6 +164,14 @@ describe('create ATA and airdrop', async () => {
       authorityPcTokenAccount,
       BigInt('1000000000'),
     );
+
+    await mintTo(
+      provider,
+      new anchor.web3.PublicKey(pcMint),
+      authority2PcTokenAccount,
+      BigInt('1000000000'),
+    );
+    
     console.log("sent to");
     console.log(authorityPcTokenAccount.toString());
 

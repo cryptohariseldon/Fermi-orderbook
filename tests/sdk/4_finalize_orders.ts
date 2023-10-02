@@ -22,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_40";
+  } from "./utils/consts2oct.ts";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -34,8 +34,8 @@ const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
 const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
 
 
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
-const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
+const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
 
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
@@ -108,13 +108,15 @@ describe('fermi-dex-new', () => {
     });
 describe('#finalize-order', async () => {
     it('Finalize order - sell @ 19 successful', async () => {
-        console.log('testing new ask')
+        console.log('testing new finalise')
       {
+        const provider = anchor.AnchorProvider.env();
+/*
         const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
         const rpcUrlLocal = 'http://localhost:8899';
         const wallet = new anchor.Wallet(authority_second);
         const conn = new Connection(rpcUrlLocal);
-        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
+        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());*/
 
         //const program = new anchor.Program(idl, programId, provider) //for existing prog
 /*
@@ -175,8 +177,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 5;
-          let base_event_slot2 = 7;
+          let base_event_slot = 3;
+          let base_event_slot2 = 5;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');

@@ -1,9 +1,8 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token';
 import { assert } from 'chai';
-import { SimpleSerum } from '../target/types/fermi_dex';
 import idl from "../../../target/idl/fermi_dex.json";
-import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
+//import solblog_keypair from "/Users/dm/Documents/blob_solana/wallet/fermi-orderbook/target/deploy/fermi_dex-keypair.json"
 const fs = require('fs');
 
 const {Keypair} = require("@solana/web3.js");
@@ -16,7 +15,7 @@ import {createMint, createAssociatedTokenAccount, mintTo} from "./utils"
 
 
 describe('fermi-dex-init', () => {
-let programId = "3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR"
+let programId = "HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW"
 
 const program = new anchor.Program(idl, programId, provider) //for existing prog
 const coinMint = anchor.web3.Keypair.generate();
