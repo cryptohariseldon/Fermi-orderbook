@@ -180,7 +180,7 @@ describe('#new_order', async () => {
         const orderId = new anchor.BN('664082786653543858175'); // Adjust accordingly
         const expectedOwner = authority.publicKey; // Adjust accordingly
     
-        await program.rpc.cancelBid(orderId, expectedOwner, {
+        await program.methods.cancelBid(orderId, expectedOwner, {
           accounts: {
             market: marketPda,
             bids: bidsPda,
@@ -193,24 +193,9 @@ describe('#new_order', async () => {
         console.log("Bid cancelled");
         let bids2 = await program.account.orders.fetch(bidsPda);
         console.log(bids2);
-
-        /*
-        const openOrders = await program.account.openOrders.fetch(
-          openOrdersPda,
-        );
-        //console.log(openOrders);
-        const bids = await program.account.orders.fetch(bidsPda);
-        //console.log(bids);
-        const asks = await program.account.orders.fetch(asksPda);
-        //console.log(asks);
-        const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        //console.log(eventQ);
-        const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
-        const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
-        console.log("Bid placed at price: 19 successful");
-        console.log("PC token balance: {}", pcbal);  ;
-        console.log("Coin token balance: {}", coinbal);  ; */
       }
-    })
+    });
+    
+ 
     })
 });

@@ -59,6 +59,8 @@ pub mod fermi_dex {
 
         order_book.cancel_order_bid(true, order_id, expected_owner)?;
 
+        msg!("cancelled bid: {}", order_id);
+
         Ok(())
     }
 
@@ -77,7 +79,72 @@ pub mod fermi_dex {
         };
 
         order_book.cancel_order_ask(false, order_id, expected_owner)?;
+        msg!("cancelled ask: {}", order_id);
 
+        Ok(())
+    }
+
+    pub fn deposit_pc_tokens(
+        ctx: Context<DepositTokens>,
+        amount: u64,
+    ) -> Result<()> {
+        // Construct the transfer instruction
+        msg!("Starting deposit_tokens function");
+  
+        let token_program = &ctx.accounts.token_program;
+
+        let transfer_ix = Transfer {
+            from: ctx.accounts.payer.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix); 
+        msg!("Transferred tokens!");
+        
+        // Execute the transfer
+        anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
+            _ => error!(ErrorCode::TransferFailed),
+        })?; 
+        
+        // Credit the balance to openOrders
+        //ctx.accounts.open_orders.native_pc_total += amount;
+        
+        ctx.accounts.open_orders.native_pc_total = ctx.accounts
+            .open_orders
+            .native_pc_total
+            .checked_add(amount)
+            .ok_or(ErrorCode::Error)?;
+        
+        Ok(())
+    }
+
+    pub fn deposit_coin_tokens(
+        ctx: Context<DepositTokens>,
+        amount: u64,
+    ) -> Result<()> {
+        // Construct the transfer instruction
+        let token_program = &ctx.accounts.token_program;
+
+        let transfer_ix = Transfer {
+            from: ctx.accounts.payer.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+        msg!("Transferred tokens!");
+        
+        // Execute the transfer
+        anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
+            _ => error!(ErrorCode::TransferFailed),
+        })?;
+        
+        // Credit the balance to openOrders
+        ctx.accounts.open_orders.native_coin_total = ctx.accounts
+            .open_orders
+            .native_coin_total
+            .checked_add(amount)
+            .ok_or(ErrorCode::Error)?;
+        
         Ok(())
     }
 
@@ -4032,6 +4099,27 @@ pub struct NewMatchAsk<'info>{
 
 
 
+}
+
+#[derive(Accounts)]
+pub struct DepositTokens<'info> {
+    #[account(mut)]
+    pub market: Box<Account<'info, Market>>,
+    #[account(mut)]
+    pub payer: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
+    
+    #[account(mut)]
+    pub open_orders: Box<Account<'info, OpenOrders>>,
+    //pub system_program: Program<'info, System>,
+    pub authority: Signer<'info>,
+
+    pub token_program: Program<'info, Token>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
