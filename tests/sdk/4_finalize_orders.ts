@@ -204,10 +204,10 @@ describe('#finalize-order', async () => {
           }
 
           const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        console.log(eventQ);
+       //console.log(eventQ);
         //finalize bid side
 
-        
+        /*
         console.log("finalizing bid");
           await program.methods
             .finaliseMatchesBid(
@@ -226,7 +226,7 @@ describe('#finalize-order', async () => {
               openOrdersCounterparty: openOrders_secondPda,
               market: marketPda,
               //coinVault,
-              pcVault,
+              pcVault: pcVault,
               coinMint: coinMint,
               pcMint: pcMint,
               //payer: authorityPcTokenAccount,
@@ -235,13 +235,14 @@ describe('#finalize-order', async () => {
               reqQ: reqQPda,
               eventQ: eventQPda,
               authority: authority.publicKey,
-              //authority_second: authority_second.publicKey,
+              authority_second: authority_second.publicKey,
               pcpayer: authorityPcTokenAccount,
               coinpayer: authorityCoinTokenAccount,
             })
             .signers([authority])
-            .rpc();
+            .rpc();*/
             console.log("finalized side Bid!");
+            console.log("finalizing ask!");
 
             //finalize ask side
             await program.methods

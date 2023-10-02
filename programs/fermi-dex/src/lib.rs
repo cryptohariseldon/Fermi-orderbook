@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, accounts::account_info};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount, Transfer, Approve},
@@ -1006,7 +1006,7 @@ pub fn finalise_matches_ask(
                 msg!("event2 orderid is {}", event2_orderid);
                 msg!("event2 orderidsecond is {}", event2_orderidsecond);
             
-                require!(event1.order_id_second == event2.order_id, Error);
+                //require!(event1.order_id_second == event2.order_id, Error);
             
                 let events: Vec<Event> = vec![event1, event2];
                 let mut order_id_general: u128 = 0;
@@ -1038,7 +1038,7 @@ pub fn finalise_matches_ask(
                     msg!("side is {}", sider);
                     //match side {
                         //Side::Ask => {
-                       if(sider == 2)  {
+                       if sider == 2  {
                             //let mut qty_pc = parsed_event.native_qty_paid;
                             let mut qty_coin = parsed_event.native_qty_paid;
                             let mut available_funds = open_orders_auth.native_coin_free;
@@ -1150,7 +1150,7 @@ pub fn finalise_matches_ask(
                         } */
                     }
                     //Side::Bid => {
-                        if (sider == 1) {
+                        if sider == 1 {
                             // check if event is finalised
                             let mut eventFin = parsed_event.finalised;
                             //let eventBidFinalised;
@@ -3809,17 +3809,19 @@ pub struct NewMatch<'info>{
     )]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /* #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )]
+    )] */
+    #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
-    #[account(
-        seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+   /*  #[account(
+      //  seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
         bump,
-    )]
+    )] */
+    #[account(mut)]
     pub market: Box<Account<'info, Market>>,
     /*
     #[account(
@@ -3829,11 +3831,12 @@ pub struct NewMatch<'info>{
     )]
     pub coin_vault: Account<'info, TokenAccount>,
 */
-    #[account(
+    /*#[account(
         mut,
         associated_token::mint = pc_mint,
         associated_token::authority = market,
-    )]
+    )] */
+    #[account(mut)]
     pub pc_vault: Account<'info, TokenAccount>, 
 
     pub coin_mint: Account<'info, Mint>,
@@ -3857,7 +3860,7 @@ pub struct NewMatch<'info>{
     #[account(
         mut,
        // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
-        token::authority = authority_second,
+        //token::authority = authority_second,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
  /*
@@ -3890,10 +3893,11 @@ pub struct NewMatchAsk<'info>{
     )]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )]
+    )] */
+    #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
