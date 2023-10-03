@@ -91,6 +91,11 @@
       "name": "cancelBid",
       "accounts": [
         {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "market",
           "isMut": true,
           "isSigner": false
@@ -130,6 +135,11 @@
     {
       "name": "cancelAsk",
       "accounts": [
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
         {
           "name": "market",
           "isMut": true,
@@ -1258,6 +1268,11 @@
     },
     {
       "code": 6014,
+      "name": "OrderNotFound",
+      "msg": "OrderNotFound"
+    },
+    {
+      "code": 6015,
       "name": "Error",
       "msg": "Error"
     }

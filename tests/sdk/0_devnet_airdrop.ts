@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constsOc2.ts";
+  } from "./utils/consts52.ts";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 

@@ -22,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constsOc2.ts";
+  } from "./utils/consts52.ts";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -207,7 +207,7 @@ describe('#finalize-order', async () => {
        //console.log(eventQ);
         //finalize bid side
 
-        /*
+        
         console.log("finalizing bid");
           await program.methods
             .finaliseMatchesBid(
@@ -240,7 +240,7 @@ describe('#finalize-order', async () => {
               coinpayer: authorityCoinTokenAccount,
             })
             .signers([authority])
-            .rpc();*/
+            .rpc();
             console.log("finalized side Bid!");
             console.log("finalizing ask!");
 

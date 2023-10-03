@@ -19,7 +19,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constsOc2";
+  } from "./utils/consts52";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -189,7 +189,7 @@ describe('#new_order', async () => {
         const asks = await program.account.orders.fetch(asksPda);
         //console.log(asks);
         const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        //console.log(eventQ);
+        console.log(eventQ);
         const pcbal = await fetchTokenBalance(pcMint, authorityPcTokenAccount.toString());
         const coinbal = await fetchTokenBalance(coinMint, authorityCoinTokenAccount.toString());
         console.log("Ask placed at price: 25 successful");
@@ -198,7 +198,8 @@ describe('#new_order', async () => {
 
         let askslist = await program.account.orders.fetch(asksPda);
         console.log(askslist);
-
+        
+/*
         console.log("cancelling order");
         //const program = new anchor.Program(idl, programId, provider);
 
@@ -217,7 +218,7 @@ describe('#new_order', async () => {
         });
         console.log("Ask cancelled");
         let askslist2 = await program.account.orders.fetch(asksPda);
-        console.log(askslist2);
+        console.log(askslist2); */
       }
     })
     })

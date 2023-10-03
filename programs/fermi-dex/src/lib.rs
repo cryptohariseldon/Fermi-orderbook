@@ -50,7 +50,26 @@ pub mod fermi_dex {
     ) -> Result<()> {
         let bids = &mut ctx.accounts.bids;
         let event_q = &mut ctx.accounts.event_q.load_mut();
+        let openorders = &mut ctx.accounts.open_orders;
+        let authority = ctx.accounts.authority.key();
 
+        //check openorders owner
+         
+        require!(openorders.authority == authority, ErrorCode::OrderNotFound);
+
+        //check the order is owned by this user
+        let mut x = 0;
+        let mut slot: usize = 0;
+        for (i, order) in openorders.orders.iter().enumerate() {
+            let mut order_int = *order;
+            if order_int == order_id {
+                x = 1;
+                slot = i;
+            }
+        }
+        require!(x == 1, ErrorCode::OrderNotFound); 
+
+        //remove order from orderbook
         let mut order_book = OrderBook {
             bids,
             asks: &mut ctx.accounts.asks,
@@ -59,10 +78,18 @@ pub mod fermi_dex {
 
         order_book.cancel_order_bid(true, order_id, expected_owner)?;
 
-        msg!("cancelled bid: {}", order_id);
+        //remove order from openorders
+        //let res, err = openorders.remove_order(slot.try_into().unwrap());
+        openorders.remove_order(slot.try_into().map_err(|_| ErrorCode::OrderNotFound)?)?;
 
+
+        msg!("cancelled bid: {}", order_id);
         Ok(())
     }
+
+
+        
+    
 
     pub fn cancel_ask(
         ctx: Context<CancelOrder>,
@@ -71,6 +98,24 @@ pub mod fermi_dex {
     ) -> Result<()> {
         let asks = &mut ctx.accounts.asks;
         let event_q = &mut ctx.accounts.event_q.load_mut();
+        let openorders = &mut ctx.accounts.open_orders;
+        let authority = ctx.accounts.authority.key();
+
+
+        //check openorders owner
+        require!(openorders.authority == authority, ErrorCode::OrderNotFound);
+
+        //check the order is owned by this user
+        let mut x = 0;
+        let mut slot: usize = 0;
+        for (i, order) in openorders.orders.iter().enumerate() {
+            let mut order_int = *order;
+            if order_int == order_id {
+                x = 1;
+                slot = i;
+            }
+        }
+        require!(x == 1, ErrorCode::OrderNotFound); 
 
         let mut order_book = OrderBook {
             bids: &mut ctx.accounts.bids,
@@ -79,7 +124,13 @@ pub mod fermi_dex {
         };
 
         order_book.cancel_order_ask(false, order_id, expected_owner)?;
+
+
+        //remove order from openOrders
+        openorders.remove_order(slot.try_into().map_err(|_| ErrorCode::OrderNotFound)?)?;
+
         msg!("cancelled ask: {}", order_id);
+
 
         Ok(())
     }
@@ -791,7 +842,7 @@ pub mod fermi_dex {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: market.to_account_info(),
+                delegate: deposit_vault.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -799,6 +850,7 @@ pub mod fermi_dex {
             anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
                 _ => error!(ErrorCode::TransferFailed),
             })?;
+            msg!("tokens approved for later spending.");
         }
         
         //},
@@ -988,7 +1040,7 @@ pub mod fermi_dex {
                         msg!("the required funds are {}", qty_pc);
             
                         //let mut deposit_amount = qty_pc / 1000;
-                        let mut deposit_amount = qty_pc / market.pc_lot_size ;
+                        let mut deposit_amount = qty_pc / 1000* market.pc_lot_size ;
                         msg!("Deposit amt {}", deposit_amount);
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = pc_vault;
@@ -4192,6 +4244,9 @@ pub struct DepositTokens<'info> {
 #[derive(Accounts)]
 pub struct CancelOrder<'info> {
     #[account(mut)]
+    pub open_orders: Box<Account<'info, OpenOrders>>,
+
+    #[account(mut)]
     pub market: Box<Account<'info, Market>>,
     #[account(mut)]
     pub bids: Box<Account<'info, Bids>>,
@@ -4271,6 +4326,9 @@ pub enum ErrorCode {
 
     #[msg("Insufficient native qty locked")]
     InvalidLocked,
+
+    #[msg("OrderNotFound")]
+    OrderNotFound,
 
     #[msg("Error")]
     Error,

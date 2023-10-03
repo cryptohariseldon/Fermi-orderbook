@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/constsOc2";
+  } from "./utils/consts52";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -147,9 +147,9 @@ describe('#new_order', async () => {
         let ordid = await program.methods
           .newOrder(
             { bid: {} },
-            new anchor.BN(35),
+            new anchor.BN(34),
             new anchor.BN(1),
-            new anchor.BN(35),
+            new anchor.BN(34),
             { limit: {} },
           )
           .accounts({
@@ -173,7 +173,7 @@ describe('#new_order', async () => {
         console.log('order id is: ', ordid);
         let bids = await program.account.orders.fetch(bidsPda);
         console.log(bids);
-
+/*
         console.log("cancelling order");
         //const program = new anchor.Program(idl, programId, provider);
 
@@ -192,7 +192,7 @@ describe('#new_order', async () => {
         });
         console.log("Bid cancelled");
         let bids2 = await program.account.orders.fetch(bidsPda);
-        console.log(bids2);
+        console.log(bids2); */
       }
     });
     
