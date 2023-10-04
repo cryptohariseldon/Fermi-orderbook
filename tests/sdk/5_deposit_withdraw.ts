@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts52";
+  } from "./utils/consts54";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -128,7 +128,7 @@ describe('#deposit', async () => {
           );
 
         console.log("depositing tokens");
-        let amount = 200000;
+        let amount = 200;
        
         let ordid = await program.methods
         .depositPcTokens(
@@ -204,7 +204,7 @@ describe('#deposit', async () => {
           );
 
         console.log("depositing tokens");
-        let amount = 200000;
+        let amount = 200;
 
         //Withdraw PC tokens
         let ordid = await program.methods

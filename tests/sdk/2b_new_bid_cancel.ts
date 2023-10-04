@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts52";
+  } from "./utils/consts54";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -178,7 +178,7 @@ describe('#new_order', async () => {
         console.log("cancelling order");
         //const program = new anchor.Program(idl, programId, provider);
 
-        const orderId = new anchor.BN('645636042579834306544'); // Adjust accordingly
+        const orderId = new anchor.BN('645636042579834306559'); // Adjust accordingly
         const expectedOwner = authority.publicKey; // Adjust accordingly
     
         await program.rpc.cancelBid(orderId, expectedOwner, {

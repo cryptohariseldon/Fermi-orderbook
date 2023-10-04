@@ -160,9 +160,10 @@ pub mod fermi_dex {
         // Credit the balance to openOrders
         //ctx.accounts.open_orders.native_pc_total += amount;
         
-        ctx.accounts.open_orders.native_pc_total = ctx.accounts
+        // Note all balances are credited as unlocked tokens, to native_pc_free.
+        ctx.accounts.open_orders.native_pc_free = ctx.accounts
             .open_orders
-            .native_pc_total
+            .native_pc_free
             .checked_add(amount)
             .ok_or(ErrorCode::Error)?;
         
@@ -190,16 +191,16 @@ pub mod fermi_dex {
         })?;
         
         // Credit the balance to openOrders
-        ctx.accounts.open_orders.native_coin_total = ctx.accounts
+        ctx.accounts.open_orders.native_coin_free = ctx.accounts
             .open_orders
-            .native_coin_total
+            .native_coin_free
             .checked_add(amount)
             .ok_or(ErrorCode::Error)?;
         
         Ok(())
     }
 
-     pub fn withdraw_tokens(
+     pub fn withdraw_coins(
         ctx: Context<WithdrawTokens>,
         amount: u64,
     ) -> Result<()> {
@@ -222,7 +223,14 @@ pub mod fermi_dex {
             &program_id
         );
 
-       
+        //Validation: owner of openorders is the authority
+        require!(open_orders.authority == authority.key(), ErrorCode::InvalidAuthority);
+
+       //Validation of the user's openorders balance
+        require!(open_orders.native_coin_free >= amount, ErrorCode::InsufficientFunds);
+
+
+       // Signing the transaction with the market PDA and bump seed.
         let market_seed = b"market";
         
         let coin_mint_key = coin_mint.key();
@@ -235,11 +243,76 @@ pub mod fermi_dex {
 
         let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
         let seeds: &[&[&[u8]]] = &[&seed_slices];
-        //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-        //let seeds: &[&[&[u8]]] = &[&seeds_array];
-        //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-        //let seeds: &[&[&[u8]]] = &[seed_slice];
-       // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
+
+
+        let transfer_ix = Transfer {
+            from: coin_vault.to_account_info(),
+            to: payer.to_account_info(),
+            authority: market.to_account_info(),  // Using the market PDA as the authority.
+        };
+    
+        // Construct the context with the market PDA and bump seed.
+        let cpi_ctx = CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            transfer_ix,
+            seeds,
+            //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
+        );
+    
+        anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
+            _ => error!(ErrorCode::TransferFailed),
+        })?;
+        msg!("tokens withdrawn");
+
+        // Reduce balance from user's OpenOrders account
+        open_orders.native_coin_free = open_orders.native_coin_free.checked_sub(amount).ok_or(ErrorCode::Error)?;
+
+        Ok(())
+    }
+
+    pub fn withdraw_tokens(
+        ctx: Context<WithdrawTokens>,
+        amount: u64,
+    ) -> Result<()> {
+        let program_id = ctx.program_id;
+        let open_orders = &mut ctx.accounts.open_orders;
+        let market = &mut ctx.accounts.market;
+        let coin_vault = &ctx.accounts.coin_vault;
+        let pc_vault = &ctx.accounts.pc_vault;
+        let payer = &ctx.accounts.payer;
+        //let bids = &mut ctx.accounts.bids;
+        //let asks = &mut ctx.accounts.asks;
+        //let req_q = &mut ctx.accounts.req_q;
+        //let event_q = &mut ctx.accounts.event_q.load_mut();
+        let authority = &ctx.accounts.authority;
+        let token_program = &ctx.accounts.token_program;
+        let coin_mint = &ctx.accounts.coin_mint;
+        let pc_mint = &ctx.accounts.pc_mint;
+        let (market_pda, bump_seed) = Pubkey::find_program_address(
+            &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+            &program_id
+        );
+
+        // Validation: owner of openorders is the authority
+        require!(open_orders.authority == authority.key(), ErrorCode::InvalidAuthority);
+
+        // Validation of the user's openorders balance
+        require!(open_orders.native_pc_free >= amount, ErrorCode::InsufficientFunds);
+       
+
+       // Signing the transaction with the market PDA and bump seed.
+        let market_seed = b"market";
+        
+        let coin_mint_key = coin_mint.key();
+        let pc_mint_key = pc_mint.key();
+
+        let coin_mint_seed = coin_mint_key.as_ref();
+        let pc_mint_seed = pc_mint_key.as_ref();
+
+        let bump_seed_arr: &[u8] = &[bump_seed];
+
+        let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
+        let seeds: &[&[&[u8]]] = &[&seed_slices];
 
         let transfer_ix = Transfer {
             from: pc_vault.to_account_info(),
@@ -259,9 +332,12 @@ pub mod fermi_dex {
             _ => error!(ErrorCode::TransferFailed),
         })?;
         msg!("tokens withdrawn");
+
+        // Reduce balance from user's OpenOrders account
+        open_orders.native_pc_free = open_orders.native_pc_free.checked_sub(amount).ok_or(ErrorCode::Error)?;
+
         Ok(())
     }
-
 
 // ... Other derived Accounts structs
 
@@ -4329,6 +4405,9 @@ pub enum ErrorCode {
 
     #[msg("OrderNotFound")]
     OrderNotFound,
+
+    #[msg("InvalidAuthority")]
+    InvalidAuthority,
 
     #[msg("Error")]
     Error,

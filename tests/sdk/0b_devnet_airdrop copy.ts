@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts54.ts";
+  } from "./utils/consts54";
 
   import {createAssociatedTokenAccount, mintTo} from "./utils/utils"
 
@@ -70,14 +70,14 @@ describe('create ATA and airdrop', async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         userpubkey,
-        1 * anchor.web3.LAMPORTS_PER_SOL,
+        100 * anchor.web3.LAMPORTS_PER_SOL,
       ),
     ); 
     
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(
         userpubkey2,
-        1 * anchor.web3.LAMPORTS_PER_SOL,
+        100 * anchor.web3.LAMPORTS_PER_SOL,
       ),
     );
   
@@ -109,7 +109,7 @@ describe('create ATA and airdrop', async () => {
 
  // comment out if ATA is already created.
  
- 
+ /*
     await createAssociatedTokenAccount(
       provider,
       new anchor.web3.PublicKey(coinMint),
@@ -137,7 +137,7 @@ describe('create ATA and airdrop', async () => {
       authority2PcTokenAccount,
       authority2,
     );
- 
+  */
     console.log("create ATA done")
 
     await mintTo(
@@ -153,7 +153,7 @@ describe('create ATA and airdrop', async () => {
       provider,
       new anchor.web3.PublicKey(coinMint),
       authority2CoinTokenAccount,
-      BigInt('1000000000'),
+      BigInt('2500000000'),
     );
 
     console.log("mint coin done")
@@ -162,14 +162,14 @@ describe('create ATA and airdrop', async () => {
       provider,
       new anchor.web3.PublicKey(pcMint),
       authorityPcTokenAccount,
-      BigInt('1000000000'),
+      BigInt('2500000000'),
     );
 
     await mintTo(
       provider,
       new anchor.web3.PublicKey(pcMint),
       authority2PcTokenAccount,
-      BigInt('1000000000'),
+      BigInt('2500000000'),
     );
     
     console.log("sent to");
