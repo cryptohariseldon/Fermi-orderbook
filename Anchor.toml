@@ -3,11 +3,12 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-fermi_dex = "6D8nP3TRrsT8FZNbhgZXGhyZz9SbnHHU2egsdJjeaHa7"
+fermi_dex = "6NLPgU8qntruya2PMt1hwD1CCBX3dAgKWjRHSoi4yrS9"
 
 
 [registry]
-#url = "https://rpc-devnet.helius.xyz/?api-key=69bea66a-a716-416b-8a45-a9c7049b0731"
+#url = "https://devnet.helius-rpc.com/?api-key=5163c3d1-8082-442e-8a15-c27bff3cfabb"
+#url = "https://api.devnet.solana.com"
 url = "http://localhost:8899/"
 
 [provider]

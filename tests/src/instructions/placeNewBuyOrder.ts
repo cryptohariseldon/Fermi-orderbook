@@ -53,6 +53,7 @@ export async function placeNewBuyOrder(kp: Keypair, price: number) {
       new anchor.web3.PublicKey(programId),
     );
 
+
     await program.methods
       .newOrder(
         { bid: {} },

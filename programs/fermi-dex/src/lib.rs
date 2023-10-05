@@ -8,10 +8,12 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+//extern crate bitflags;
+
 
 //declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
 //local
-declare_id!("6D8nP3TRrsT8FZNbhgZXGhyZz9SbnHHU2egsdJjeaHa7");
+declare_id!("6NLPgU8qntruya2PMt1hwD1CCBX3dAgKWjRHSoi4yrS9");
 
 #[program]
 pub mod fermi_dex {
@@ -540,9 +542,9 @@ pub mod fermi_dex {
             open_orders.credit_locked_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_credit);
             open_orders.unlock_pc(native_pc_unlocked);
-*/
 
-            /*
+
+            
             open_orders.native_coin_total = open_orders
                 .native_coin_total
                 .checked_sub(native_coin_debit)
@@ -718,7 +720,7 @@ pub mod fermi_dex {
              })? */
              // NOTE - CAN DIRECTLY PASS USERS' PC & COIN ACCOUNTS INSTEAD OF VAULTS. TODO - FIX OPENORDERS ACCOUNTING IN THAT CASE.
              /// Just-in-time transfers for bid side.
-             pub fn finalise_matches_bid(
+    pub fn finalise_matches_bid(
                 ctx: Context<NewMatch>,
                 event1_slot: u8,
                 event2_slot: u8,
@@ -755,12 +757,55 @@ pub mod fermi_dex {
                 let mut order_id_general: u128 = 0;
                 let mut first_event_done: bool = false;
             
-                let parsed_event = events[0];
-                let mut sider = parsed_event.event_flags;
-                let side = Side::Bid;
-            
-                match side {
-                    Side::Bid => {
+                //let parsed_event = events[0];
+                //let mut sider = parsed_event.event_flags;
+                //let side = Side::Bid;
+                /*let side2;
+                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side2 = Side::Bid;
+                    } else {
+                    side2 = Side::Ask;
+                      } */
+                //msg!("the side is {}", side2);
+                for (index, parsed_event) in events.iter().enumerate() {
+                    //let side;
+                    //let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    //let bit_flags = EventFlag::from_bits_unchecked(eventflags);
+                    /*let bit_flags = unsafe {BitFlags::<EventFlag>::from_bits_unchecked(parsed_event.event_flags)};
+
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side = 2; //BID
+                    } else {
+                    side = 1; //ASK
+                      } */
+                    let sider; // u8 for side
+                    match BitFlags::<EventFlag>::from_bits(parsed_event.event_flags) {
+                        Ok(flags) => {
+                            let side = EventFlag::flags_to_side(flags);
+                            msg!("The side derived from parsed_event.event_flags is: {:?}", side);
+                        },
+                        Err(_) => {
+                            msg!("Error: Invalid flags detected: {:?}", parsed_event.event_flags);
+                        }
+                    }
+                    
+                    
+                    let flags = BitFlags::<EventFlag>::from_bits(parsed_event.event_flags).unwrap_or(BitFlags::empty());
+
+                    let side = EventFlag::flags_to_side(flags);
+                    if side == Side::Bid {
+                        sider = 1;
+                    }
+                    else {
+                        sider = 2;
+                    }
+                    msg!("side is {}", sider);
+                //match side {
+                  //  Side::Bid => {
+                //let sider = 1;
+                
+                    if sider == 1 {
                         let mut qty_pc = parsed_event.native_qty_paid;
                         let mut qty_coin = parsed_event.native_qty_released;
                         let mut available_funds = open_orders_auth.native_pc_free;
@@ -824,27 +869,43 @@ pub mod fermi_dex {
                         }
                         let mut remaining_funds = 0;
                         if remaining_funds > 0 {
-                            open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
-                            open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
-                            open_orders_auth.native_pc_free -= qty_pc;
+                           // open_orders_auth.credit_unlocked_coin(parsed_event.native_qty_released);
+                           // open_orders_auth.native_pc_free = open_orders_auth.native_pc_free * 10;
+                           // open_orders_auth.native_pc_free -= qty_pc;
                             msg!("Newly locked PC for bidder {}", qty_pc);
                         }
-                    },
-                    Side::Ask => {
-                        let mut qty_coin = parsed_event.native_qty_paid;
-                        let mut available_funds = open_orders_cpty.native_coin_free * 10;
-                        let mut remaining_funds = available_funds - qty_coin;
+                        if index == 0 {
+                            open_orders_auth.native_pc_free  = open_orders_auth
+                                .native_pc_free
+                                .checked_add(qty_pc)
+                                .unwrap();
+                            // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                            }
+                        if index == 1 {
+                            open_orders_cpty.native_pc_free  = open_orders_cpty
+                                .native_pc_free
+                                .checked_add(deposit_amount)
+                                .unwrap();
+                            }
+                    }
+                    // Side::Ask => {
+                    if sider == 2 {
+                        //let mut qty_coin = parsed_event.native_qty_paid;
+                        //let mut available_funds = open_orders_cpty.native_coin_free * 10;
+                        //let mut remaining_funds = available_funds - qty_coin;
+                        /*
                         if remaining_funds > 1 {
                             open_orders_auth.credit_unlocked_pc(parsed_event.native_qty_released);
                             open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
                             open_orders_auth.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
-                        }
-                    }
+                        } */
+                    } 
                 }
             
                 Ok(())
             }
+
 /*
             fn determine_side(eventflags: u8) -> Side {
                 let flags = unsafe { bitflags::bitflags! { EventFlag::from_bits_unchecked(eventflags) } };
@@ -865,14 +926,14 @@ pub mod fermi_dex {
             
 
             /// just in time transfers for ask side
-            pub fn finalise_matches_ask(
+pub fn finalise_matches_ask(
                 ctx: Context<NewMatchAsk>,
                 event1_slot: u8,
                 event2_slot: u8,
             ) -> Result<()> {
                 let program_id = ctx.program_id;
-                let open_orders_auth = &mut ctx.accounts.open_orders_owner;
-                let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty;
+                let open_orders_auth = &mut ctx.accounts.open_orders_owner; //owner of event 1
+                let open_orders_cpty = &mut ctx.accounts.open_orders_counterparty; // owner of event 2
                 let market = &ctx.accounts.market;
                 let coin_vault = &ctx.accounts.coin_vault;
                 let req_q = &mut ctx.accounts.req_q;
@@ -902,70 +963,102 @@ pub mod fermi_dex {
                 let mut order_id_general: u128 = 0;
                 let mut first_event_done: bool = false;
             
-                let parsed_event = events[1];
-                let mut sider = parsed_event.event_flags;
-                let side = Side::Bid;
-            
-                match side {
-                    Side::Bid => {
-                        //let mut qty_pc = parsed_event.native_qty_paid;
-                        let mut qty_coin = parsed_event.native_qty_paid;
-                        let mut available_funds = open_orders_auth.native_coin_free;
-                        msg!("the available funds is {}", available_funds);
-                        msg!("the required funds are {}", qty_coin);
-            
-                        //let mut deposit_amount = qty_pc / 1000;
-                        let mut deposit_amount = qty_coin; //decimals already multiplied
-                        msg!("Deposit amt {}", deposit_amount);
-                        let mut cpty_deposit_amt = qty_coin;
-                        let mut deposit_vault = coin_vault;
-            
-                        if deposit_amount > 0 {
-                            // Derive the market's PDA and bump seed.
-                            let (market_pda, bump_seed) = Pubkey::find_program_address(
-                                &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
-                                &program_id
-                            );
+                //let parsed_event = events[1];
+                //let mut sider = parsed_event.event_flags;
+                for (index, parsed_event) in events.iter().enumerate() {
+                    let sider;
+                    /*
+                    let bit_flags = BitFlags::<EventFlag>::from_bits_truncate(parsed_event.event_flags);
+                    if bit_flags.contains(EventFlag::Bid) {
+                    side = 1; //BID
+                    } else {
+                    side = 2; //ASK
+                      } */
+                    //let side = flags_to_side(parsed_event.event_flags);
+                    let flags = BitFlags::<EventFlag>::from_bits(parsed_event.event_flags).unwrap_or(BitFlags::empty());
 
-                           
-                            let market_seed = b"market";
+                    let side = EventFlag::flags_to_side(flags);
+                    if side == Side::Bid {
+                        sider = 1;
+                    }
+                    else {
+                        sider = 2;
+                    }
+                    msg!("side is {}", sider);
+                    //match side {
+                        //Side::Ask => {
+                       if(sider == 2)  {
+                            //let mut qty_pc = parsed_event.native_qty_paid;
+                            let mut qty_coin = parsed_event.native_qty_paid;
+                            let mut available_funds = open_orders_auth.native_coin_free;
+                            msg!("the available funds is {}", available_funds);
+                            msg!("the required funds are {}", qty_coin);
+                
+                            //let mut deposit_amount = qty_pc / 1000;
+                            let mut deposit_amount = qty_coin; //decimals already multiplied
+                            msg!("Deposit amt {}", deposit_amount);
+                            let mut cpty_deposit_amt = qty_coin;
+                            let mut deposit_vault = coin_vault;
+                
+                            if deposit_amount > 0 {
+                                // Derive the market's PDA and bump seed.
+                                let (market_pda, bump_seed) = Pubkey::find_program_address(
+                                    &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+                                    &program_id
+                                );
+
                             
-                            let coin_mint_key = coin_mint.key();
-                            let pc_mint_key = pc_mint.key();
+                                let market_seed = b"market";
+                                
+                                let coin_mint_key = coin_mint.key();
+                                let pc_mint_key = pc_mint.key();
 
-                            let coin_mint_seed = coin_mint_key.as_ref();
-                            let pc_mint_seed = pc_mint_key.as_ref();
+                                let coin_mint_seed = coin_mint_key.as_ref();
+                                let pc_mint_seed = pc_mint_key.as_ref();
 
-                            let bump_seed_arr: &[u8] = &[bump_seed];
+                                let bump_seed_arr: &[u8] = &[bump_seed];
 
-                            let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
-                            let seeds: &[&[&[u8]]] = &[&seed_slices];
-                            //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-                            //let seeds: &[&[&[u8]]] = &[&seeds_array];
-                            //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
-                            //let seeds: &[&[&[u8]]] = &[seed_slice];
-                           // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
+                                let seed_slices: [&[u8]; 4] = [market_seed, coin_mint_seed, pc_mint_seed, bump_seed_arr];
+                                let seeds: &[&[&[u8]]] = &[&seed_slices];
+                                //let seeds_array: [&[u8]; 4] = [b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                                //let seeds: &[&[&[u8]]] = &[&seeds_array];
+                                //let seed_slice: &[&[u8]] = &[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]];
+                                //let seeds: &[&[&[u8]]] = &[seed_slice];
+                            // let seeds = &[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[bump_seed]]];
 
-                            let transfer_ix = Transfer {
-                                from: payercoin.to_account_info(),
-                                to: deposit_vault.to_account_info(),
-                                authority: market.to_account_info(),  // Using the market PDA as the authority.
-                            };
-                        
-                            // Construct the context with the market PDA and bump seed.
-                            let cpi_ctx = CpiContext::new_with_signer(
-                                token_program.to_account_info(),
-                                transfer_ix,
-                                seeds,
-                                //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
-                            );
-                        
-                            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                                _ => error!(ErrorCode::TransferFailed),
-                            })?;
-                        
-                           // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                                let transfer_ix = Transfer {
+                                    from: payercoin.to_account_info(),
+                                    to: deposit_vault.to_account_info(),
+                                    authority: market.to_account_info(),  // Using the market PDA as the authority.
+                                };
+                            
+                                // Construct the context with the market PDA and bump seed.
+                                let cpi_ctx = CpiContext::new_with_signer(
+                                    token_program.to_account_info(),
+                                    transfer_ix,
+                                    seeds,
+                                    //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
+                                );
+                            
+                                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                    _ => error!(ErrorCode::TransferFailed),
+                                })?;
+                            
+                            //accounting
+                            if index == 0 {
+                            open_orders_auth.native_coin_free = open_orders_auth
+                                .native_coin_free
+                                .checked_add(deposit_amount)
+                                .unwrap();
+                            }
+                            if index == 1 {
+                                open_orders_cpty.native_coin_free = open_orders_cpty
+                                    .native_coin_free
+                                    .checked_add(deposit_amount)
+                                    .unwrap();
+
                         }
+
                         /*
                         if cpty_deposit_amt > 0 {
                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
@@ -978,9 +1071,10 @@ pub mod fermi_dex {
                             open_orders_cpty.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
                         } */
-                    },
-                    Side::Ask => {
-                        let mut qty_coin = parsed_event.native_qty_paid;
+                    }
+                    //Side::Bid => {
+                        if (sider == 1) {
+                      /*  let mut qty_coin = parsed_event.native_qty_paid;
                         let mut available_funds = open_orders_cpty.native_coin_free * 10;
                         let mut remaining_funds = available_funds - qty_coin;
                         if remaining_funds > 1 {
@@ -988,13 +1082,37 @@ pub mod fermi_dex {
                             open_orders_auth.native_coin_free = open_orders_auth.native_coin_free * 10;
                             open_orders_auth.native_coin_free -= qty_coin;
                             msg!("Newly locked coins for asker {}", qty_coin);
-                        }
+                        } */
                     }
+                //}
                 }
-            
-                Ok(())
             }
-/*            
+                
+                Ok(())
+            
+        }
+/*
+            pub fn flags_to_side(flags: u8) -> Side {
+                
+            
+            }
+
+            
+
+            fn determine_side(eventflags: u8) -> Side {
+                let flags = unsafe { bitflags::bitflags! { EventFlag::from_bits_unchecked(eventflags) } };
+            
+                if flags.contains(EventFlag::Bid) && flags.contains(EventFlag::Fill) {
+                    Side::Bid
+                } else if flags.contains(EventFlag::Fill) && !flags.contains(EventFlag::Bid) {
+                    Side::Ask
+                } else {
+                    panic!("Invalid eventflags combination");
+                }
+            }
+        
+          
+
     pub fn finalise_matches2(
                      ctx: Context<NewMatch>,
                      event1_slot: u8,
@@ -2475,9 +2593,10 @@ impl<'a> OrderBook<'a> {
             // testing
 
             if !crossed || post_only {
+                msg!("not crossed!");
                 break true;
             }
-
+            msg!("crossed!");
             let offer_size = best_offer.qty;
             let trade_qty = offer_size
                 .min(coin_qty_remaining)
@@ -2539,10 +2658,11 @@ impl<'a> OrderBook<'a> {
             //let lenevents = event_q.len();
             //let idx = lenevents +1;
             
+            //write maker side event to eventQ
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
-                //.push_back(maker_fill)
-                //.map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+             //   .push_back(maker_fill)
+             //   .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
@@ -2631,7 +2751,7 @@ impl<'a> OrderBook<'a> {
             to_release.jit_data = jit_data;
 
             // multiple possible counterparties
-            if native_accum_fill_price > 0 {
+            //if native_accum_fill_price > 0 {
                 let taker_fill = Event::new(EventView::Fill {
                     side: Side::Bid,
                     maker: false,
@@ -2667,8 +2787,8 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| ErrorCode::QueueAlreadyFull)?;*/
-            }
+                    .map_err(|_| ErrorCode::QueueAlreadyFull)?; */
+           // }
         }
 
         if !done {
@@ -3258,7 +3378,7 @@ pub struct InitializeMarket<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-#[derive(Copy, Clone, PartialEq, AnchorSerialize, AnchorDeserialize)]
+#[derive(Copy, Debug, Clone, PartialEq, AnchorSerialize, AnchorDeserialize)]
 pub enum Side {
     Bid = 0,
     Ask = 1,
