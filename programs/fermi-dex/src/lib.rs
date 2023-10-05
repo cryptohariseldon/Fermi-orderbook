@@ -11,9 +11,9 @@ use resp;
 //extern crate bitflags;
 
 
-//declare_id!("B1mcdHiKiDTy8TqV5Dpoo6SLUnpA6J7HXAbGLzjz6t1W");
+declare_id!("4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9");
 //local
-declare_id!("HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW");
+//declare_id!("HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW");
 
 #[program]
 pub mod fermi_dex {
@@ -918,7 +918,7 @@ pub mod fermi_dex {
 
             let transfer_ix = Approve {
                 to: payer.to_account_info(),
-                delegate: deposit_vault.to_account_info(),
+                delegate: market.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
             let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
@@ -4138,19 +4138,19 @@ pub struct NewMatch<'info>{
     )]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    /* #[account(
+    #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] */
-    #[account(mut)]
+    )]
+    //#[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
-   /*  #[account(
-      //  seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
-        bump,
-    )] */
-    #[account(mut)]
+   #[account(
+      seeds = [b"market".as_ref(), coin_mint.key().as_ref(), pc_mint.key().as_ref()],
+      bump,
+    )] 
+   // #[account(mut)]
     pub market: Box<Account<'info, Market>>,
     /*
     #[account(
@@ -4222,11 +4222,11 @@ pub struct NewMatchAsk<'info>{
     )]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    /*#[account(
+    #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] */
-    #[account(mut)]
+    )]
+   // #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
