@@ -1239,10 +1239,21 @@ pub mod fermi_dex {
                 //Settlement if both events are finalised
                 
                 if eventBidFinalised == true && eventAskFinalised == true {
-                    //subtract pc from event1 owner
+                    //checked subtract pc from event1 owner
                    // open_orders_auth.native_pc_free -= event1.native_qty_paid;
+                    open_orders_auth.native_pc_free = open_orders_auth
+                                .native_pc_free
+                                .checked_sub(event1.native_qty_paid)
+                                .unwrap();
+                            
                     //subtract coin from event2 owner
-                   // open_orders_cpty.native_coin_free -= event2.native_qty_paid;
+                    //open_orders_cpty.native_coin_free -= event2.native_qty_paid;
+                    //checked sub
+                    open_orders_cpty.native_coin_free = open_orders_cpty
+                                .native_coin_free
+                                .checked_sub(event2.native_qty_paid)
+                                .unwrap();
+                            
                     //add pc to event2 owner
                     open_orders_cpty.native_pc_free += event2.native_qty_released;
                     //add coin to event1 owner  
@@ -1477,9 +1488,18 @@ pub fn finalise_matches_ask(
             //Settle funds
             if eventBidFinalised == true && eventAskFinalised == true {
                 //checked subtract pc from event1 owner
-                open_orders_auth.native_pc_free -= event1.native_qty_paid;
+                //open_orders_auth.native_pc_free -= event1.native_qty_paid;
+                open_orders_auth.native_pc_free = open_orders_auth
+                                .native_pc_free
+                                .checked_sub(event1.native_qty_paid)
+                                .unwrap();
+                            
                 //subtract coin from event2 owner
-                open_orders_cpty.native_coin_free -= event2.native_qty_paid;
+                //open_orders_cpty.native_coin_free -= event2.native_qty_paid;
+                open_orders_cpty.native_coin_free = open_orders_cpty
+                                .native_coin_free
+                                .checked_sub(event2.native_qty_paid)
+                                .unwrap();
                 //add pc to event2 owner
                 open_orders_cpty.native_pc_free += event2.native_qty_released;
                 //add coin to event1 owner
@@ -2434,14 +2454,14 @@ impl EventQueue {
     #[inline]
     pub fn len(&self) -> u64 {
         return self.head;
-    }
-        /*
+    } 
+        /* 
     #[inline]
     pub fn len(&self) -> u64 {
         let count_ptr = &self.header.clone().count() as *const u64;
         let count = unsafe { std::ptr::read_unaligned(count_ptr) };
                 return count;
-    }
+    } */
 
     #[inline]
     pub fn full(&self) -> bool {
@@ -2514,14 +2534,14 @@ impl EventQueue {
     //     self.header.decr_event_id(len_diff);
     //     Ok(())
     // }
-
+/* 
     pub fn iter(&self) -> impl Iterator<Item = &Event> {
         EventQueueIterator {
             queue: self,
             index: 0,
-        }
-    }*/
-}
+        } */
+    }
+
 
 
 struct EventQueueIterator<'a> {
