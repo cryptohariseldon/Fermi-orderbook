@@ -22,7 +22,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_40";
+  } from "./utils/consts54.ts";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -34,8 +34,8 @@ const secretKeySecond = JSON.parse(fs.readFileSync("./kp3/key.json"));
 const secretKeyThird = JSON.parse(fs.readFileSync("./kp4/key.json"));
 
 
-const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
-const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
+const keypair2 = Keypair.fromSecretKey(new Uint8Array(secretKeySecond));
+const keypair = Keypair.fromSecretKey(new Uint8Array(secretKeyThird));
 
 //const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey));
 //const keypair = anchor.web3.Keypair.generate();
@@ -108,13 +108,15 @@ describe('fermi-dex-new', () => {
     });
 describe('#finalize-order', async () => {
     it('Finalize order - sell @ 19 successful', async () => {
-        console.log('testing new ask')
+        console.log('testing new finalise')
       {
+        const provider = anchor.AnchorProvider.env();
+/*
         const rpcUrl = 'https://api.devnet.solana.com';  // You can replace this with the appropriate RPC URL for your network.
         const rpcUrlLocal = 'http://localhost:8899';
         const wallet = new anchor.Wallet(authority_second);
         const conn = new Connection(rpcUrlLocal);
-        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());
+        const provider = new anchor.AnchorProvider(conn, wallet, anchor.AnchorProvider.defaultOptions());*/
 
         //const program = new anchor.Program(idl, programId, provider) //for existing prog
 /*
@@ -175,8 +177,8 @@ describe('#finalize-order', async () => {
             }
           } */
           let base_order_id = 498062089990157893629;
-          let base_event_slot = 5;
-          let base_event_slot2 = 7;
+          let base_event_slot = 3;
+          let base_event_slot2 = 5;
       
           console.log(base_order_id);
           console.log('test finalise match with event slot + order id');
@@ -202,7 +204,7 @@ describe('#finalize-order', async () => {
           }
 
           const eventQ = await program.account.eventQueue.fetch(eventQPda);
-        console.log(eventQ);
+       //console.log(eventQ);
         //finalize bid side
 
         
@@ -224,7 +226,7 @@ describe('#finalize-order', async () => {
               openOrdersCounterparty: openOrders_secondPda,
               market: marketPda,
               //coinVault,
-              pcVault,
+              pcVault: pcVault,
               coinMint: coinMint,
               pcMint: pcMint,
               //payer: authorityPcTokenAccount,
@@ -233,13 +235,14 @@ describe('#finalize-order', async () => {
               reqQ: reqQPda,
               eventQ: eventQPda,
               authority: authority.publicKey,
-              //authority_second: authority_second.publicKey,
+              authority_second: authority_second.publicKey,
               pcpayer: authorityPcTokenAccount,
               coinpayer: authorityCoinTokenAccount,
             })
             .signers([authority])
             .rpc();
             console.log("finalized side Bid!");
+            console.log("finalizing ask!");
 
             //finalize ask side
             await program.methods
