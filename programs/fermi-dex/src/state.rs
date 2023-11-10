@@ -830,7 +830,7 @@ pub struct NewMatch<'info>{
     #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )]
+    )] 
     //#[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
@@ -904,8 +904,8 @@ pub struct NewMatchAsk<'info>{
     #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )]
-   // #[account(mut)]
+    )] 
+   //#[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
