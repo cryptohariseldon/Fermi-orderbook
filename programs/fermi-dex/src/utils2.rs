@@ -37,7 +37,7 @@ impl Market {
 }
 
 impl EventView {
-    fn side(&self) -> Side {
+    pub fn side(&self) -> Side {
         match self {
             &EventView::Fill { side, .. } | &EventView::Out { side, .. } |  &EventView::Finalise { side, .. } => side,
         }
@@ -46,7 +46,7 @@ impl EventView {
 
 impl EventFlag {
     #[inline]
-    fn from_side(side: Side) -> BitFlags<Self> {
+    pub fn from_side(side: Side) -> BitFlags<Self> {
         match side {
             Side::Bid => EventFlag::Bid.into(),
             Side::Ask => BitFlags::empty(),
@@ -54,7 +54,7 @@ impl EventFlag {
     }
 
     #[inline]
-    fn flags_to_side(flags: BitFlags<Self>) -> Side {
+    pub fn flags_to_side(flags: BitFlags<Self>) -> Side {
         if flags.contains(EventFlag::Bid) {
             Side::Bid
         } else {
@@ -249,7 +249,7 @@ impl<'a> OrderBook<'a> {
 }
 
 impl<'a> OrderBook<'a> {
-    fn new_bid(
+    pub fn new_bid(
         &mut self,
         params: NewBidParams,
         event_q: &mut EventQueue,
@@ -573,7 +573,7 @@ impl<'a> OrderBook<'a> {
 }
 
 impl<'a> OrderBook<'a> {
-    fn new_ask(
+    pub fn new_ask(
         &mut self,
         params: NewAskParams,
         event_q: &mut EventQueue,
@@ -860,7 +860,7 @@ impl<'a> OrderBook<'a> {
 }
 
 impl<'a> OrderBook<'a> {
-    fn cancel_order(&mut self, params: CancelOrderParams, event_q: &mut EventQueue) -> Result<()> { 
+    pub fn cancel_order(&mut self, params: CancelOrderParams, event_q: &mut EventQueue) -> Result<()> { 
         let CancelOrderParams {
             side,
             order_id,
@@ -870,7 +870,7 @@ impl<'a> OrderBook<'a> {
         Ok(())
     }
 
-    fn cancel_order_bid(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
+    pub fn cancel_order_bid(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
        
         //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
         //let orders = if side { &mut *self.bids } else { &mut *self.asks };
@@ -881,7 +881,7 @@ impl<'a> OrderBook<'a> {
             Ok(())
         }
 
-        fn cancel_order_ask(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
+        pub fn cancel_order_ask(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
        
             //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
             //let orders = if side { &mut *self.bids } else { &mut *self.asks };
@@ -903,7 +903,7 @@ impl<'a> OrderBook<'a> {
     impl OpenOrders {
         pub const MAX_SIZE: usize = 1 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8 * 16;
     
-        fn init(&mut self, market: Pubkey, authority: Pubkey) -> Result<()> {
+        pub fn init(&mut self, market: Pubkey, authority: Pubkey) -> Result<()> {
             require!(!self.is_initialized, ErrorCode::AlreadyInitialized);
     
             self.is_initialized = true;
@@ -914,7 +914,7 @@ impl<'a> OrderBook<'a> {
             Ok(())
         }
     
-        fn credit_unlocked_coin(&mut self, native_coin_amount: u64) {
+        pub fn credit_unlocked_coin(&mut self, native_coin_amount: u64) {
             self.native_coin_total = self
                 .native_coin_total
                 .checked_add(native_coin_amount)
@@ -922,30 +922,30 @@ impl<'a> OrderBook<'a> {
             self.native_coin_free = self.native_coin_free.checked_add(native_coin_amount).unwrap();
         }
     
-        fn credit_locked_coin(&mut self, native_coin_amount: u64) {
+        pub fn credit_locked_coin(&mut self, native_coin_amount: u64) {
             self.native_coin_total = self
                 .native_coin_total
                 .checked_add(native_coin_amount)
                 .unwrap();
         }
     
-        fn credit_unlocked_pc(&mut self, native_pc_amount: u64) {
+        pub fn credit_unlocked_pc(&mut self, native_pc_amount: u64) {
             self.native_pc_total = self.native_pc_total.checked_add(native_pc_amount).unwrap();
             self.native_pc_free = self.native_pc_free.checked_add(native_pc_amount).unwrap();
         }
     
-        fn credit_locked_pc(&mut self, native_pc_amount: u64) {
+        pub fn credit_locked_pc(&mut self, native_pc_amount: u64) {
             self.native_pc_total = self.native_pc_total.checked_add(native_pc_amount).unwrap();
         }
     
-        fn lock_free_coin(&mut self, native_coin_amount: u64) {
+        pub fn lock_free_coin(&mut self, native_coin_amount: u64) {
             self.native_coin_free = self
                 .native_coin_free
                 .checked_sub(native_coin_amount)
                 .unwrap();
         }
     
-        fn lock_free_pc(&mut self, native_pc_amount: u64) {
+       pub fn lock_free_pc(&mut self, native_pc_amount: u64) {
             self.native_pc_free = self.native_pc_free.checked_sub(native_pc_amount).unwrap();
         }
     
@@ -962,7 +962,7 @@ impl<'a> OrderBook<'a> {
             assert!(self.native_pc_free <= self.native_pc_total);
         }
     
-        fn slot_is_free(&self, slot: u8) -> bool {
+        pub fn slot_is_free(&self, slot: u8) -> bool {
             let slot_mask = 1u8 << slot;
             self.free_slot_bits & slot_mask != 0
         }
@@ -993,7 +993,7 @@ impl<'a> OrderBook<'a> {
             Ok(())
         }
     
-        fn add_order(&mut self, id: u128, side: Side) -> Result<u8> {
+        pub fn add_order(&mut self, id: u128, side: Side) -> Result<u8> {
             //remove oldest order if openorders is full
             if self.free_slot_bits == 0 {
                 self.remove_order(0)?;
