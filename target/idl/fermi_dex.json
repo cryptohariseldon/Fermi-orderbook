@@ -524,9 +524,6 @@
     },
     {
       "name": "finaliseMatchesBid",
-      "docs": [
-        "Just-in-time transfers for bid side."
-      ],
       "accounts": [
         {
           "name": "openOrdersOwner",
@@ -1347,8 +1344,5 @@
       "name": "Error",
       "msg": "Error"
     }
-  ],
-  "metadata": {
-    "address": "4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9"
-  }
+  ]
 }
