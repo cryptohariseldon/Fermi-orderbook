@@ -14,6 +14,156 @@ use resp;
 use crate::state::*;
 use crate::errors::*;
 
+impl Market {
+    pub const MAX_SIZE: usize = 32 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 32;
+
+    #[inline]
+    pub fn check_payer_mint(&self, payer_mint: Pubkey, side: Side) -> bool {
+        match side {
+            Side::Bid => {
+                if payer_mint == self.pc_mint {
+                    return true;
+                }
+                return false;
+            }
+            Side::Ask => {
+                if payer_mint == self.coin_mint {
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+}
+
+impl EventView {
+    fn side(&self) -> Side {
+        match self {
+            &EventView::Fill { side, .. } | &EventView::Out { side, .. } |  &EventView::Finalise { side, .. } => side,
+        }
+    }
+}
+
+impl EventFlag {
+    #[inline]
+    fn from_side(side: Side) -> BitFlags<Self> {
+        match side {
+            Side::Bid => EventFlag::Bid.into(),
+            Side::Ask => BitFlags::empty(),
+        }
+    }
+
+    #[inline]
+    fn flags_to_side(flags: BitFlags<Self>) -> Side {
+        if flags.contains(EventFlag::Bid) {
+            Side::Bid
+        } else {
+            Side::Ask
+        }
+    }
+}
+
+impl Event {
+    pub const MAX_SIZE: usize = 1 + 1 + 8 + 8 + 16 + 32 + 1 + 32;
+
+    #[inline(always)]
+    pub fn new(view: EventView) -> Self {
+        match view {
+            EventView::Fill {
+                side,
+                maker,
+                native_qty_paid,
+                native_qty_received,
+                order_id,
+                owner,
+                owner_slot,
+                finalised,
+                cpty,
+                order_id_second,
+            } => {
+                let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
+                if maker {
+                    flags |= EventFlag::Maker;
+                }
+                let mut finalised: u8 = 0;
+                Event {
+                    event_flags: flags.bits(),
+                    owner_slot,
+                    native_qty_released: native_qty_received,
+                    native_qty_paid,
+                    order_id,
+                    owner,
+                    finalised,
+                    order_id_second,
+                    //cpty,
+                }
+            },
+
+            EventView::Out {
+                side,
+                release_funds,
+                native_qty_unlocked,
+                native_qty_still_locked,
+                order_id,
+                owner,
+                owner_slot,
+                finalised,
+            } => {
+                let mut flags = EventFlag::from_side(side) | EventFlag::Out;
+                if release_funds {
+                    flags |= EventFlag::ReleaseFunds;
+                }
+                let mut finalised: u8 = 0;
+                let mut cpty: Pubkey = owner;
+                Event {
+                    event_flags: flags.bits(),
+                    owner_slot,
+                    //finalised: finalised,
+                    native_qty_released: native_qty_unlocked,
+                    native_qty_paid: native_qty_still_locked,
+                    order_id,
+                    owner,
+                    finalised,
+                    order_id_second: 0,
+                    //cpty
+                }
+
+            },
+
+            EventView::Finalise {
+                side,
+                maker,
+                native_qty_paid,
+                native_qty_received,
+                order_id,
+                owner,
+                owner_slot,
+                finalised,
+                cpty,
+            } => {
+                let mut flags = EventFlag::from_side(side) | EventFlag::Fill;
+                if maker {
+                    flags |= EventFlag::Maker;
+                }
+                //let mut finalsed= true;
+                Event {
+                    event_flags: flags.bits(),
+                    owner_slot,
+                    //finalised: finalised,
+                    native_qty_released: native_qty_received,
+                    native_qty_paid,
+                    order_id,
+                    owner,
+                    finalised,
+                    order_id_second:0,
+                    //cpty,
+                }
+        }
+    }
+}
+
+    
+}
 
 impl<'a> OrderBook<'a> {
     pub fn find_bbo(&self, side: Side) -> Result<&Order> {
