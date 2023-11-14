@@ -255,6 +255,7 @@ pub struct Event {
     pub owner: Pubkey,
     pub finalised: u8,
     pub order_id_second: u128,
+    pub timestamp: u64, // block the order was filled in
     // pub cpty: Pubkey, // Uncomment this if you want it to be public
 }
 
@@ -813,6 +814,7 @@ pub struct NewOrder<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    //pub clock: Sysvar<'info, Clock>,
 
     pub rent: Sysvar<'info, Rent>,
 }
@@ -888,6 +890,7 @@ pub struct NewMatch<'info>{
     pub associated_token_program: Program<'info, AssociatedToken>,
 
     pub rent: Sysvar<'info, Rent>,
+    pub clock: Sysvar<'info, Clock>,
 
 
 

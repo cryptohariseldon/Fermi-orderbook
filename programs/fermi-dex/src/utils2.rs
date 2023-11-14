@@ -8,6 +8,7 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+use solana_program::clock::Clock;
 
 
 
@@ -70,6 +71,33 @@ impl Event {
 
     #[inline(always)]
     pub fn new(view: EventView) -> Self {
+        //let clock = Clock::get()?;
+        let mut current_timestamp: u64 = 0;
+        let clock = match Clock::get() {
+            Ok(clock) => clock,
+            Err(program_error) => {
+                // Handle the error, for example, print an error message
+                msg!("Error getting clock data: {:?}", program_error);
+                // Return a default Clock or handle the error in another way
+                Clock::default()  // You might need to implement the Default trait for Clock
+            }
+        };
+        let current_timestamp: u64 = clock.unix_timestamp as u64;
+        /* 
+        match clock {
+            Ok(clock_data) => {
+                // Access the unix_timestamp field
+                let current_timestamp = clock_data.unix_timestamp as u64;
+                // Use current_timestamp as needed
+                Ok(())
+            }
+            Err(program_error) => {
+                // Handle the error, for example, print an error message
+                msg!("Error getting clock data: {:?}", program_error);
+                Err(program_error)
+            }
+        } */
+        //let current_timestamp= clock.unix_timestamp as u64;
         match view {
             EventView::Fill {
                 side,
@@ -97,6 +125,7 @@ impl Event {
                     owner,
                     finalised,
                     order_id_second,
+                    timestamp: current_timestamp,
                     //cpty,
                 }
             },
@@ -127,6 +156,7 @@ impl Event {
                     owner,
                     finalised,
                     order_id_second: 0,
+                    timestamp: current_timestamp,
                     //cpty
                 }
 
@@ -158,6 +188,7 @@ impl Event {
                     owner,
                     finalised,
                     order_id_second:0,
+                    timestamp: current_timestamp,
                     //cpty,
                 }
         }

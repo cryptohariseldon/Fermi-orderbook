@@ -19,7 +19,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts_10nov_2";
+  } from "./utils/consts_14nov_a";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));

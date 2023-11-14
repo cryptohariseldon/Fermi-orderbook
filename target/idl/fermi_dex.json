@@ -599,6 +599,11 @@
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1011,6 +1016,10 @@
           {
             "name": "orderIdSecond",
             "type": "u128"
+          },
+          {
+            "name": "timestamp",
+            "type": "u64"
           }
         ]
       }

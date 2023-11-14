@@ -10,6 +10,7 @@ dependencies = [
  "anchor-spl",
  "enumflags2",
  "resp",
+ "solana-program",
 ]
 
 [[package]]

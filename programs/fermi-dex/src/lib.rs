@@ -8,6 +8,8 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+use solana_program::clock::Clock;
+
 //extern crate bitflags;
 
 mod utils2;
@@ -378,7 +380,10 @@ pub mod fermi_dex {
                 ErrorCode::WrongAuthority
             );
         }
-        
+        let clock = Clock::get()?;
+        let current_timestamp = clock.unix_timestamp;
+        //let current_timestamp = Clock::unix_timestamp;
+        msg!("timestamp is {}", current_timestamp);
         let deposit_amount;
         let deposit_vault;
         let cpty_vault;
