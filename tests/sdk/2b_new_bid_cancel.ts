@@ -18,7 +18,7 @@ import {
     pcVault,
     reqQPda,
     programId,
-  } from "./utils/consts54";
+  } from "./utils/consts_10nov_1";
 
 const {Keypair} = require("@solana/web3.js");
 const secretKey = JSON.parse(fs.readFileSync("/Users/dm/.config/solana/id.json"));
@@ -92,8 +92,8 @@ describe('fermi-dex-new', () => {
        
 
     });
-describe('#new_order', async () => {
-    it('New order - buy @ 20', async () => {
+describe('#new_order cancel', async () => {
+    it('New order - buy @ 20 cancel', async () => {
         console.log('testing new bid')
       {
         const provider = anchor.AnchorProvider.env();

@@ -93,8 +93,8 @@ describe('fermi-dex-new', () => {
        
 
     });
-describe('#new_order', async () => {
-    it('New order - sell @ 19 successful', async () => {
+describe('#new_order cancel', async () => {
+    it('New order - sell @ 19 successful - cancel', async () => {
         console.log('testing new ask')
       {
         const provider = anchor.AnchorProvider.env();

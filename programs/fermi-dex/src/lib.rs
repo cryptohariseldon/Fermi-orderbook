@@ -8,6 +8,8 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+use solana_program::clock::Clock;
+
 //extern crate bitflags;
 
 mod utils2;
@@ -378,7 +380,10 @@ pub mod fermi_dex {
                 ErrorCode::WrongAuthority
             );
         }
-        
+        let clock = Clock::get()?;
+        let current_timestamp = clock.unix_timestamp;
+        //let current_timestamp = Clock::unix_timestamp;
+        msg!("timestamp is {}", current_timestamp);
         let deposit_amount;
         let deposit_vault;
         let cpty_vault;
@@ -599,7 +604,7 @@ pub mod fermi_dex {
                         msg!("the required funds are {}", qty_pc);
             
                         //let mut deposit_amount = qty_pc / 1000;
-                        let mut deposit_amount = qty_pc / (1000* market.pc_lot_size) ;
+                        let mut deposit_amount = qty_pc / (market.pc_lot_size *10)  ;
                         msg!("Deposit amt {}", deposit_amount);
                         let mut cpty_deposit_amt = qty_coin;
                         let mut deposit_vault = pc_vault;
@@ -708,6 +713,7 @@ pub mod fermi_dex {
                 if eventBidFinalised == true && eventAskFinalised == true {
                     //checked subtract pc from event1 owner
                    // open_orders_auth.native_pc_free -= event1.native_qty_paid;
+                   /* 
                     open_orders_auth.native_pc_free = open_orders_auth
                                 .native_pc_free
                                 .checked_sub(event1.native_qty_paid)
@@ -719,7 +725,7 @@ pub mod fermi_dex {
                     open_orders_cpty.native_coin_free = open_orders_cpty
                                 .native_coin_free
                                 .checked_sub(event2.native_qty_paid)
-                                .unwrap();
+                                .unwrap(); */
                             
                     //add pc to event2 owner
                     open_orders_cpty.native_pc_free += event2.native_qty_released;
