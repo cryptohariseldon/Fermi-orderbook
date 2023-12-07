@@ -371,6 +371,7 @@ impl<'a> OrderBook<'a> {
             }
 }
         let crossed;
+        msg!("checking bid for matches");
         let done = loop {
             let best_offer = match self.find_bbo_mut(Side::Ask) {
                 Err(_) => {
@@ -612,6 +613,7 @@ impl<'a> OrderBook<'a> {
         event_q: &mut EventQueue,
         to_release: &mut RequestProceeds,
     ) -> Result<Option<OrderRemaining>> {
+        msg!("new ask");
         let NewAskParams {
             max_qty,
             limit_price,
@@ -679,11 +681,12 @@ impl<'a> OrderBook<'a> {
                 })?;
             }
         }
-
+        msg!("loop2");
         let done = loop {
             let best_bid = match self.find_bbo_mut(Side::Bid) {
                 Err(_) => {
                     crossed = false;
+                    msg!("not crossed!");
                     break true;
                 }
                 Ok(o) => o,
@@ -693,8 +696,10 @@ impl<'a> OrderBook<'a> {
             crossed = limit_price <= trade_price;
 
             if !crossed || post_only {
+                msg!("not crossed!");
                 break true;
             }
+            msg!("crossed!");
 
             let bid_size = best_bid.qty;
             let trade_qty = bid_size.min(unfilled_qty);

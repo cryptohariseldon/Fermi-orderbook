@@ -22,9 +22,9 @@ use errors::*;
 use crate::errors::ErrorCode;
 
 
-declare_id!("4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9");
+//declare_id!("4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9");
 //local
-//declare_id!("HViUPBVkNo9v9y24N7qForgibiGGT3vQgbHjJnaScBMW");
+declare_id!("2BM843fAN55fqsMGidaqNr1P4127YLcxvTM5W4B2gNpn");
 
 #[program]
 pub mod fermi_dex {
@@ -450,7 +450,9 @@ pub mod fermi_dex {
         let mut order_book = OrderBook { bids, asks, market };
 
         // matching occurs at this stage
+        msg!("proessing request");
         order_book.process_request(&request, &mut event_q.as_mut().unwrap(), &mut proceeds)?;
+        msg!("request processed");
         //msg!(event_q[1].side);
         //let jit_data = vec![];
 
@@ -649,6 +651,7 @@ pub mod fermi_dex {
                             })?;
                             let fin: u8 = 1;
                             let owner = parsed_event.owner;
+                            msg!("deposit amount {}", deposit_amount);
                             open_orders_auth.credit_unlocked_pc(deposit_amount);
                             let bidder_fill = Event::new(EventView::Finalise {
                              side: Side::Ask,
@@ -728,11 +731,17 @@ pub mod fermi_dex {
                                 .unwrap(); */
                             
                     //add pc to event2 owner
+                    let mut qty_pc = event2.native_qty_released;
+                    let mut qty_coin = event1.native_qty_released;
+
                     open_orders_cpty.native_pc_free += event2.native_qty_released;
                     //add coin to event1 owner  
                     open_orders_auth.native_coin_free += event1.native_qty_released;
 
                     msg!("settlement completed!");
+                    msg!("balance pc added to cpty {}", qty_pc);
+                    msg!("balance coin added to auth {}", qty_coin);
+
 
                 }
             
