@@ -8,6 +8,7 @@ use anchor_spl::{
 use anchor_spl::token::accessor::authority;
 use enumflags2::{bitflags, BitFlags};
 use resp;
+use std::cell::RefCell;
 
 
 use crate::utils2::*;
@@ -181,7 +182,10 @@ pub struct EventQueue {
 
 #[account]
 #[derive(Default)]
+//#[account(zero_copy)]
 pub struct Orders<const T: bool> {
+    //pub sorted: RefCell<Vec<Order>> 
+    //write sorted using refcell
     pub sorted: Vec<Order>,
 }
 
@@ -477,6 +481,7 @@ impl<'a> OrderBook<'a> {
             OrderType::ImmediateOrCancel => (false, false),
             OrderType::PostOnly => (true, true),
         };
+        msg!("New order being processed");
         //check Order impls for sourcing payer acc.
         let limit_price = Order::price_from_order_id(order_id);
         let mut limit = 10;
@@ -823,17 +828,18 @@ pub struct NewOrder<'info> {
 //#[instruction(side: Side)]
 
 pub struct NewMatch<'info>{
-    #[account(
+   /*  #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
-    )]
+    )] */
+    #[account(mut)]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] 
-    //#[account(mut)]
+    )] */
+    #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
@@ -874,8 +880,11 @@ pub struct NewMatch<'info>{
     pub authority: Signer<'info>,
 
 
-    #[account(mut)]
-    pub authority_second: Signer<'info>,
+    /*#[account(mut)]
+    pub authority_second: Signer<'info>,*/
+
+     /// CHECK: This account is only used for its public key in seeds and is not used for signing.
+     pub authority_second: AccountInfo<'info>,
 
     #[account(
         mut,
@@ -898,17 +907,18 @@ pub struct NewMatch<'info>{
 
 #[derive(Accounts)]
 pub struct NewMatchAsk<'info>{
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
-    )]
+    )]*/
+    #[account(mut)]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] 
-   //#[account(mut)]
+    )] */
+   #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
@@ -947,8 +957,11 @@ pub struct NewMatchAsk<'info>{
     pub authority: Signer<'info>,
 
 
-    #[account(mut)]
-    pub authority_second: Signer<'info>,
+    //#[account(mut)]
+    //pub authority_second: Signer<'info>,
+
+    /// CHECK: This account is only used for its public key in seeds and is not used for signing.
+    pub authority_second: AccountInfo<'info>,
 
     #[account(
         mut,

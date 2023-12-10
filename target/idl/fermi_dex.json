@@ -527,12 +527,12 @@
       "accounts": [
         {
           "name": "openOrdersOwner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "openOrdersCounterparty",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -572,8 +572,8 @@
         },
         {
           "name": "authoritySecond",
-          "isMut": true,
-          "isSigner": true
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "pcpayer",
@@ -625,12 +625,12 @@
       "accounts": [
         {
           "name": "openOrdersOwner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "openOrdersCounterparty",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -670,8 +670,8 @@
         },
         {
           "name": "authoritySecond",
-          "isMut": true,
-          "isSigner": true
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "coinpayer",
@@ -1407,6 +1407,6 @@
     }
   ],
   "metadata": {
-    "address": "4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9"
+    "address": "2BM843fAN55fqsMGidaqNr1P4127YLcxvTM5W4B2gNpn"
   }
 }
