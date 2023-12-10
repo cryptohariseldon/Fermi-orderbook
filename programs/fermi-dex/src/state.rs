@@ -828,17 +828,18 @@ pub struct NewOrder<'info> {
 //#[instruction(side: Side)]
 
 pub struct NewMatch<'info>{
-    #[account(
+   /*  #[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
-    )]
+    )] */
+    #[account(mut)]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] 
-    //#[account(mut)]
+    )] */
+    #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 
@@ -906,17 +907,18 @@ pub struct NewMatch<'info>{
 
 #[derive(Accounts)]
 pub struct NewMatchAsk<'info>{
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority.key().as_ref()],
         bump,
-    )]
+    )]*/
+    #[account(mut)]
     pub open_orders_owner: Box<Account<'info, OpenOrders>>,
 
-    #[account(
+    /*#[account(
         seeds = [b"open-orders".as_ref(), market.key().as_ref(), authority_second.key().as_ref()],
         bump,
-    )] 
-   //#[account(mut)]
+    )] */
+   #[account(mut)]
     pub open_orders_counterparty: Box<Account<'info, OpenOrders>>,
 
 

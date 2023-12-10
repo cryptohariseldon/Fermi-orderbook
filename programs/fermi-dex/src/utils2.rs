@@ -371,7 +371,7 @@ impl<'a> OrderBook<'a> {
             }
 }
         let crossed;
-        msg!("checking bid for matches");
+        msg!("checking bid  for matches");
         let done = loop {
             let best_offer = match self.find_bbo_mut(Side::Ask) {
                 Err(_) => {

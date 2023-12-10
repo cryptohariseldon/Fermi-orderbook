@@ -527,12 +527,12 @@
       "accounts": [
         {
           "name": "openOrdersOwner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "openOrdersCounterparty",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -625,12 +625,12 @@
       "accounts": [
         {
           "name": "openOrdersOwner",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "openOrdersCounterparty",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
