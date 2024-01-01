@@ -1422,6 +1422,11 @@
       "code": 6016,
       "name": "Error",
       "msg": "Error"
+    },
+    {
+      "code": 6017,
+      "name": "ApprovalFailed",
+      "msg": "Error"
     }
   ]
 }

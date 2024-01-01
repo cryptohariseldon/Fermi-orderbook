@@ -11,7 +11,7 @@ use resp;
 
 
 #[error_code]
-pub enum ErrorCode {
+pub enum ErrorCodeCustom {
     #[msg("Wrong payer mint")]
     WrongPayerMint,
     #[msg("Wrong market")]
@@ -58,4 +58,10 @@ pub enum ErrorCode {
 
     #[msg("Error")]
     Error,
+
+    #[msg("Error")]
+    ApprovalFailed,
+    
+
+
 }

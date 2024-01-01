@@ -19,7 +19,7 @@ mod errors;
 use utils2::*;
 use state::*;
 use errors::*;
-use crate::errors::ErrorCode;
+use crate::errors::ErrorCodeCustom;
 
 
 //declare_id!("4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9");
@@ -66,7 +66,7 @@ pub mod fermi_dex {
 
         //check openorders owner
          
-        require!(openorders.authority == authority, ErrorCode::OrderNotFound);
+        require!(openorders.authority == authority, ErrorCodeCustom::OrderNotFound);
 
         //check the order is owned by this user
         let mut x = 0;
@@ -78,7 +78,7 @@ pub mod fermi_dex {
                 slot = i;
             }
         }
-        require!(x == 1, ErrorCode::OrderNotFound); 
+        require!(x == 1, ErrorCodeCustom::OrderNotFound); 
 
         //remove order from orderbook
         let mut order_book = OrderBook {
@@ -91,7 +91,7 @@ pub mod fermi_dex {
 
         //remove order from openorders
         //let res, err = openorders.remove_order(slot.try_into().unwrap());
-        openorders.remove_order(slot.try_into().map_err(|_| ErrorCode::OrderNotFound)?)?;
+        openorders.remove_order(slot.try_into().map_err(|_| ErrorCodeCustom::OrderNotFound)?)?;
 
 
         msg!("cancelled bid: {}", order_id);
@@ -114,7 +114,7 @@ pub mod fermi_dex {
 
 
         //check openorders owner
-        require!(openorders.authority == authority, ErrorCode::OrderNotFound);
+        require!(openorders.authority == authority, ErrorCodeCustom::OrderNotFound);
 
         //check the order is owned by this user
         let mut x = 0;
@@ -126,7 +126,7 @@ pub mod fermi_dex {
                 slot = i;
             }
         }
-        require!(x == 1, ErrorCode::OrderNotFound); 
+        require!(x == 1, ErrorCodeCustom::OrderNotFound); 
 
         let mut order_book = OrderBook {
             bids: &mut ctx.accounts.bids,
@@ -138,7 +138,7 @@ pub mod fermi_dex {
 
 
         //remove order from openOrders
-        openorders.remove_order(slot.try_into().map_err(|_| ErrorCode::OrderNotFound)?)?;
+        openorders.remove_order(slot.try_into().map_err(|_| ErrorCodeCustom::OrderNotFound)?)?;
 
         msg!("cancelled ask: {}", order_id);
 
@@ -165,7 +165,7 @@ pub mod fermi_dex {
         
         // Execute the transfer
         anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
-            _ => error!(ErrorCode::TransferFailed),
+            _ => error!(ErrorCodeCustom::TransferFailed),
         })?; 
         
         
@@ -173,7 +173,7 @@ pub mod fermi_dex {
             .open_orders
             .native_pc_free
             .checked_add(amount)
-            .ok_or(ErrorCode::Error)?;
+            .ok_or(ErrorCodeCustom::Error)?;
         
         Ok(())
     }
@@ -195,7 +195,7 @@ pub mod fermi_dex {
         
         // Execute the transfer
         anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
-            _ => error!(ErrorCode::TransferFailed),
+            _ => error!(ErrorCodeCustom::TransferFailed),
         })?;
         
         // Credit the balance to openOrders
@@ -203,7 +203,7 @@ pub mod fermi_dex {
             .open_orders
             .native_coin_free
             .checked_add(amount)
-            .ok_or(ErrorCode::Error)?;
+            .ok_or(ErrorCodeCustom::Error)?;
         
         Ok(())
     }
@@ -229,7 +229,7 @@ pub mod fermi_dex {
         );
 
         //Validation: owner of openorders is the authority
-        require!(open_orders.authority == authority.key(), ErrorCode::InvalidAuthority);
+        require!(open_orders.authority == authority.key(), ErrorCodeCustom::InvalidAuthority);
 
        //Validation of the user's openorders balance
         msg!("oo coin free : {}", open_orders.native_coin_free);
@@ -237,7 +237,7 @@ pub mod fermi_dex {
         msg!("oo owner market {}", open_orders.market);
 
 
-        //require!(open_orders.native_coin_free >= amount, ErrorCode::InsufficientFunds);
+        //require!(open_orders.native_coin_free >= amount, ErrorCodeCustom::InsufficientFunds);
 
 
        // Signing the transaction with the market PDA and bump seed.
@@ -270,12 +270,12 @@ pub mod fermi_dex {
         );
     
         anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
-            _ => error!(ErrorCode::TransferFailed),
+            _ => error!(ErrorCodeCustom::TransferFailed),
         })?;
         msg!("tokens withdrawn");
 
         // Reduce balance from user's OpenOrders account
-        open_orders.native_coin_free = open_orders.native_coin_free.checked_sub(amount).ok_or(ErrorCode::Error)?;
+        open_orders.native_coin_free = open_orders.native_coin_free.checked_sub(amount).ok_or(ErrorCodeCustom::Error)?;
 
         Ok(())
     }
@@ -301,7 +301,7 @@ pub mod fermi_dex {
         );
 
         // Validation: owner of openorders is the authority
-        require!(open_orders.authority == authority.key(), ErrorCode::InvalidAuthority);
+        require!(open_orders.authority == authority.key(), ErrorCodeCustom::InvalidAuthority);
 
         // Validation of the user's openorders balance
         //msg!("oo coin free : {}", open_orders.native_coin_free);
@@ -309,7 +309,7 @@ pub mod fermi_dex {
         msg!("oo owner market {}", open_orders.market);
         msg!("oo pc free : {}", open_orders.native_pc_free);
 
-        //require!(open_orders.native_pc_free >= amount, ErrorCode::InsufficientFunds);
+        //require!(open_orders.native_pc_free >= amount, ErrorCodeCustom::InsufficientFunds);
        
 
        // Signing the transaction with the market PDA and bump seed.
@@ -341,12 +341,12 @@ pub mod fermi_dex {
         );
     
         anchor_spl::token::transfer(cpi_ctx, amount).map_err(|err| match err {
-            _ => error!(ErrorCode::TransferFailed),
+            _ => error!(ErrorCodeCustom::TransferFailed),
         })?;
         msg!("tokens withdrawn");
 
         // Reduce balance from user's OpenOrders account
-        open_orders.native_pc_free = open_orders.native_pc_free.checked_sub(amount).ok_or(ErrorCode::Error)?;
+        open_orders.native_pc_free = open_orders.native_pc_free.checked_sub(amount).ok_or(ErrorCodeCustom::Error)?;
 
         Ok(())
     }
@@ -383,11 +383,11 @@ pub mod fermi_dex {
         } else {
             require!(
                 open_orders.market.key() == market.key(),
-                ErrorCode::WrongMarket
+                ErrorCodeCustom::EmptyQueue
             );
             require!(
                 open_orders.authority.key() == authority.key(),
-                ErrorCode::WrongAuthority
+                ErrorCodeCustom::WrongAuthority
             );
         }
         let clock = Clock::get()?;
@@ -418,7 +418,7 @@ pub mod fermi_dex {
                 native_pc_qty_locked = None;
                 let lock_qty_native = max_coin_qty
                     .checked_mul(market.coin_lot_size)
-                    .ok_or(error!(ErrorCode::InsufficientFunds))?;
+                    .ok_or(error!(ErrorCodeCustom::InsufficientFunds))?;
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_coin_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
                 //deposit_amount = total_deposit_amount * 2/100; //marginal deposit up front
@@ -501,11 +501,11 @@ pub mod fermi_dex {
                 //let mut owner_deposits = owner_order.deposits;
                 msg!("owner qty {}", owner_order);
                 msg!("dep {}", deposits);
-}
+
                //_orders_mut.native_pc_free <= open_orders_mut.native_pc_total)?;
-        }
+            }
 
-
+        }    
         let matched_amount_pc = proceeds.native_pc_credit;
         let matched_amount_coin = proceeds.coin_credit;
 
@@ -522,13 +522,39 @@ pub mod fermi_dex {
                 delegate: market.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
-            let cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
-            //let marginal_deposit = cpi_ctx * 2 / 100
-            anchor_spl::token::approve(cpi_ctx, deposit_amount).map_err(|err| match err {
-                _ => error!(ErrorCode::TransferFailed),
+            let approve_cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            anchor_spl::token::approve(approve_cpi_ctx, deposit_amount).map_err(|err| {
+            msg!("Failed to approve tokens: {:?}", err);
+            ErrorCodeCustom::ApprovalFailed // Use the correct error code
+                })?;
+        }    
+        msg!("Approval successful for {} tokens", deposit_amount);
+
+            // Calculate 1% of the deposit_amount
+        let transfer_fraction = 0.01; // 1%
+        let transfer_amount = (deposit_amount as f64 * transfer_fraction) as u64;
+
+        
+        if deposit_amount > 0 {
+            // Set up the Approve instruction
+            let approve_ix = Approve {
+                to: payer.to_account_info(), // This is the account holding the tokens
+                delegate: market.to_account_info(), // This is who you're giving permission to
+                authority: authority.to_account_info(), // The authority of the 'to' account
+            };
+        
+            // Create the CPI context for the approve instruction
+            let approve_cpi_ctx = CpiContext::new(token_program.to_account_info(), approve_ix);
+        
+            // Execute the approval (passing the amount separately)
+            anchor_spl::token::approve(approve_cpi_ctx, deposit_amount).map_err(|err| {
+                msg!("Failed to approve tokens: {:?}", err);
+                ErrorCodeCustom::ApprovalFailed // Replace with your actual error code
             })?;
-            msg!("tokens approved for later spending.");
+            msg!("Tokens approved for later spending.");
         }
+        
+        
         
         
         msg!("matched amount {}", matched_amount_coin);
@@ -536,7 +562,7 @@ pub mod fermi_dex {
 
 
            Ok(())
-       }
+    }
 
 
        
@@ -571,7 +597,7 @@ pub mod fermi_dex {
                 msg!("event2 orderid is {}", event2_orderid);
                 msg!("event2 orderidsecond is {}", event2_orderidsecond);
             
-                require!(event1.order_id_second == event2.order_id, Error);
+                require!(event1.order_id_second == event2.order_id, ErrorCodeCustom::Error);
             
                 let events: Vec<Event> = vec![event1, event2];
                 let mut order_id_general: u128 = 0;
@@ -660,7 +686,7 @@ pub mod fermi_dex {
                             );
                         
                             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                                _ => error!(ErrorCode::TransferFailed),
+                                _ => error!(ErrorCodeCustom::TransferFailed),
                             })?;
                             let fin: u8 = 1;
                             let owner = parsed_event.owner;
@@ -752,14 +778,14 @@ pub mod fermi_dex {
                         .open_orders_counterparty
                         .native_pc_free
                         .checked_add(qty_pc)
-                        .ok_or(ErrorCode::Error)?;
+                        .ok_or(ErrorCodeCustom::Error)?;
                     
 
                     ctx.accounts.open_orders_counterparty.native_coin_free = ctx.accounts
                         .open_orders_counterparty
                         .native_coin_free
                         .checked_add(qty_coin)
-                        .ok_or(ErrorCode::Error)?;
+                        .ok_or(ErrorCodeCustom::Error)?;
                     //add coin to event1 owner  
                     //open_orders_auth.native_coin_free += event1.native_qty_released;
 
@@ -897,7 +923,7 @@ pub fn finalise_matches_ask(
                                 );
                             
                                 anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
-                                    _ => error!(ErrorCode::TransferFailed),
+                                    _ => error!(ErrorCodeCustom::TransferFailed),
                                 })?;
                                 let fin: u8 = 1;
                                 let owner = parsed_event.owner;
@@ -989,7 +1015,7 @@ pub fn finalise_matches_ask(
                 Ok(())
             
         }
-
+    }
             
-         }
+         
         

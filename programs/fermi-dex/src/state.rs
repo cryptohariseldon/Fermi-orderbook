@@ -12,7 +12,7 @@ use std::cell::RefCell;
 
 
 use crate::utils2::*;
-use crate::errors::ErrorCode;
+use crate::errors::ErrorCodeCustom;
 
 
 #[account]
@@ -349,7 +349,7 @@ impl EventQueue {
 
     #[inline]
     pub fn pop_front(&mut self) -> Result<Event> {
-        require!(!self.empty(), ErrorCode::EmptyQueue);
+        require!(!self.empty(), ErrorCodeCustom::EmptyQueue);
 
         let value = self.buf[self.header.head() as usize];
 
@@ -386,12 +386,12 @@ impl<const T: bool> Orders<T> {
     pub const MAX_SIZE: usize = 8 + 4 + 32 * Order::MAX_SIZE;
 
     pub fn find_bbo(&self) -> Result<&Order> {
-        require!(self.sorted.len() > 0, ErrorCode::EmptyOrders);
+        require!(self.sorted.len() > 0, ErrorCodeCustom::EmptyOrders);
         Ok(&self.sorted[0])
     }
 
     pub fn find_bbo_mut(&mut self) -> Result<&mut Order> {
-        require!(self.sorted.len() > 0, ErrorCode::EmptyOrders);
+        require!(self.sorted.len() > 0, ErrorCodeCustom::EmptyOrders);
         Ok(&mut self.sorted[0])
     }
 
@@ -434,7 +434,7 @@ impl<const T: bool> Orders<T> {
     }
 
     pub fn delete_worst(&mut self) -> Result<Order> {
-        require!(!self.sorted.is_empty(), ErrorCode::EmptyOrders);
+        require!(!self.sorted.is_empty(), ErrorCodeCustom::EmptyOrders);
         Ok(self.sorted.pop().unwrap())
     }
 }
@@ -731,14 +731,14 @@ pub struct FinaliseMatch<'info>{
 
     #[account(
         mut,
-        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCodeCustom::WrongPayerMint,
         token::authority = authority,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        //constraint = market.check_payer_mint(payer.mint, side) @ ErrorCodeCustom::WrongPayerMint,
         token::authority = authority,
     )]
     pub coinpayer: Account<'info, TokenAccount>,
@@ -797,7 +797,7 @@ pub struct NewOrder<'info> {
 
     #[account(
         mut,
-        constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+        constraint = market.check_payer_mint(payer.mint, side) @ ErrorCodeCustom::WrongPayerMint,
         token::authority = authority,
     )]
     pub payer: Account<'info, TokenAccount>,
@@ -888,7 +888,7 @@ pub struct NewMatch<'info>{
 
     #[account(
         mut,
-       // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+       // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCodeCustom::WrongPayerMint,
         //token::authority = authority_second,
     )]
     pub pcpayer: Account<'info, TokenAccount>,
@@ -965,7 +965,7 @@ pub struct NewMatchAsk<'info>{
 
     #[account(
         mut,
-       // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCode::WrongPayerMint,
+       // constraint = market.check_payer_mint(payer.mint, side) @ ErrorCodeCustom::WrongPayerMint,
        // token::authority = authority_second,
     )]
     pub coinpayer: Account<'info, TokenAccount>,

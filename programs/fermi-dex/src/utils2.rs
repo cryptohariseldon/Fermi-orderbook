@@ -15,7 +15,7 @@ use solana_program::clock::Clock;
 use crate::state::*;
 use crate::errors::*;
 
-use crate::errors::ErrorCode;
+use crate::errors::ErrorCodeCustom;
 
 impl Market {
     pub const MAX_SIZE: usize = 32 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 32;
@@ -299,7 +299,7 @@ impl<'a> OrderBook<'a> {
             post_allowed,
         } = params;
         if post_allowed {
-            require!(limit_price.is_some(), ErrorCode::InvalidPrice);
+            require!(limit_price.is_some(), ErrorCodeCustom::InvalidPrice);
         }
 
         let coin_lot_size = self.market.coin_lot_size;
@@ -329,7 +329,7 @@ impl<'a> OrderBook<'a> {
             owner_slot,
         });
         if let Err(err) = insert_result {
-            if err == error!(ErrorCode::OrdersAlreadyFull) {
+            if err == error!(ErrorCodeCustom::OrdersAlreadyFull) {
                 // boot out the least aggressive bid
                 msg!("bids full! booting...");
                 let order = self.bids.delete_worst()?;
@@ -361,7 +361,7 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(out)
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?; */
+                    .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?; */
                 self.bids.insert(Order {
                     order_id,
                     qty: max_coin_qty,
@@ -423,7 +423,7 @@ impl<'a> OrderBook<'a> {
             event_q.buf[idx as usize] = maker_fill;
             event_q.head +=1;
              //   .push_back(maker_fill)
-             //   .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;
+             //   .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;
 
                 msg!("event.idx: {}", idx);
                 msg!("event.side: {}", "Ask");
@@ -537,7 +537,7 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| ErrorCode::QueueAlreadyFull)?; */
+                    .map_err(|_| ErrorCodeCustom::QueueAlreadyFull)?; */
            // }
         }
 
@@ -640,7 +640,7 @@ impl<'a> OrderBook<'a> {
             owner_slot,
         });
         if let Err(err) = insert_result {
-            if err == error!(ErrorCode::OrdersAlreadyFull) {
+            if err == error!(ErrorCodeCustom::OrdersAlreadyFull) {
                 // boot out the least aggressive offer
                 msg!("offers full! booting...");
                 let order = self.asks.delete_worst()?;
@@ -672,7 +672,7 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(out)
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                    .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;*/
                 self.asks.insert(Order {
                     order_id,
                     qty: unfilled_qty,
@@ -753,7 +753,7 @@ impl<'a> OrderBook<'a> {
 /*
             event_q
                 .push_back(maker_fill)
-                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;*/
 
             best_bid.qty -= trade_qty;
             unfilled_qty -= trade_qty;
@@ -797,7 +797,7 @@ impl<'a> OrderBook<'a> {
                         owner: best_bid.owner,
                         owner_slot: best_bid.owner_slot,
                     }))
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                    .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;*/
                 //self.bids.delete(best_bid_id)?;
             }
 
@@ -846,7 +846,7 @@ impl<'a> OrderBook<'a> {
 /*
                 event_q
                     .push_back(taker_fill)
-                    .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                    .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;*/
             }
         }
 
@@ -890,7 +890,7 @@ impl<'a> OrderBook<'a> {
 /*
             event_q
                 .push_back(out)
-                .map_err(|_| error!(ErrorCode::QueueAlreadyFull))?;*/
+                .map_err(|_| error!(ErrorCodeCustom::QueueAlreadyFull))?;*/
         }
 
         Ok(None)
@@ -910,7 +910,7 @@ impl<'a> OrderBook<'a> {
 
     pub fn cancel_order_bid(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
        
-        //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
+        //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCodeCustom> {
         //let orders = if side { &mut *self.bids } else { &mut *self.asks };
         let orders = &mut *self.bids;
         orders.delete(order_id);
@@ -921,7 +921,7 @@ impl<'a> OrderBook<'a> {
 
         pub fn cancel_order_ask(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<()> {
        
-            //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCode> {
+            //  pub fn remove_order_by_id_and_owner(&mut self, side: bool, order_id: u128, owner: Pubkey) -> Result<(), ErrorCodeCustom> {
             //let orders = if side { &mut *self.bids } else { &mut *self.asks };
             let orders = &mut *self.asks;
             orders.delete(order_id);
@@ -942,7 +942,7 @@ impl<'a> OrderBook<'a> {
         pub const MAX_SIZE: usize = 1 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8 * 16;
     
         pub fn init(&mut self, market: Pubkey, authority: Pubkey) -> Result<()> {
-            require!(!self.is_initialized, ErrorCode::AlreadyInitialized);
+            require!(!self.is_initialized, ErrorCodeCustom::AlreadyInitialized);
     
             self.is_initialized = true;
             self.market = market;
@@ -1021,7 +1021,7 @@ impl<'a> OrderBook<'a> {
         pub fn remove_order(&mut self, slot: u8) -> Result<()> {
             // check_assert!(slot < 128)?;
             // check_assert!(!self.slot_is_free(slot))?;
-            //require!(self.slot_is_free(slot), ErrorCode::SlotIsNotFree);
+            //require!(self.slot_is_free(slot), ErrorCodeCustom::SlotIsNotFree);
     
             let slot_mask = 1u8 << slot;
             self.orders[slot as usize] = 0;
@@ -1036,9 +1036,9 @@ impl<'a> OrderBook<'a> {
             if self.free_slot_bits == 0 {
                 self.remove_order(0)?;
             } 
-            //require!(self.free_slot_bits != 0, ErrorCode::TooManyOpenOrders);
+            //require!(self.free_slot_bits != 0, ErrorCodeCustom::TooManyOpenOrders);
             let slot = self.free_slot_bits.trailing_zeros() as u8;
-            require!(self.slot_is_free(slot), ErrorCode::SlotIsNotFree);
+            require!(self.slot_is_free(slot), ErrorCodeCustom::SlotIsNotFree);
             let slot_mask = 1u8 << slot;
             self.free_slot_bits &= !slot_mask;
             match side {
