@@ -59,10 +59,25 @@ pub enum ErrorCodeCustom {
     #[msg("BothEventsAlreadyFinalised")]
     BothEventsFinalised,
 
+    #[msg("ThisSideAlreadyFinalised")]
+    SideAlreadyFinalised,
+
+    #[msg("EventNotExpired")]
+    FinalizeNotExpired,
+
+    #[msg("EventAlreadyFinalised")]
+    EventFinalised,
+
+    #[msg("WrongSideProvided")]
+    WrongSide,
+
+
+
+
     #[msg("Error")]
     Error,
 
-    #[msg("Error")]
+    #[msg("ApprovalFailed")]
     ApprovalFailed,
     
 

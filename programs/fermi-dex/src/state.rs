@@ -1054,5 +1054,6 @@ pub struct CancelWithPenalty<'info> {
     pub open_orders_bidder: Box<Account<'info, OpenOrders>>,
     #[account(mut)]
     pub open_orders_asker: Box<Account<'info, OpenOrders>>,
-    // Include other necessary accounts, if needed
+    #[account(mut)]
+    pub event_q: AccountLoader<'info, EventQueue>,
 }

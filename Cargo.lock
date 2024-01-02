@@ -11,6 +11,7 @@ dependencies = [
  "enumflags2",
  "resp",
  "solana-program",
+ "spl-token",
 ]
 
 [[package]]

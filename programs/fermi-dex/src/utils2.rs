@@ -10,6 +10,17 @@ use enumflags2::{bitflags, BitFlags};
 use resp;
 use solana_program::clock::Clock;
 
+use anchor_lang::solana_program::account_info::AccountInfo;
+
+use anchor_lang::solana_program::program_pack::Pack;
+use anchor_lang::solana_program::pubkey::Pubkey;
+use anchor_lang::{context::CpiContext, Accounts};
+use anchor_lang::{solana_program, Result};
+use std::ops::Deref;
+
+pub use spl_token;
+pub use spl_token::ID;
+
 
 
 use crate::state::*;
@@ -894,6 +905,34 @@ impl<'a> OrderBook<'a> {
         }
 
         Ok(None)
+    }
+}
+
+
+// Error handling is currently impossible for solana CPI's: https://solana.stackexchange.com/questions/4277/how-to-handle-error-of-invoked-signed-calls
+pub fn custom_token_transfer<'info>(
+    cpi_ctx: CpiContext<'_, '_, '_, 'info, Transfer<'info>>,
+    amount: u64,
+) -> Result<()> {
+    let ix = spl_token::instruction::transfer(
+        &spl_token::ID,
+        cpi_ctx.accounts.from.key,
+        cpi_ctx.accounts.to.key,
+        cpi_ctx.accounts.authority.key,
+        &[],
+        amount,
+    )?;
+
+    match solana_program::program::invoke_signed(
+        &ix,
+        &[cpi_ctx.accounts.from, cpi_ctx.accounts.to, cpi_ctx.accounts.authority],
+        cpi_ctx.signer_seeds,
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            msg!("Transfer failed: {:?}", e);
+            Err(e.into())
+        },
     }
 }
 

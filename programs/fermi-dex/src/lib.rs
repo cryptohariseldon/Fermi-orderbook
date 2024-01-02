@@ -579,42 +579,103 @@ pub mod fermi_dex {
     }
 
 
-/* 
-    fn cancel_with_penalty(
+
+    pub fn cancel_with_penalty(
         ctx: Context<CancelWithPenalty>,
         side: Side,
+        event_slot1: u8,
+        event_slot2: u8,
         //open_orders_bidder: &mut Account<'info, OpenOrders>,
         //open_orders_asker: &mut Account<'info, OpenOrders>,
         deposit_amount: u64,
     ) -> Result<()> {
         let open_orders_bidder = &mut ctx.accounts.open_orders_bidder;
         let open_orders_asker = &mut ctx.accounts.open_orders_asker;
+        let event_q = &mut ctx.accounts.event_q.load_mut()?;
+        let event1: Event = event_q.buf[usize::from(event_slot1)];
+        let event2: Event = event_q.buf[usize::from(event_slot2)];
     
         // Calculate the penalty amount (1% of deposit_amount)
         let penalty_amount = deposit_amount / 100;
         
+        // require the mandated delay period has been exceeded
+        let clock = Clock::get()?;
+        let current_timestamp = clock.unix_timestamp as u64;
+        let event1_timestamp = event1.timestamp;
+        let event2_timestamp = event2.timestamp;
+        require!(
+            current_timestamp > event1_timestamp + 60 && current_timestamp > event2_timestamp + 60,
+            ErrorCodeCustom::FinalizeNotExpired
+        );
+
+        // verify that the events have not already been finalized
+        
         match side{
             Side::Bid => {
+                //verify event1 is not already finalized
+                // this ensures that a party cannot be penalised if they've already supplied capital
+                require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
+                //require!(EventFlag::flags_to_side(event1.event_flags) == Side::Bid, ErrorCodeCustom::WrongSide);
+
                 // Deduct the penalty from the bidder's deposit
-                open_orders_bidder.debit_locked_pc(penalty_amount)?;
+                open_orders_bidder.debit_locked_pc(penalty_amount);
         
                 // Add the penalty amount to the asker's open order balance
-                open_orders_asker.credit_unlocked_pc(penalty_amount)?;
+                open_orders_asker.credit_unlocked_pc(penalty_amount);
         
                 msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
             }
             Side::Ask => {
+                //verify event2 is not already finalized
+                // this ensures that a party cannot be penalised if they've already supplied capital
+                require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
+                //require!(event2.flags_to_side() == Side::Ask, ErrorCodeCustom::WrongSide);
+
                 // Deduct the penalty from the asker's deposit
-                open_orders_asker.debit_locked_coin(penalty_amount)?;
+                open_orders_asker.debit_locked_coin(penalty_amount);
         
                 // Add the penalty amount to the bidder's open order balance
-                open_orders_bidder.credit_unlocked_coin(penalty_amount)?;
+                open_orders_bidder.credit_unlocked_coin(penalty_amount);
         
                 msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
             }
+
         } 
+
+        //replace events with finalised = 2
+        let fin: u8 = 2;
+        let owner = event1.owner;
+        let bidder_fill = Event::new(EventView::Finalise {
+            side: Side::Ask,
+            maker: true,
+            native_qty_paid:  event1.native_qty_paid,
+            native_qty_received: event1.native_qty_released,
+            order_id: event1.order_id,
+            owner: event1.owner,
+            owner_slot: event1.owner_slot,
+            finalised: fin,
+            cpty: owner,
+        });
+        let idx = event_slot1;
+        event_q.buf[idx as usize] = bidder_fill;
+
+        let owner = event2.owner;
+        let asker_fill = Event::new(EventView::Finalise {
+            side: Side::Ask,
+            maker: true,
+            native_qty_paid:  event2.native_qty_paid,
+            native_qty_received: event2.native_qty_released,
+            order_id: event2.order_id,
+            owner: event2.owner,
+            owner_slot: event2.owner_slot,
+            finalised: fin,
+            cpty: owner,
+        });
+        let idx = event_slot2;
+        event_q.buf[idx as usize] = asker_fill;
+
         Ok(())
-    } */
+    } 
 
     /* 
     pub fn cancel_ask_with_penalty(
@@ -1055,13 +1116,22 @@ pub fn finalise_matches_ask(
                                 })?;*/
 
                                 // If transfer fails, handle penalty
-                                if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
+                                //if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
+                                msg!("attempting JIT transfers");
+                                //match anchor_spl::token::transfer(cpi_ctx, deposit_amount) 
+                                match utils2::custom_token_transfer(cpi_ctx, deposit_amount)
+                                {
+                                        
+                                Err(err) => {
+                                            msg!("Failed to transfer tokens: {:?}", err);
+                                            // Additional error handling logic
+                                        
                                     msg!("Transfer failed, handling penalty: {:?}", err);
                                     let side_cancel = Side::Ask;
                                     // Calculate the penalty amount
                                     let penalty_amount = deposit_amount / 100; // Assuming 1% penalty
                                     
-                            
+                               
                                         // Make accounting changes representing the penalty.
                                     /*cancel_with_penalty(side_cancel, &mut ctx.accounts.open_orders_owner, 
                                             &mut ctx.accounts.open_orders_counterparty, deposit_amount)?;*/
@@ -1106,7 +1176,10 @@ pub fn finalise_matches_ask(
 
                                     }
                                     //If transfer succeeds, record deal status in eventQ
-                                    else {
+                                    //else {
+                                    Ok(_) => {
+                                            // Successful transfer
+                                            msg!("Tokens transferred!");
                                         // finalized = 1 means succesfully transferred and settleable.
                                         let fin: u8 = 1;
                                         let owner = parsed_event.owner;
@@ -1148,7 +1221,8 @@ pub fn finalise_matches_ask(
                                     };
                                     let mut remaining_funds = 1;
                                     eventAskFinalised = true;
-                        }
+                                }
+                            }
 
 
                         /*
