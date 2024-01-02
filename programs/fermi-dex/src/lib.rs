@@ -28,6 +28,8 @@ declare_id!("3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR");
 
 #[program]
 pub mod fermi_dex {
+    use anchor_lang::prelude::borsh::de;
+
     use super::*;
 
     pub fn initialize_market(
@@ -587,7 +589,7 @@ pub mod fermi_dex {
         event_slot2: u8,
         //open_orders_bidder: &mut Account<'info, OpenOrders>,
         //open_orders_asker: &mut Account<'info, OpenOrders>,
-        deposit_amount: u64,
+        //deposit_amount: u64,
     ) -> Result<()> {
         let open_orders_bidder = &mut ctx.accounts.open_orders_bidder;
         let open_orders_asker = &mut ctx.accounts.open_orders_asker;
@@ -596,7 +598,7 @@ pub mod fermi_dex {
         let event2: Event = event_q.buf[usize::from(event_slot2)];
     
         // Calculate the penalty amount (1% of deposit_amount)
-        let penalty_amount = deposit_amount / 100;
+        //let penalty_amount = deposit_amount / 100;
         
         // require the mandated delay period has been exceeded
         let clock = Clock::get()?;
@@ -616,6 +618,8 @@ pub mod fermi_dex {
                 // this ensures that a party cannot be penalised if they've already supplied capital
                 require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(EventFlag::flags_to_side(event1.event_flags) == Side::Bid, ErrorCodeCustom::WrongSide);
+                let deposit_amount = event1.native_qty_paid;
+                let penalty_amount = deposit_amount / 100;
 
                 // Deduct the penalty from the bidder's deposit
                 open_orders_bidder.debit_locked_pc(penalty_amount);
@@ -630,6 +634,8 @@ pub mod fermi_dex {
                 // this ensures that a party cannot be penalised if they've already supplied capital
                 require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(event2.flags_to_side() == Side::Ask, ErrorCodeCustom::WrongSide);
+                let deposit_amount = event2.native_qty_paid;
+                let penalty_amount = deposit_amount / 100;
 
                 // Deduct the penalty from the asker's deposit
                 open_orders_asker.debit_locked_coin(penalty_amount);
