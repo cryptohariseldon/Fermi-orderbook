@@ -1420,11 +1420,16 @@
     },
     {
       "code": 6016,
+      "name": "BothEventsFinalised",
+      "msg": "BothEventsAlreadyFinalised"
+    },
+    {
+      "code": 6017,
       "name": "Error",
       "msg": "Error"
     },
     {
-      "code": 6017,
+      "code": 6018,
       "name": "ApprovalFailed",
       "msg": "Error"
     }

@@ -579,7 +579,7 @@ pub mod fermi_dex {
     }
 
 
-
+/* 
     fn cancel_with_penalty(
         ctx: Context<CancelWithPenalty>,
         side: Side,
@@ -614,7 +614,7 @@ pub mod fermi_dex {
             }
         } 
         Ok(())
-    }
+    } */
 
     /* 
     pub fn cancel_ask_with_penalty(
@@ -681,7 +681,7 @@ pub mod fermi_dex {
                 let mut eventAskFinalised: bool = false;
 
                 //validation
-                require(event1.finalized== 0 || event2.finalized == 0, ErrorCodeCustom::BothEventsFinalised);
+                require!(event1.finalised== 0 || event2.finalised == 0, ErrorCodeCustom::BothEventsFinalised);
             
                 
                 for (index, parsed_event) in events.iter().enumerate() {
@@ -759,67 +759,103 @@ pub mod fermi_dex {
                                 seeds,
                                 //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
                             );
-                        
-                            anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                            // handle error if transfer fails by pentalty
+                           /* anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                 _ => error!(ErrorCodeCustom::TransferFailed),
-                            })?;
+                            })?;*/
+                            // Execute the transfer
+                            if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
+                                msg!("Failed to transfer tokens: {:?}", err);
+                                msg!("handling penalty payments!");
+                                let penalty_amount = deposit_amount / 100;
+                                // Deduct the penalty from the bidder's deposit
+                                open_orders_auth.debit_locked_pc(penalty_amount);
+                        
+                                // Add the penalty amount to the asker's open order balance
+                                open_orders_cpty.credit_unlocked_pc(penalty_amount);
+                        
+                                msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+                                // finalized = 2 means cancelled with penalty
+                                let fin: u8 = 2;
+                                    let owner = parsed_event.owner;
+                                    msg!("deposit amount {}", deposit_amount);
+                                    open_orders_auth.credit_unlocked_pc(deposit_amount);
+                                    let bidder_fill = Event::new(EventView::Finalise {
+                                    side: Side::Ask,
+                                    maker: true,
+                                    native_qty_paid:  parsed_event.native_qty_paid,
+                                    native_qty_received: parsed_event.native_qty_released,
+                                    order_id: parsed_event.order_id,
+                                    owner: parsed_event.owner,
+                                    owner_slot: parsed_event.owner_slot,
+                                    finalised: fin,
+                                    cpty: owner,
+                                });
+                                //let idx = event_q.as_mut().unwrap().head + 1;
+                                let mut event_slot = 1;
+                                if index == 0 {
+                                    event_slot = event1_slot;
+                                }
+                                if index == 1 {
+                                    event_slot = event2_slot;
+                                }
+                                let idx = event_slot;
+                                event_q.buf[idx as usize] = bidder_fill;
+                                eventBidFinalised = false;
 
-                                            // Deduct the penalty from the bidder's deposit
-                            open_orders_bidder.debit_locked_pc(penalty_amount)?;
-                    
-                            // Add the penalty amount to the asker's open order balance
-                            open_orders_asker.credit_unlocked_pc(penalty_amount)?;
-                    
-                            msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
-
-
-                            let fin: u8 = 1;
-                            let owner = parsed_event.owner;
-                            msg!("deposit amount {}", deposit_amount);
-                            open_orders_auth.credit_unlocked_pc(deposit_amount);
-                            let bidder_fill = Event::new(EventView::Finalise {
-                             side: Side::Ask,
-                             maker: true,
-                             native_qty_paid:  parsed_event.native_qty_paid,
-                             native_qty_received: parsed_event.native_qty_released,
-                             order_id: parsed_event.order_id,
-                             owner: parsed_event.owner,
-                             owner_slot: parsed_event.owner_slot,
-                             finalised: fin,
-                             cpty: owner,
-                         });
-                         //let idx = event_q.as_mut().unwrap().head + 1;
-                         let mut event_slot = 1;
-                         if index == 0 {
-                            event_slot = event1_slot;
-                         }
-                         if index == 1 {
-                            event_slot = event2_slot;
-                         }
-                         let idx = event_slot;
-                         event_q.buf[idx as usize] = bidder_fill;
-                         eventBidFinalised = true;
-                        }
-                        if cpty_deposit_amt > 0 {
-                           //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
-                        }
-                        let mut remaining_funds = 0;
-                        if remaining_funds > 0 {
-                           
-                            msg!("Newly locked PC for bidder {}", qty_pc);
-                        }
-                        if index == 0 {
-                            open_orders_auth.native_pc_free  = open_orders_auth
-                                .native_pc_free
-                                .checked_add(qty_pc)
-                                .unwrap();
-                            // open_orders_auth.credit_unlocked_pc(deposit_amount);
                             }
-                        if index == 1 {
-                            open_orders_cpty.native_pc_free  = open_orders_cpty
-                                .native_pc_free
-                                .checked_add(deposit_amount)
-                                .unwrap();
+                            else {
+                                msg!("Tokens transferred!");
+                             
+
+                                    let fin: u8 = 1;
+                                    let owner = parsed_event.owner;
+                                    msg!("deposit amount {}", deposit_amount);
+                                    open_orders_auth.credit_unlocked_pc(deposit_amount);
+                                    let bidder_fill = Event::new(EventView::Finalise {
+                                    side: Side::Ask,
+                                    maker: true,
+                                    native_qty_paid:  parsed_event.native_qty_paid,
+                                    native_qty_received: parsed_event.native_qty_released,
+                                    order_id: parsed_event.order_id,
+                                    owner: parsed_event.owner,
+                                    owner_slot: parsed_event.owner_slot,
+                                    finalised: fin,
+                                    cpty: owner,
+                                });
+                                //let idx = event_q.as_mut().unwrap().head + 1;
+                                let mut event_slot = 1;
+                                if index == 0 {
+                                    event_slot = event1_slot;
+                                }
+                                if index == 1 {
+                                    event_slot = event2_slot;
+                                }
+                                let idx = event_slot;
+                                event_q.buf[idx as usize] = bidder_fill;
+                                eventBidFinalised = true;
+                                }
+                                if cpty_deposit_amt > 0 {
+                                //open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
+                                }
+                                let mut remaining_funds = 0;
+                                if remaining_funds > 0 {
+                                
+                                    msg!("Newly locked PC for bidder {}", qty_pc);
+                                }
+                                if index == 0 {
+                                    open_orders_auth.native_pc_free  = open_orders_auth
+                                        .native_pc_free
+                                        .checked_add(qty_pc)
+                                        .unwrap();
+                                    // open_orders_auth.credit_unlocked_pc(deposit_amount);
+                                    }
+                                if index == 1 {
+                                    open_orders_cpty.native_pc_free  = open_orders_cpty
+                                        .native_pc_free
+                                        .checked_add(deposit_amount)
+                                        .unwrap();
+                                    }
                             }
                     }
                     // Side::Ask => {
@@ -1024,11 +1060,8 @@ pub fn finalise_matches_ask(
                                     let side_cancel = Side::Ask;
                                     // Calculate the penalty amount
                                     let penalty_amount = deposit_amount / 100; // Assuming 1% penalty
-                                    let cancel_with_penalty_ctx = CancelWithPenalty {
-                                            open_orders_bidder: ctx.accounts.open_orders_owner,
-                                            open_orders_asker: ctx.accounts.open_orders_counterparty,
-                                            // Initialize other necessary accounts, if any
-                                        };
+                                    
+                            
                                         // Make accounting changes representing the penalty.
                                     /*cancel_with_penalty(side_cancel, &mut ctx.accounts.open_orders_owner, 
                                             &mut ctx.accounts.open_orders_counterparty, deposit_amount)?;*/

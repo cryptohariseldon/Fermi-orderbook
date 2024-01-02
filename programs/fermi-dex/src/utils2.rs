@@ -959,6 +959,20 @@ impl<'a> OrderBook<'a> {
                 .unwrap();
             self.native_coin_free = self.native_coin_free.checked_add(native_coin_amount).unwrap();
         }
+
+        pub fn debit_locked_coin(&mut self, native_coin_amount: u64) {
+            self.native_coin_total = self
+                .native_coin_total
+                .checked_sub(native_coin_amount)
+                .unwrap();
+        }
+
+        pub fn debit_locked_pc(&mut self, native_pc_amount: u64) {
+            self.native_pc_total = self
+                .native_pc_total
+                .checked_sub(native_pc_amount)
+                .unwrap();
+        }
     
         pub fn credit_locked_coin(&mut self, native_coin_amount: u64) {
             self.native_coin_total = self
