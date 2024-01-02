@@ -1051,8 +1051,8 @@ pub struct WithdrawTokens<'info> {
 #[derive(Accounts)]
 pub struct CancelWithPenalty<'info> {
     #[account(mut)]
-    pub open_orders_bidder: Account<'info, OpenOrders>,
+    pub open_orders_bidder: Box<Account<'info, OpenOrders>>,
     #[account(mut)]
-    pub open_orders_asker: Account<'info, OpenOrders>,
+    pub open_orders_asker: Box<Account<'info, OpenOrders>>,
     // Include other necessary accounts, if needed
 }

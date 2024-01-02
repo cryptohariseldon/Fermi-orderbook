@@ -580,10 +580,11 @@ pub mod fermi_dex {
 
 
 
-    fn cancel_bid_with_penalty(
-        //ctx: Context<CancelWithPenalty>,
-        open_orders_bidder: &mut Account<'info, OpenOrders>,
-        open_orders_asker: &mut Account<'info, OpenOrders>,
+    fn cancel_with_penalty(
+        ctx: Context<CancelWithPenalty>,
+        side: Side,
+        //open_orders_bidder: &mut Account<'info, OpenOrders>,
+        //open_orders_asker: &mut Account<'info, OpenOrders>,
         deposit_amount: u64,
     ) -> Result<()> {
         let open_orders_bidder = &mut ctx.accounts.open_orders_bidder;
@@ -591,19 +592,32 @@ pub mod fermi_dex {
     
         // Calculate the penalty amount (1% of deposit_amount)
         let penalty_amount = deposit_amount / 100;
-    
-        // Deduct the penalty from the bidder's deposit
-        open_orders_bidder.decrease_deposit(penalty_amount)?;
-    
-        // Add the penalty amount to the asker's open order balance
-        open_orders_asker.increase_balance(penalty_amount)?;
-    
-        msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
-    
+        
+        match side{
+            Side::Bid => {
+                // Deduct the penalty from the bidder's deposit
+                open_orders_bidder.debit_locked_pc(penalty_amount)?;
+        
+                // Add the penalty amount to the asker's open order balance
+                open_orders_asker.credit_unlocked_pc(penalty_amount)?;
+        
+                msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+            }
+            Side::Ask => {
+                // Deduct the penalty from the asker's deposit
+                open_orders_asker.debit_locked_coin(penalty_amount)?;
+        
+                // Add the penalty amount to the bidder's open order balance
+                open_orders_bidder.credit_unlocked_coin(penalty_amount)?;
+        
+                msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
+            }
+        } 
         Ok(())
     }
 
-    fn cancel_ask_with_penalty(
+    /* 
+    pub fn cancel_ask_with_penalty(
         //ctx: Context<CancelWithPenalty>,
         open_orders_asker: &mut Account<'info, OpenOrders>,
         open_orders_bidder: &mut Account<'info, OpenOrders>,
@@ -624,7 +638,7 @@ pub mod fermi_dex {
         msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
     
         Ok(())
-    }
+    } */
     
        
     pub fn finalise_matches_bid(
@@ -749,6 +763,16 @@ pub mod fermi_dex {
                             anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                 _ => error!(ErrorCodeCustom::TransferFailed),
                             })?;
+
+                                            // Deduct the penalty from the bidder's deposit
+                            open_orders_bidder.debit_locked_pc(penalty_amount)?;
+                    
+                            // Add the penalty amount to the asker's open order balance
+                            open_orders_asker.credit_unlocked_pc(penalty_amount)?;
+                    
+                            msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+
+
                             let fin: u8 = 1;
                             let owner = parsed_event.owner;
                             msg!("deposit amount {}", deposit_amount);
@@ -922,8 +946,8 @@ pub fn finalise_matches_ask(
                 //let mut sider = parsed_event.event_flags;
 
                 //validation
-                require(event1.finalized== 0 || event2.finalized == 0, ErrorCodeCustom::BothEventsFinalised);
-                
+                require!(event1.finalised== 0 || event2.finalised == 0, ErrorCodeCustom::BothEventsFinalised);
+
                 for (index, parsed_event) in events.iter().enumerate() {
                     let sider;
                    
@@ -997,17 +1021,27 @@ pub fn finalise_matches_ask(
                                 // If transfer fails, handle penalty
                                 if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
                                     msg!("Transfer failed, handling penalty: {:?}", err);
-
+                                    let side_cancel = Side::Ask;
                                     // Calculate the penalty amount
                                     let penalty_amount = deposit_amount / 100; // Assuming 1% penalty
-                                    /*let cancel_with_penalty_ctx = CancelWithPenalty {
-                                            open_orders_bidder: ctx.accounts.open_orders_owner.clone(),
-                                            open_orders_asker: ctx.accounts.open_orders_counterparty.clone(),
+                                    let cancel_with_penalty_ctx = CancelWithPenalty {
+                                            open_orders_bidder: ctx.accounts.open_orders_owner,
+                                            open_orders_asker: ctx.accounts.open_orders_counterparty,
                                             // Initialize other necessary accounts, if any
-                                        };*/
+                                        };
                                         // Make accounting changes representing the penalty.
-                                    cancel_ask_with_penalty(&mut &mut ctx.accounts.open_orders_owner, 
-                                            &mut ctx.accounts.open_orders_counterparty, deposit_amount)?;
+                                    /*cancel_with_penalty(side_cancel, &mut ctx.accounts.open_orders_owner, 
+                                            &mut ctx.accounts.open_orders_counterparty, deposit_amount)?;*/
+                                    
+                                    //cancel_with_penalty(cancel_with_penalty_ctx, side, deposit_amount);
+                                    // Directly apply penalty to asker:
+                                     // Deduct the penalty from the asker's deposit
+                                    open_orders_auth.debit_locked_coin(penalty_amount);
+                            
+                                    // Add the penalty amount to the bidder's open order balance
+                                    open_orders_cpty.credit_unlocked_coin(penalty_amount);
+                            
+                                    msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
                                         
                                     //Record deal status in eventQ
                                     // finalized = 2 means succesfully cancelled and penalty issued. Cannot be settled and invalidated.
