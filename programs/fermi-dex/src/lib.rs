@@ -667,7 +667,7 @@ pub mod fermi_dex {
                 let mut eventAskFinalised: bool = false;
 
                 //validation
-                
+                require(event1.finalized== 0 || event2.finalized == 0, ErrorCodeCustom::BothEventsFinalised);
             
                 
                 for (index, parsed_event) in events.iter().enumerate() {
@@ -805,7 +805,8 @@ pub mod fermi_dex {
                         if eventFin == 1{
                             eventAskFinalised = true;
                         }
-                        if eventFin == 0 {
+                        // eventFin = 0 means unfinalized, eventFin = 2 means cancelled with penalty
+                        if eventFin == 0 || eventFin == 2 {
                             eventAskFinalised == false;
                         }
                         
@@ -919,6 +920,10 @@ pub fn finalise_matches_ask(
             
                 //let parsed_event = events[1];
                 //let mut sider = parsed_event.event_flags;
+
+                //validation
+                require(event1.finalized== 0 || event2.finalized == 0, ErrorCodeCustom::BothEventsFinalised);
+                
                 for (index, parsed_event) in events.iter().enumerate() {
                     let sider;
                    

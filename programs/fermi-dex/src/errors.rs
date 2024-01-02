@@ -56,6 +56,9 @@ pub enum ErrorCodeCustom {
     #[msg("InvalidAuthority")]
     InvalidAuthority,
 
+    #[msg("BothEventsAlreadyFinalised")]
+    BothEventsFinalised,
+
     #[msg("Error")]
     Error,
 
