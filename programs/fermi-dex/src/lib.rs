@@ -24,7 +24,7 @@ use crate::errors::ErrorCodeCustom;
 
 //declare_id!("4jde1a6MyoiwLVqB6UH5mBJp3gbpk1wcth8TZJfnf1V9");
 //local
-declare_id!("2BM843fAN55fqsMGidaqNr1P4127YLcxvTM5W4B2gNpn");
+declare_id!("3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR");
 
 #[program]
 pub mod fermi_dex {
@@ -517,12 +517,12 @@ pub mod fermi_dex {
             //msg!("deposit vault {}", deposit_vault);
             //msg!("approval vault {}", payer);
 
-            let transfer_ix = Approve {
+            let approve_ix = Approve {
                 to: payer.to_account_info(),
                 delegate: market.to_account_info(),
                 authority: authority.to_account_info(), // authority.to_account_info(),
             };
-            let approve_cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            let approve_cpi_ctx = CpiContext::new(token_program.to_account_info(), approve_ix);
             anchor_spl::token::approve(approve_cpi_ctx, deposit_amount).map_err(|err| {
             msg!("Failed to approve tokens: {:?}", err);
             ErrorCodeCustom::ApprovalFailed // Use the correct error code
@@ -534,24 +534,38 @@ pub mod fermi_dex {
         let transfer_fraction = 0.01; // 1%
         let transfer_amount = (deposit_amount as f64 * transfer_fraction) as u64;
 
-        
-        if deposit_amount > 0 {
+        // Marginal deposit to back your order (for later penalties if order fails)
+        if transfer_amount > 0 {
             // Set up the Approve instruction
-            let approve_ix = Approve {
-                to: payer.to_account_info(), // This is the account holding the tokens
-                delegate: market.to_account_info(), // This is who you're giving permission to
+            let transfer_ix = Transfer {
+                from: payer.to_account_info(), // This is the account holding the tokens
+                to: deposit_vault.to_account_info(), // This is who you're giving permission to
                 authority: authority.to_account_info(), // The authority of the 'to' account
             };
         
             // Create the CPI context for the approve instruction
-            let approve_cpi_ctx = CpiContext::new(token_program.to_account_info(), approve_ix);
-        
+            let transfer_cpi_ctx = CpiContext::new(token_program.to_account_info(), transfer_ix);
+            msg!("Tokens transferred as Margin later spending: {}", transfer_amount);
+
+            // Update openorders balances.
+            match side {
+                Side::Bid => {
+                    //open_orders.credit__pc(deposit_amount);
+                    open_orders.credit_locked_pc(transfer_amount);
+                }
+                Side::Ask => {
+                    //open_orders.credit_coin(deposit_amount);
+                    open_orders.credit_locked_coin(transfer_amount);
+                }
+            }
             // Execute the approval (passing the amount separately)
-            anchor_spl::token::approve(approve_cpi_ctx, deposit_amount).map_err(|err| {
-                msg!("Failed to approve tokens: {:?}", err);
-                ErrorCodeCustom::ApprovalFailed // Replace with your actual error code
+            anchor_spl::token::transfer(transfer_cpi_ctx, transfer_amount).map_err(|err| {
+                msg!("Failed to transfer tokens: {:?}", err);
+                ErrorCodeCustom::TransferFailed // Replace with your actual error code
             })?;
-            msg!("Tokens approved for later spending.");
+            
+
+
         }
         
         
