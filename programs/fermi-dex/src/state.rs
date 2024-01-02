@@ -1047,3 +1047,12 @@ pub struct WithdrawTokens<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 
 }
+
+#[derive(Accounts)]
+pub struct CancelWithPenalty<'info> {
+    #[account(mut)]
+    pub open_orders_bidder: Account<'info, OpenOrders>,
+    #[account(mut)]
+    pub open_orders_asker: Account<'info, OpenOrders>,
+    // Include other necessary accounts, if needed
+}

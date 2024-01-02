@@ -579,6 +579,53 @@ pub mod fermi_dex {
     }
 
 
+
+    fn cancel_bid_with_penalty(
+        //ctx: Context<CancelWithPenalty>,
+        open_orders_bidder: &mut Account<'info, OpenOrders>,
+        open_orders_asker: &mut Account<'info, OpenOrders>,
+        deposit_amount: u64,
+    ) -> Result<()> {
+        let open_orders_bidder = &mut ctx.accounts.open_orders_bidder;
+        let open_orders_asker = &mut ctx.accounts.open_orders_asker;
+    
+        // Calculate the penalty amount (1% of deposit_amount)
+        let penalty_amount = deposit_amount / 100;
+    
+        // Deduct the penalty from the bidder's deposit
+        open_orders_bidder.decrease_deposit(penalty_amount)?;
+    
+        // Add the penalty amount to the asker's open order balance
+        open_orders_asker.increase_balance(penalty_amount)?;
+    
+        msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+    
+        Ok(())
+    }
+
+    fn cancel_ask_with_penalty(
+        //ctx: Context<CancelWithPenalty>,
+        open_orders_asker: &mut Account<'info, OpenOrders>,
+        open_orders_bidder: &mut Account<'info, OpenOrders>,
+        deposit_amount: u64,
+    ) -> Result<()> {
+        //let open_orders_asker = &mut ctx.accounts.open_orders_asker;
+        //let open_orders_bidder = &mut ctx.accounts.open_orders_bidder;
+    
+        // Calculate the penalty amount (1% of deposit_amount)
+        let penalty_amount = deposit_amount / 100;
+    
+        // Deduct the penalty from the asker's deposit
+        open_orders_asker.debit_locked_coin(penalty_amount)?;
+    
+        // Add the penalty amount to the bidder's open order balance
+        open_orders_bidder.credit_locked_coin(penalty_amount)?;
+    
+        msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
+    
+        Ok(())
+    }
+    
        
     pub fn finalise_matches_bid(
                 ctx: Context<NewMatch>,
@@ -935,48 +982,100 @@ pub fn finalise_matches_ask(
                                     seeds,
                                     //&[&[b"market", coin_mint.key().as_ref(), pc_mint.key().as_ref(), &[seeds]]]
                                 );
-                            
-                                anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
+                                // Prepare for penalty if transfer fails:
+                          
+                                /*anchor_spl::token::transfer(cpi_ctx, deposit_amount).map_err(|err| match err {
                                     _ => error!(ErrorCodeCustom::TransferFailed),
-                                })?;
-                                let fin: u8 = 1;
-                                let owner = parsed_event.owner;
-                                let asker_fill = Event::new(EventView::Finalise {
-                                    side: Side::Ask,
-                                    maker: true,
-                                    native_qty_paid:  parsed_event.native_qty_paid,
-                                    native_qty_received: parsed_event.native_qty_released,
-                                    order_id: parsed_event.order_id,
-                                    owner: parsed_event.owner,
-                                    owner_slot: parsed_event.owner_slot,
-                                    finalised: fin,
-                                    cpty: owner,
-                                });
-                                //let idx = event_q.as_mut().unwrap().head + 1;
-                                let mut event_slot = 0;
-                                if index == 0 {
-                                   event_slot = event1_slot;
-                                }
-                                if index == 1 {
-                                   event_slot = event2_slot;
-                                }
-                                let idx = event_slot;
-                                event_q.buf[idx as usize] = asker_fill;
-                                let event_bid_finalised = true;
-                            
-                            //accounting
-                            if index == 0 {
-                            open_orders_auth.native_coin_free = open_orders_auth
-                                .native_coin_free
-                                .checked_add(deposit_amount)
-                                .unwrap();
-                            }
-                            if index == 1 {
-                                open_orders_cpty.native_coin_free = open_orders_cpty
-                                    .native_coin_free
-                                    .checked_add(deposit_amount)
-                                    .unwrap();
 
+                                })?;*/
+
+                                // If transfer fails, handle penalty
+                                if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
+                                    msg!("Transfer failed, handling penalty: {:?}", err);
+
+                                    // Calculate the penalty amount
+                                    let penalty_amount = deposit_amount / 100; // Assuming 1% penalty
+                                    /*let cancel_with_penalty_ctx = CancelWithPenalty {
+                                            open_orders_bidder: ctx.accounts.open_orders_owner.clone(),
+                                            open_orders_asker: ctx.accounts.open_orders_counterparty.clone(),
+                                            // Initialize other necessary accounts, if any
+                                        };*/
+                                        // Make accounting changes representing the penalty.
+                                    cancel_ask_with_penalty(&mut &mut ctx.accounts.open_orders_owner, 
+                                            &mut ctx.accounts.open_orders_counterparty, deposit_amount)?;
+                                        
+                                    //Record deal status in eventQ
+                                    // finalized = 2 means succesfully cancelled and penalty issued. Cannot be settled and invalidated.
+                                        let fin: u8 = 2;
+                                        let owner = parsed_event.owner;
+                                        let asker_fill = Event::new(EventView::Finalise {
+                                            side: Side::Ask,
+                                            maker: true,
+                                            native_qty_paid:  parsed_event.native_qty_paid,
+                                            native_qty_received: parsed_event.native_qty_released,
+                                            order_id: parsed_event.order_id,
+                                            owner: parsed_event.owner,
+                                            owner_slot: parsed_event.owner_slot,
+                                            finalised: fin,
+                                            cpty: owner,
+                                        });
+                                        //let idx = event_q.as_mut().unwrap().head + 1;
+                                        let mut event_slot = 0;
+                                        if index == 0 {
+                                        event_slot = event1_slot;
+                                        }
+                                        if index == 1 {
+                                        event_slot = event2_slot;
+                                        }
+                                        let idx = event_slot;
+                                        event_q.buf[idx as usize] = asker_fill;
+                                        let event_bid_finalised = true;
+
+
+                                    }
+                                    //If transfer succeeds, record deal status in eventQ
+                                    else {
+                                        // finalized = 1 means succesfully transferred and settleable.
+                                        let fin: u8 = 1;
+                                        let owner = parsed_event.owner;
+                                        let asker_fill = Event::new(EventView::Finalise {
+                                            side: Side::Ask,
+                                            maker: true,
+                                            native_qty_paid:  parsed_event.native_qty_paid,
+                                            native_qty_received: parsed_event.native_qty_released,
+                                            order_id: parsed_event.order_id,
+                                            owner: parsed_event.owner,
+                                            owner_slot: parsed_event.owner_slot,
+                                            finalised: fin,
+                                            cpty: owner,
+                                        });
+                                        //let idx = event_q.as_mut().unwrap().head + 1;
+                                        let mut event_slot = 0;
+                                        if index == 0 {
+                                        event_slot = event1_slot;
+                                        }
+                                        if index == 1 {
+                                        event_slot = event2_slot;
+                                        }
+                                        let idx = event_slot;
+                                        event_q.buf[idx as usize] = asker_fill;
+                                        let event_bid_finalised = true;
+                                    
+                                    //accounting
+                                    if index == 0 {
+                                    open_orders_auth.native_coin_free = open_orders_auth
+                                        .native_coin_free
+                                        .checked_add(deposit_amount)
+                                        .unwrap();
+                                    }
+                                    if index == 1 {
+                                        open_orders_cpty.native_coin_free = open_orders_cpty
+                                            .native_coin_free
+                                            .checked_add(deposit_amount)
+                                            .unwrap();
+                                    };
+                                    let mut remaining_funds = 1;
+                                    eventAskFinalised = true;
                         }
 
 
@@ -984,8 +1083,7 @@ pub fn finalise_matches_ask(
                         if cpty_deposit_amt > 0 {
                             open_orders_cpty.credit_unlocked_coin(cpty_deposit_amt);
                         } */
-                        let mut remaining_funds = 1;
-                        eventAskFinalised = true;
+                        
                         
                     }
                     //Side::Bid => {
@@ -996,7 +1094,7 @@ pub fn finalise_matches_ask(
                             if eventFin == 1{
                                 eventBidFinalised = true;
                             }
-                            if eventFin == 0 {
+                            else {
                                 eventBidFinalised == false;
                             }
 
