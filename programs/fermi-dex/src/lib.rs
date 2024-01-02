@@ -581,6 +581,12 @@ pub mod fermi_dex {
     }
 
 
+    //Checklist for cancel with penalty
+    // 1. Check that the mandated delay period has been exceeded.
+    // 2. Check that the event in question has not already been finalized.
+    // 3. Check that the owner of the defaulting openorders is the bidder/asker as the case may be.
+    // 4. Check that the owner of the counterparty openorders is the asker/bidder as the case may be.
+    // 5. Check that the events in question compose a match.
 
     pub fn cancel_with_penalty(
         ctx: Context<CancelWithPenalty>,
@@ -610,6 +616,10 @@ pub mod fermi_dex {
             ErrorCodeCustom::FinalizeNotExpired
         );
 
+        //Verify that the events are a match.
+        require!(event1.order_id_second == event2.order_id || event2.order_id_second == event1.order_id, ErrorCodeCustom::Error);
+
+
         // verify that the events have not already been finalized
         
         match side{
@@ -618,6 +628,11 @@ pub mod fermi_dex {
                 // this ensures that a party cannot be penalised if they've already supplied capital
                 require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(EventFlag::flags_to_side(event1.event_flags) == Side::Bid, ErrorCodeCustom::WrongSide);
+                //verify owner of openorders is the bidder
+                require!(open_orders_bidder.authority == event1.owner, ErrorCodeCustom::InvalidAuthority);
+                //verify counterparty
+                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+
                 let deposit_amount = event1.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;
 
@@ -634,6 +649,11 @@ pub mod fermi_dex {
                 // this ensures that a party cannot be penalised if they've already supplied capital
                 require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(event2.flags_to_side() == Side::Ask, ErrorCodeCustom::WrongSide);
+                //verify owner of openorders is the asker
+                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+                //verify counterparty
+                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+
                 let deposit_amount = event2.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;
 
