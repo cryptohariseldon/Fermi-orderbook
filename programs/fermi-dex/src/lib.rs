@@ -950,6 +950,7 @@ pub mod fermi_dex {
                             })?;*/
                             // Execute the transfer
                             if let Err(err) = anchor_spl::token::transfer(cpi_ctx, deposit_amount) {
+                                // CPI errors cannot be handled in code, this arm will not be reached.
                                 msg!("Failed to transfer tokens: {:?}", err);
                                 msg!("handling penalty payments!");
                                 let penalty_amount = deposit_amount / 100;
@@ -1009,6 +1010,9 @@ pub mod fermi_dex {
                                     cpty: owner,
                                 });
                                 //let idx = event_q.as_mut().unwrap().head + 1;
+                                let mut event_updated = event1.clone();
+                                event_updated.finalised = 1;
+                                let bidder_finalize = event_updated;
                                 let mut event_slot = 1;
                                 if index == 0 {
                                     event_slot = event1_slot;
@@ -1017,7 +1021,7 @@ pub mod fermi_dex {
                                     event_slot = event2_slot;
                                 }
                                 let idx = event_slot;
-                                event_q.buf[idx as usize] = bidder_fill;
+                                event_q.buf[idx as usize] = bidder_finalize;
                                 eventBidFinalised = true;
                                 }
                                 if cpty_deposit_amt > 0 {
@@ -1247,6 +1251,7 @@ pub fn finalise_matches_ask(
                                 {
                                         
                                 Err(err) => {
+                                    // Error on CPI cannot be handled. Below arm never reached.
                                             msg!("Failed to transfer tokens: {:?}", err);
                                             // Additional error handling logic
                                         
@@ -1286,6 +1291,9 @@ pub fn finalise_matches_ask(
                                             cpty: owner,
                                         });
                                         //let idx = event_q.as_mut().unwrap().head + 1;
+                                        let mut event_updated = parsed_event.clone();
+                                        event_updated.finalised = 1;
+                                        let asker_finalize = event_updated;
                                         let mut event_slot = 0;
                                         if index == 0 {
                                         event_slot = event1_slot;
@@ -1294,8 +1302,8 @@ pub fn finalise_matches_ask(
                                         event_slot = event2_slot;
                                         }
                                         let idx = event_slot;
-                                        event_q.buf[idx as usize] = asker_fill;
-                                        let event_bid_finalised = true;
+                                        event_q.buf[idx as usize] = asker_finalize;
+                                        let event_ask_finalised = true;
 
 
                                     }
@@ -1318,6 +1326,9 @@ pub fn finalise_matches_ask(
                                             finalised: fin,
                                             cpty: owner,
                                         });
+                                        let mut event_updated = parsed_event.clone();
+                                        event_updated.finalised = 1;
+                                        let asker_finalize = event_updated;
                                         //let idx = event_q.as_mut().unwrap().head + 1;
                                         let mut event_slot = 0;
                                         if index == 0 {
@@ -1327,8 +1338,7 @@ pub fn finalise_matches_ask(
                                         event_slot = event2_slot;
                                         }
                                         let idx = event_slot;
-                                        event_q.buf[idx as usize] = asker_fill;
-                                        let event_bid_finalised = true;
+                                        event_q.buf[idx as usize] = asker_finalize;
                                     
                                     //accounting
                                     if index == 0 {
