@@ -900,7 +900,7 @@ pub mod fermi_dex {
                     if sider == 1 {
                         let mut qty_pc = parsed_event.native_qty_paid;
                         let mut qty_coin = parsed_event.native_qty_released;
-                        let mut available_funds = open_orders_auth.native_pc_free;
+                        let mut available_funds = open_orders_auth.native_pc_total;
                         msg!("the available funds is {}", available_funds);
                         msg!("the required funds are {}", qty_pc);
             
@@ -1029,15 +1029,15 @@ pub mod fermi_dex {
                                     msg!("Newly locked PC for bidder {}", qty_pc);
                                 }
                                 if index == 0 {
-                                    open_orders_auth.native_pc_free  = open_orders_auth
-                                        .native_pc_free
+                                    open_orders_auth.native_pc_total  = open_orders_auth
+                                        .native_pc_total
                                         .checked_add(qty_pc)
                                         .unwrap();
                                     // open_orders_auth.credit_unlocked_pc(deposit_amount);
                                     }
                                 if index == 1 {
-                                    open_orders_cpty.native_pc_free  = open_orders_cpty
-                                        .native_pc_free
+                                    open_orders_cpty.native_pc_total  = open_orders_cpty
+                                        .native_pc_total
                                         .checked_add(deposit_amount)
                                         .unwrap();
                                     }
@@ -1063,16 +1063,16 @@ pub mod fermi_dex {
                     //checked subtract pc from event1 owner
                    // open_orders_auth.native_pc_free -= event1.native_qty_paid;
                     
-                    open_orders_auth.native_pc_free = open_orders_auth
-                                .native_pc_free
+                    open_orders_auth.native_pc_total = open_orders_auth
+                                .native_pc_total
                                 .checked_sub(event1.native_qty_paid)
                                 .unwrap();
                             
                     //subtract coin from event2 owner
                     //open_orders_cpty.native_coin_free -= event2.native_qty_paid;
                     //checked sub
-                    open_orders_cpty.native_coin_free = open_orders_cpty
-                                .native_coin_free
+                    open_orders_cpty.native_coin_total = open_orders_cpty
+                                .native_coin_total
                                 .checked_sub(event2.native_qty_paid)
                                 .unwrap(); 
                             
@@ -1088,22 +1088,22 @@ pub mod fermi_dex {
                         .ok_or(ErrorCodeCustom::Error)?;
                     
 
-                    ctx.accounts.open_orders_counterparty.native_coin_free = ctx.accounts
+                    ctx.accounts.open_orders_counterparty.native_coin_total = ctx.accounts
                         .open_orders_counterparty
                         .native_coin_free
                         .checked_add(qty_coin)
                         .ok_or(ErrorCodeCustom::Error)?;
                     //add coin to event1 owner  
-                    //open_orders_auth.native_coin_free += event1.native_qty_released;
+                    //open_orders_auth.native_coin_total += event1.native_qty_released;
 
                     msg!("settlement completed!");
                     msg!("balance pc added to cpty {}", qty_pc);
                     msg!("balance coin added to auth {}", qty_coin);
-                    msg!("oo cpty coin bal {}", ctx.accounts.open_orders_counterparty.native_coin_free);
+                    msg!("oo cpty coin bal {}", ctx.accounts.open_orders_counterparty.native_coin_total);
                     msg!("oo cpty owner {}", ctx.accounts.open_orders_counterparty.authority);
 
 
-                    msg!("oo owner pc bal {}", ctx.accounts.open_orders_owner.native_pc_free);
+                    msg!("oo owner pc bal {}", ctx.accounts.open_orders_owner.native_pc_total);
                     msg!("oo owner owner {}", ctx.accounts.open_orders_owner.authority);
                     msg!("oo owner market {}", ctx.accounts.open_orders_owner.market);
 
@@ -1188,7 +1188,7 @@ pub fn finalise_matches_ask(
                        if sider == 2  {
                             //let mut qty_pc = parsed_event.native_qty_paid;
                             let mut qty_coin = parsed_event.native_qty_paid;
-                            let mut available_funds = open_orders_auth.native_coin_free;
+                            let mut available_funds = open_orders_auth.native_coin_total;
                             msg!("the available funds is {}", available_funds);
                             msg!("the required funds are {}", qty_coin);
                 
@@ -1332,14 +1332,14 @@ pub fn finalise_matches_ask(
                                     
                                     //accounting
                                     if index == 0 {
-                                    open_orders_auth.native_coin_free = open_orders_auth
-                                        .native_coin_free
+                                    open_orders_auth.native_coin_total = open_orders_auth
+                                        .native_coin_total
                                         .checked_add(deposit_amount)
                                         .unwrap();
                                     }
                                     if index == 1 {
-                                        open_orders_cpty.native_coin_free = open_orders_cpty
-                                            .native_coin_free
+                                        open_orders_cpty.native_coin_total = open_orders_cpty
+                                            .native_coin_total
                                             .checked_add(deposit_amount)
                                             .unwrap();
                                     };
@@ -1377,15 +1377,15 @@ pub fn finalise_matches_ask(
             if eventBidFinalised == true && eventAskFinalised == true {
                 //checked subtract pc from event1 owner
                 //open_orders_auth.native_pc_free -= event1.native_qty_paid;
-                open_orders_auth.native_pc_free = open_orders_auth
-                                .native_pc_free
+                open_orders_auth.native_pc_total = open_orders_auth
+                                .native_pc_total
                                 .checked_sub(event1.native_qty_paid)
                                 .unwrap();
                             
                 //subtract coin from event2 owner
                 //open_orders_cpty.native_coin_free -= event2.native_qty_paid;
-                open_orders_cpty.native_coin_free = open_orders_cpty
-                                .native_coin_free
+                open_orders_cpty.native_coin_total = open_orders_cpty
+                                .native_coin_total
                                 .checked_sub(event2.native_qty_paid)
                                 .unwrap();
                 //add pc to event2 owner
