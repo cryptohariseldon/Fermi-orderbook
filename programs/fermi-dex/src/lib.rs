@@ -89,6 +89,11 @@ pub mod fermi_dex {
             market: &mut ctx.accounts.market,
         };
 
+        //order value is freed up
+        let order_value = Order::price_from_order_id(order_id);
+        let marginal_deposit = order_value / 100;
+        openorders.unlock_pc(marginal_deposit);
+
         order_book.cancel_order_bid(true, order_id, expected_owner)?;
 
         //remove order from openorders
@@ -135,6 +140,11 @@ pub mod fermi_dex {
             asks,
             market: &mut ctx.accounts.market,
         };
+
+        //order value is freed up
+        let order_value = Order::price_from_order_id(order_id);
+        let marginal_deposit = order_value / 100;
+        openorders.unlock_coin(marginal_deposit);
 
         order_book.cancel_order_ask(false, order_id, expected_owner)?;
 
@@ -624,52 +634,137 @@ pub mod fermi_dex {
 
 
         // verify that the events have not already been finalized
+        require!(event1.finalised == 0 || event2.finalised == 0, ErrorCodeCustom::EventFinalised);
+
+        // Verify openorders specified match the events.
+        msg!("event1 owner is {}", event1.owner);
+        msg!("openorders bidder is {}", open_orders_bidder.key());
+        msg!("event2 owner is {}", event2.owner);
+        msg!("openorders asker is {}", open_orders_asker.key());
+        require!(open_orders_bidder.key() == event1.owner || open_orders_asker.key() == event1.owner, ErrorCodeCustom::InvalidAuthority);
+        //verify counterparty
+
+        require!(open_orders_asker.key() == event2.owner || open_orders_bidder.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
         
         match side{
             Side::Bid => {
                 //verify event1 is not already finalized
-                // this ensures that a party cannot be penalised if they've already supplied capital
-                require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
+                
                 //require!(EventFlag::flags_to_side(event1.event_flags) == Side::Bid, ErrorCodeCustom::WrongSide);
                 //verify owner of openorders is the bidder
-                require!(open_orders_bidder.key() == event1.owner, ErrorCodeCustom::InvalidAuthority);
-                //verify counterparty
-                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
+
+                
+                if open_orders_bidder.key() == event1.owner {
+                // this ensures that a party cannot be penalised if they've already supplied capital.
+                require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
 
                 let deposit_amount = event1.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;
 
                 // Deduct the penalty from the bidder's deposit
-                open_orders_bidder.debit_locked_pc(penalty_amount/1000);
+                open_orders_bidder.debit_locked_pc(penalty_amount);
         
                 // Add the penalty amount to the asker's open order balance
-                open_orders_asker.credit_unlocked_pc(penalty_amount/1000);
+                open_orders_asker.credit_unlocked_pc(penalty_amount);
         
                 msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+
+                
+                //If asker has finalized bid, free up their tokens deposited
+                    if event2.finalised == 1 {
+                        let asker_deposit_amount = event2.native_qty_paid;
+                        open_orders_asker.unlock_coin(asker_deposit_amount);
+                    } else {
+                        // free up locked funds for honest counterparty
+                        let asker_marginal_deposit = event2.native_qty_paid / 100;
+                        open_orders_asker.unlock_coin(asker_marginal_deposit);
+                    }
+                }
+                else {
+                    require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
+                    let deposit_amount = event2.native_qty_paid;
+                    let penalty_amount = deposit_amount / 100;
+    
+                    // Deduct the penalty from the bidder's deposit
+                    open_orders_asker.debit_locked_pc(penalty_amount);
+            
+                    // Add the penalty amount to the asker's open order balance
+                    open_orders_bidder.credit_unlocked_pc(penalty_amount);
+            
+                    msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
+    
+                    // free up locked funds for honest counterparty
+                    let asker_marginal_deposit = event1.native_qty_released;
+                    open_orders_bidder.unlock_coin(asker_marginal_deposit);
+                    //if asker has finalized bid, free up their tokens deposited
+                    if event1.finalised == 1 {
+                        let asker_deposit_amount = event1.native_qty_released;
+                        open_orders_bidder.unlock_coin(asker_deposit_amount);
+                    } else {
+                        // free up margin locked funds for honest counterparty
+                        let asker_marginal_deposit = event1.native_qty_released / 100;
+                        open_orders_bidder.unlock_coin(asker_marginal_deposit);
+                    }
+                }
+
             }
             Side::Ask => {
                 //verify event2 is not already finalized
                 // this ensures that a party cannot be penalised if they've already supplied capital
-                require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
-                //require!(event2.flags_to_side() == Side::Ask, ErrorCodeCustom::WrongSide);
-                //verify owner of openorders is the asker
-                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
-                //verify counterparty
-                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
+                if open_orders_asker.key() == event2.owner {
+                    require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
 
-                let deposit_amount = event2.native_qty_paid;
+                    let deposit_amount = event2.native_qty_paid;
+                    let penalty_amount = deposit_amount / 100;
+
+                    // Deduct the penalty from the asker's deposit
+                    open_orders_asker.debit_locked_coin(penalty_amount);
+            
+                    // Add the penalty amount to the bidder's open order balance
+                    open_orders_bidder.credit_unlocked_coin(penalty_amount);
+            
+                    msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
+
+                    // if bidder has finalized bid, free up their tokens deposited
+                    if event1.finalised == 1 {
+                        let bidder_deposit_amount = event1.native_qty_paid;
+                        open_orders_bidder.unlock_pc(bidder_deposit_amount);
+                    } else {
+                        // free up margin locked funds for honest counterparty
+                        let bidder_marginal_deposit = event1.native_qty_paid / 100;
+                        open_orders_bidder.unlock_pc(bidder_marginal_deposit);
+                    }
+
+            }
+            else {
+                require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
+
+                let deposit_amount = event1.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;
 
                 // Deduct the penalty from the asker's deposit
-                open_orders_asker.debit_locked_coin(penalty_amount);
+                open_orders_bidder.debit_locked_coin(penalty_amount);
         
                 // Add the penalty amount to the bidder's open order balance
-                open_orders_bidder.credit_unlocked_coin(penalty_amount);
+                open_orders_asker.credit_unlocked_coin(penalty_amount);
         
                 msg!("Penalty of {} coins transferred from asker to bidder", penalty_amount);
+
+                //if bidder has finalized bid, free up their tokens deposited
+                if event2.finalised == 1 {
+                    let bidder_deposit_amount = event2.native_qty_released;
+                    open_orders_asker.unlock_pc(bidder_deposit_amount);
+                } else {
+                    // free up margin locked funds for honest counterparty
+                    let bidder_marginal_deposit = event2.native_qty_released / 100;
+                    open_orders_asker.unlock_pc(bidder_marginal_deposit);
+                }
+
+
             }
 
         } 
+    }
 
         //replace events with finalised = 2
         let fin: u8 = 2;
