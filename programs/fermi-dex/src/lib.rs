@@ -1010,7 +1010,7 @@ pub mod fermi_dex {
                                     cpty: owner,
                                 });
                                 //let idx = event_q.as_mut().unwrap().head + 1;
-                                let mut event_updated = event1.clone();
+                                let mut event_updated = parsed_event.clone();
                                 event_updated.finalised = 1;
                                 let bidder_finalize = event_updated;
                                 let mut event_slot = 1;
