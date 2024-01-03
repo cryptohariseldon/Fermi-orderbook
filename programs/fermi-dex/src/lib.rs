@@ -402,7 +402,10 @@ pub mod fermi_dex {
         let native_pc_qty_locked;
         match side {
             Side::Bid => {
-                let lock_qty_native = max_native_pc_qty;
+                let lock_qty_native = max_native_pc_qty
+                    .checked_mul(market.pc_lot_size)
+                    .ok_or(error!(ErrorCodeCustom::InsufficientFunds))?;
+                ;
                 native_pc_qty_locked = Some(lock_qty_native);
                 let free_qty_to_lock = lock_qty_native.min(open_orders.native_pc_free);
                 let total_deposit_amount = lock_qty_native - free_qty_to_lock;
@@ -629,18 +632,18 @@ pub mod fermi_dex {
                 require!(event1.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(EventFlag::flags_to_side(event1.event_flags) == Side::Bid, ErrorCodeCustom::WrongSide);
                 //verify owner of openorders is the bidder
-                require!(open_orders_bidder.authority == event1.owner, ErrorCodeCustom::InvalidAuthority);
+                require!(open_orders_bidder.key() == event1.owner, ErrorCodeCustom::InvalidAuthority);
                 //verify counterparty
-                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
 
                 let deposit_amount = event1.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;
 
                 // Deduct the penalty from the bidder's deposit
-                open_orders_bidder.debit_locked_pc(penalty_amount);
+                open_orders_bidder.debit_locked_pc(penalty_amount/1000);
         
                 // Add the penalty amount to the asker's open order balance
-                open_orders_asker.credit_unlocked_pc(penalty_amount);
+                open_orders_asker.credit_unlocked_pc(penalty_amount/1000);
         
                 msg!("Penalty of {} PC Tokens transferred from bidder to asker", penalty_amount);
             }
@@ -650,9 +653,9 @@ pub mod fermi_dex {
                 require!(event2.finalised == 0, ErrorCodeCustom::SideAlreadyFinalised);
                 //require!(event2.flags_to_side() == Side::Ask, ErrorCodeCustom::WrongSide);
                 //verify owner of openorders is the asker
-                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
                 //verify counterparty
-                require!(open_orders_asker.authority == event2.owner, ErrorCodeCustom::InvalidAuthority);
+                require!(open_orders_asker.key() == event2.owner, ErrorCodeCustom::InvalidAuthority);
 
                 let deposit_amount = event2.native_qty_paid;
                 let penalty_amount = deposit_amount / 100;

@@ -1006,12 +1006,22 @@ impl<'a> OrderBook<'a> {
                 .unwrap();
         }
 
-        pub fn debit_locked_pc(&mut self, native_pc_amount: u64) {
+        pub fn debit_locked_pc2(&mut self, native_pc_amount: u64) {
             self.native_pc_total = self
                 .native_pc_total
                 .checked_sub(native_pc_amount)
                 .unwrap();
         }
+
+        pub fn debit_locked_pc(&mut self, native_pc_amount: u64) {
+            if let Some(new_total) = self.native_pc_total.checked_sub(native_pc_amount) {
+                self.native_pc_total = new_total;
+            } else {
+                msg!("current native_pc_total: {}", self.native_pc_total);
+                msg!("debit amount: {}", native_pc_amount);
+            }
+        }
+        
     
         pub fn credit_locked_coin(&mut self, native_coin_amount: u64) {
             self.native_coin_total = self

@@ -555,10 +555,6 @@
         {
           "name": "eventSlot2",
           "type": "u8"
-        },
-        {
-          "name": "depositAmount",
-          "type": "u64"
         }
       ]
     },
@@ -1493,5 +1489,8 @@
       "name": "ApprovalFailed",
       "msg": "ApprovalFailed"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "3Ek56WB263s9WH7bhGtjpNkFk8V2UDXmvsKxDJ9RzmGR"
+  }
 }
